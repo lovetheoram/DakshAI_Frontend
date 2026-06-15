@@ -1,8 +1,8 @@
 // src/api/axiosClient.js
 import axios from "axios";
 
-const API_BASE = "http://127.0.0.1:8000";
-// const API_BASE ="https://lovetheoram.pythonanywhere.com"
+// const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://dakshai.onrender.com"
 
 const axiosClient = axios.create({
   baseURL: API_BASE,

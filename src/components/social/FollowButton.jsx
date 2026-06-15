@@ -30,10 +30,10 @@ export default function FollowButton({ userId, isFollowing }) {
     <button
       onClick={toggle}
       disabled={loading}
-      className={`px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+      className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 active:scale-[0.97] ${
         follow
-          ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-md hover:shadow-lg"
+          ? "bg-white/10 text-gray-300 border border-white/5 hover:bg-white/15"
+          : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg"
       } disabled:opacity-50`}
     >
       {follow ? "Following" : "Follow"}

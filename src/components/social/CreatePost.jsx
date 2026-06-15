@@ -96,34 +96,24 @@ export default function CreatePost({ onPostCreated }) {
   };
 
   return (
-    <motion.div layout className="bg-white border rounded-2xl shadow-md p-4 mb-4 relative overflow-hidden sm:p-6">
+    <motion.div layout className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-4 mb-4 relative overflow-hidden sm:p-6 text-white">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
         <div className="flex items-center space-x-3 mb-2 sm:mb-0">
           <motion.div
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
-            className="w-10 h-10 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-lg"
+            className="w-10 h-10 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center text-lg"
           >
             ✨
           </motion.div>
           <div>
-            <h3 className="font-bold text-gray-800 text-base sm:text-lg">
+            <h3 className="font-bold text-white text-base sm:text-lg">
               Create Amazing Content
             </h3>
-            <div className="flex items-center space-x-2 text-xs sm:text-sm">
-              {/* <span className="text-orange-500 font-semibold">🔥 {postStreak} post streak</span> */}
-              {/* <motion.span
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-2 py-0.5 rounded-full font-bold"
-              >
-                +50 XP
-              </motion.span> */}
-            </div>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-600 px-3 py-1 rounded-full text-xs font-semibold">
+        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-full text-xs font-semibold">
           🎯 Level 12
         </div>
       </div>
@@ -133,19 +123,19 @@ export default function CreatePost({ onPostCreated }) {
         <select
           value={selectedConcept}
           onChange={(e) => setSelectedConcept(e.target.value)}
-          className="w-full appearance-none bg-gray-50 border-2 border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition"
+          className="w-full appearance-none bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
         >
-          <option value="">🎓 Select Concept (optional)</option>
+          <option value="" className="bg-slate-900 text-white">🎓 Select Concept (optional)</option>
           {concepts.map((c) => (
-            <option key={c.id} value={c.id}>📚 {c.name}</option>
+            <option key={c.id} value={c.id} className="bg-slate-900 text-white">📚 {c.name}</option>
           ))}
         </select>
-        <Sparkles className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-purple-400" />
+        <Sparkles className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-purple-400 pointer-events-none" />
       </div>
 
       {/* Content Textarea */}
       <textarea
-        className="w-full resize-none text-gray-800 text-sm sm:text-base border-2 border-gray-200 rounded-lg p-3 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-200 mb-3 transition"
+        className="w-full resize-none bg-slate-950/60 border border-white/10 text-white text-sm sm:text-base rounded-xl p-3.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 mb-3 transition-all duration-200"
         rows={isExpanded ? 4 : 3}
         placeholder="Share your thoughts, ideas, or discoveries..."
         value={content}
@@ -154,29 +144,29 @@ export default function CreatePost({ onPostCreated }) {
       />
 
       {/* Media Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
-        <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-blue-600 font-medium">
-          <div className="p-2 bg-blue-100 rounded-lg"><Image size={16} /></div> Images
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+        <label className="flex items-center gap-2 cursor-pointer text-gray-300 hover:text-blue-400 font-medium text-xs sm:text-sm">
+          <div className="p-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg"><Image size={16} /></div> Images
           <input type="file" multiple accept="image/*" hidden onChange={handleImages} />
         </label>
 
-        <label className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-green-600 font-medium">
-          <div className="p-2 bg-green-100 rounded-lg"><FileText size={16} /></div> Documents
+        <label className="flex items-center gap-2 cursor-pointer text-gray-300 hover:text-emerald-400 font-medium text-xs sm:text-sm">
+          <div className="p-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg"><FileText size={16} /></div> Documents
           <input type="file" multiple hidden onChange={handleDocuments} />
         </label>
 
         <div className="flex items-center gap-2 flex-1">
-          <div className="p-2 bg-red-100 rounded-lg"><Video size={16} className="text-red-600" /></div>
+          <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg"><Video size={16} className="text-red-400" /></div>
           <input
             type="text"
             placeholder="YouTube link"
             value={videoInput}
             onChange={(e) => setVideoInput(e.target.value)}
-            className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-red-400 transition"
+            className="flex-1 bg-slate-950/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 transition-all duration-200"
           />
           <button
             onClick={handleAddVideo}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs sm:text-sm font-semibold transition"
+            className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-[0.97] border border-red-500/30"
           >
             Add
           </button>
@@ -196,7 +186,7 @@ export default function CreatePost({ onPostCreated }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {imagePreviews.map((src, i) => (
                 <div key={i} className="relative group">
-                  <img src={src} className="h-24 w-full object-cover rounded-lg border-2 border-gray-200" />
+                  <img src={src} className="h-24 w-full object-cover rounded-lg border border-white/10" />
                   <button
                     onClick={() => removeImage(i)}
                     className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
@@ -218,9 +208,9 @@ export default function CreatePost({ onPostCreated }) {
             className="mb-3 space-y-2"
           >
             {documents.map((d, i) => (
-              <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg p-2 border border-gray-200 text-xs sm:text-sm">
+              <div key={i} className="flex items-center justify-between bg-slate-950/60 rounded-xl p-3 border border-white/10 text-xs sm:text-sm text-gray-300">
                 <div className="flex items-center gap-2">
-                  <FileText size={14} className="text-blue-600" />
+                  <FileText size={14} className="text-purple-400" />
                   {d.name}
                 </div>
                 <button onClick={() => removeDocument(i)} className="text-red-500 hover:text-red-600">
@@ -243,7 +233,7 @@ export default function CreatePost({ onPostCreated }) {
               <div key={i} className="relative group">
                 <iframe
                   src={v}
-                  className="w-full h-40 sm:h-60 rounded-lg border-2 border-gray-200"
+                  className="w-full h-40 sm:h-60 rounded-lg border border-white/10"
                   allowFullScreen
                   title={`video-${i}`}
                 />
@@ -263,7 +253,7 @@ export default function CreatePost({ onPostCreated }) {
       <button
         onClick={submit}
         disabled={!content && !images.length && !videos.length && !documents.length}
-        className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 disabled:from-gray-300 disabled:to-gray-400 text-white py-3 sm:py-4 rounded-lg font-bold text-sm sm:text-lg transition-all duration-200"
+        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:via-pink-500 hover:to-indigo-500 disabled:bg-slate-800/80 disabled:from-slate-800 disabled:to-slate-800 disabled:text-gray-500 disabled:cursor-not-allowed border border-white/5 hover:border-white/10 text-white py-3 sm:py-3.5 rounded-xl font-extrabold text-sm sm:text-base transition-all duration-200 active:scale-[0.98] shadow-lg"
       >
         <div className="flex items-center justify-center gap-2">
           <Sparkles size={18} />

@@ -41,7 +41,7 @@ export default function MessageBubble({ message, isMine }) {
         {!isMine && (
           <motion.div 
             whileHover={{ scale: 1.1, rotate: 5 }}
-            className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-sm font-bold mb-1"
+            className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-sm font-bold border border-purple-500/20 mb-1"
           >
             U
           </motion.div>
@@ -53,8 +53,8 @@ export default function MessageBubble({ message, isMine }) {
             className={`
               px-4 py-3 rounded-2xl shadow-lg relative overflow-hidden
               ${isMine 
-                ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-br-none" 
-                : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
+                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-none" 
+                : "bg-slate-800/80 text-white rounded-bl-none border border-white/5"
               }
             `}
           >
@@ -70,7 +70,7 @@ export default function MessageBubble({ message, isMine }) {
             <div className="relative z-10">
               <p className="text-sm leading-relaxed">{message.text}</p>
               
-              <div className={`flex items-center justify-between mt-2 ${isMine ? "text-blue-100" : "text-gray-500"}`}>
+              <div className={`flex items-center justify-between mt-2 ${isMine ? "text-blue-100" : "text-gray-400"}`}>
                 <p className="text-[10px] opacity-70">
                   {new Date(message.created_at).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -109,23 +109,15 @@ export default function MessageBubble({ message, isMine }) {
                 initial={{ opacity: 0, scale: 0.8, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                className={`absolute top-0 ${isMine ? "-left-20" : "-right-20"} flex space-x-1 bg-white rounded-full shadow-lg border p-1`}
+                className={`absolute top-0 ${isMine ? "-left-10" : "-right-10"} flex bg-slate-950 border border-white/10 rounded-full shadow-lg p-1 backdrop-blur-md z-20`}
               >
                 <motion.button
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setLiked(!liked)}
-                  className={`p-2 rounded-full ${liked ? "bg-red-100 text-red-500" : "bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-500"} transition-colors`}
+                  className={`p-2 rounded-full ${liked ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-white/5 text-gray-400 border border-white/5 hover:bg-red-500/20 hover:text-red-400"} transition-colors`}
                 >
                   <Heart size={12} fill={liked ? "currentColor" : "none"} />
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-500 transition-colors"
-                >
-                  <Reply size={12} />
                 </motion.button>
               </motion.div>
             )}

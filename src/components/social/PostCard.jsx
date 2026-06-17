@@ -372,6 +372,67 @@ export default function PostCard({ post, onConceptClick }) {
           </motion.div>
         )}
 
+        {/* Progress Metadata Widget */}
+        {post.post_type === "progress" && post.post_metadata && (
+          <div className="mb-5 p-5 bg-white/5 border border-purple-500/20 rounded-2xl backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+              <span className="text-xs font-black tracking-widest text-purple-400 uppercase">⚡ Growth OS telemetry</span>
+              {post.post_metadata.daksh_score !== undefined && (
+                <span className="text-xs font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                  Daksh: {post.post_metadata.daksh_score}%
+                </span>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Radial Growth Dial */}
+              <div className="flex flex-col items-center justify-center p-3 bg-slate-950/40 rounded-xl border border-white/5">
+                <div className="relative flex items-center justify-center w-24 h-24">
+                  {(() => {
+                    const ratio = post.post_metadata.target_growth > 0
+                      ? (post.post_metadata.completed_growth / post.post_metadata.target_growth) * 100
+                      : 100;
+                    const radius = 34;
+                    const circumference = 2 * Math.PI * radius;
+                    const strokeOffset = circumference * (1 - Math.min(ratio, 100) / 100);
+                    return (
+                      <>
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle cx="48" cy="48" r={radius} className="stroke-slate-800 fill-none" strokeWidth="6" />
+                          <circle cx="48" cy="48" r={radius} className="stroke-purple-500 fill-none" strokeWidth="6"
+                                  strokeDasharray={circumference}
+                                  strokeDashoffset={strokeOffset}
+                                  strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute flex flex-col items-center">
+                          <span className="text-sm font-black text-white">{Math.round(ratio)}%</span>
+                          <span className="text-[8px] text-slate-400 font-semibold uppercase">Quota</span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2">Daily Quota Met</span>
+                <span className="text-xs text-purple-300 font-semibold mt-1">
+                  +{post.post_metadata.completed_growth}% / +{post.post_metadata.target_growth}%
+                </span>
+              </div>
+
+              {/* Numerical Stats Column */}
+              <div className="flex flex-col justify-center space-y-2">
+                <div className="flex justify-between items-center p-2.5 bg-slate-950/40 rounded-xl border border-white/5">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">🎯 Accuracy</span>
+                  <span className="text-sm font-black text-emerald-400">{Math.round((post.post_metadata.accuracy || 0) * 100)}%</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-slate-950/40 rounded-xl border border-white/5">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">📝 Solved</span>
+                  <span className="text-sm font-black text-blue-400">{post.post_metadata.questions_solved || 0} MCQs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Media */}
         <AnimatePresence>
           {post.media?.length > 0 && (

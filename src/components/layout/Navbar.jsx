@@ -164,7 +164,7 @@ import {
   Sparkles,
   Bell,
   User,
-  Flame,
+  Brain,
   LogOut,
   Info,
   Users,
@@ -195,7 +195,7 @@ export default function Navbar() {
             to="/"
             className="flex items-center gap-2 font-bold text-white pointer-events-auto"
           >
-            <Flame className="text-purple-400" size={22} />
+            <Brain className="text-purple-400" size={22} />
             DakshAI
           </Link>
 
@@ -228,7 +228,7 @@ export default function Navbar() {
       <header className="hidden md:block sticky top-0 z-50 bg-slate-900/70 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 text-white">
           <Link to="/" className="flex items-center gap-2 font-black text-xl tracking-tight">
-            <Flame className="text-purple-400" />
+            <Brain className="text-purple-400" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400">DakshAI</span>
           </Link>
 

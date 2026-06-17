@@ -270,6 +270,7 @@ export default function FeedPage() {
   const [posts, setPosts] = useState([]);
   const [concepts, setConcepts] = useState([]);
   const [selectedConcept, setSelectedConcept] = useState(null);
+  const [useMatchmaking, setUseMatchmaking] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [feedScore, setFeedScore] = useState(1250);
@@ -293,7 +294,10 @@ export default function FeedPage() {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const filters = selectedConcept ? { concept_id: selectedConcept } : {};
+        const filters = {
+          ...(selectedConcept ? { concept_id: selectedConcept } : {}),
+          ...(useMatchmaking ? { matchmaking: "true" } : {}),
+        };
         const res = await socialApi.getPosts(filters);
         setPosts(res.data?.posts || []);
       } catch (err) {
@@ -304,7 +308,7 @@ export default function FeedPage() {
       }
     };
     fetchPosts();
-  }, [selectedConcept]);
+  }, [selectedConcept, useMatchmaking]);
 
   const handlePostCreated = (newPost) => {
     setPosts((prev) => [newPost, ...prev]);
@@ -330,16 +334,28 @@ export default function FeedPage() {
             className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl"
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-              <h3 className="text-xl font-bold text-white flex items-center">
-                <motion.span
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="mr-3 text-2xl"
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setUseMatchmaking(false)}
+                  className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all ${
+                    !useMatchmaking
+                      ? "bg-purple-600 text-white border-purple-500/30 shadow-lg shadow-purple-500/10"
+                      : "text-gray-400 hover:text-white border-white/5 bg-white/5 hover:bg-white/10"
+                  }`}
                 >
-                  🎯
-                </motion.span>
-                Smart Filters
-              </h3>
+                  General Feed
+                </button>
+                <button
+                  onClick={() => setUseMatchmaking(true)}
+                  className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all flex items-center gap-1.5 ${
+                    useMatchmaking
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-lg shadow-purple-500/15"
+                      : "text-gray-400 hover:text-white border-white/5 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  🧠 Weakness Match
+                </button>
+              </div>
               <AnimatePresence>
                 {selectedConcept && (
                   <motion.div

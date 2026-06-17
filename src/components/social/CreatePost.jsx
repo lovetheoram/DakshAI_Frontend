@@ -27,7 +27,7 @@ export default function CreatePost({ onPostCreated }) {
   const [concepts, setConcepts] = useState([]);
   const [selectedConcept, setSelectedConcept] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [postStreak, setPostStreak] = useState(3);
+
 
   useEffect(() => {
     syllabusApi.getConceptList()
@@ -83,7 +83,7 @@ export default function CreatePost({ onPostCreated }) {
 
     const res = await socialApi.createPost(formData);
     onPostCreated(res.data.data);
-    setPostStreak((prev) => prev + 1);
+
 
     // Reset
     setContent("");
@@ -109,12 +109,9 @@ export default function CreatePost({ onPostCreated }) {
           </motion.div>
           <div>
             <h3 className="font-bold text-white text-base sm:text-lg">
-              Create Amazing Content
+              Create Post
             </h3>
           </div>
-        </div>
-        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-full text-xs font-semibold">
-          🎯 Level 12
         </div>
       </div>
 

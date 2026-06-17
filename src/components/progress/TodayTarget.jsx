@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Trophy, Target, Flame, Share2, Sparkles, BookOpen, Clock, 
+  Trophy, Target, Calendar, Share2, Sparkles, BookOpen, Clock, 
   Activity, Smile, Zap, ChevronRight, Check, AlertCircle, RefreshCw
 } from "lucide-react";
 import progressApi from "../../api/progressApi";
@@ -311,9 +311,9 @@ export default function TodayTarget() {
 
         <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
           <div className="px-5 py-3 rounded-2xl bg-white/5 border border-white/5 text-center">
-            <span className="text-xs text-gray-400 block mb-0.5">Growth Streak</span>
-            <span className="text-xl font-bold flex items-center justify-center gap-1 text-orange-400">
-              <Flame size={18} fill="currentColor" />
+            <span className="text-xs text-gray-400 block mb-0.5">Consistency Streak</span>
+            <span className="text-xl font-bold flex items-center justify-center gap-1 text-purple-400">
+              <Calendar size={18} className="text-purple-400" />
               {streakStats ? `${streakStats.growth_streak} Days` : "0 Days"}
             </span>
           </div>
@@ -572,7 +572,7 @@ export default function TodayTarget() {
 
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1 text-gray-300">
-                  <span className="flex items-center gap-1"><Flame size={12} className="text-orange-400" /> Consistency Compliance</span>
+                  <span className="flex items-center gap-1"><Calendar size={12} className="text-purple-400" /> Consistency Compliance</span>
                   <span>{streakStats ? `${streakStats.week_compliance}%` : "0%"}</span>
                 </div>
                 <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-white/5">

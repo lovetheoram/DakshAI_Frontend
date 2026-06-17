@@ -61,14 +61,12 @@ export default function InboxPage() {
   const [inbox, setInbox] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
-  const [inboxScore, setInboxScore] = useState(0);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
     socialApi.getInbox().then((res) => {
       setInbox(res.data.inbox || []);
-      setInboxScore(res.data.inbox?.length * 2 || 0);
     });
   }, []);
 
@@ -149,22 +147,8 @@ export default function InboxPage() {
                     <MessageSquare size={16} className="mr-1" />
                     <span className="font-semibold">{inbox.length} conversations</span>
                   </div>
-                  <div className="flex items-center text-green-600">
-                    <span className="mr-1">⚡</span>
-                    <span className="font-semibold">{inboxScore} XP</span>
-                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="flex space-x-3">
-              <motion.div 
-                whileHover={{ scale: 1.05, rotate: 2 }}
-                className="bg-gradient-to-r from-emerald-400 to-cyan-400 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center"
-              >
-                <Star size={14} className="mr-2" />
-                Messenger Pro
-              </motion.div>
             </div>
           </div>
 
@@ -308,7 +292,6 @@ export default function InboxPage() {
                             New
                           </motion.span>
                         )}
-                        <span>+2 XP</span>
                       </div>
                       
                       <motion.button

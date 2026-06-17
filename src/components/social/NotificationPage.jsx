@@ -37,12 +37,11 @@
 // NotificationPage.jsx
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Heart, MessageCircle, UserPlus, Award, Zap, X, Check } from "lucide-react";
+import { Bell, Heart, MessageCircle, UserPlus, Award, X, Check } from "lucide-react";
 import socialApi from "../../api/socialApi";
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState([]);
-  const [notificationScore, setNotificationScore] = useState(0);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
@@ -52,7 +51,6 @@ export default function NotificationPage() {
         read: n.is_read
       }));
       setNotifications(notifs);
-      setNotificationScore(notifs.length * 3);
     });
   }, []);
 
@@ -154,10 +152,6 @@ export default function NotificationPage() {
                     <Bell size={16} className="mr-1" />
                     <span className="font-semibold">{notifications.length} notifications</span>
                   </div>
-                  <div className="flex items-center text-green-600">
-                    <Zap size={16} className="mr-1" />
-                    <span className="font-semibold">{notificationScore} XP</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -231,7 +225,6 @@ export default function NotificationPage() {
                         New
                       </motion.span>
                     )}
-                    <span className="text-xs text-green-500 font-semibold">+3 XP</span>
                   </div>
                 </div>
               </div>

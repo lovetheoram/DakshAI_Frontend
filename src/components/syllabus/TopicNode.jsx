@@ -267,6 +267,8 @@ const TechTreeVisualization = ({ currentSubject, theme, onConceptSelect, onSubto
 
 const SubtopicNode = ({ subtopic, theme, index, isOpen, onToggle, onConceptSelect }) => {
   const [efficiency, setEfficiency] = useState(0);
+  const [concepts, setConcepts] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -279,6 +281,21 @@ const SubtopicNode = ({ subtopic, theme, index, isOpen, onToggle, onConceptSelec
     };
     fetchProgress();
   }, [subtopic.id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLoading(true);
+      syllabusApi.getSubtopicConcepts(subtopic.id)
+        .then((data) => {
+          setConcepts(data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch concepts:", err);
+          setLoading(false);
+        });
+    }
+  }, [isOpen, subtopic.id]);
 
   const nodeColor = theme.primary[index % theme.primary.length];
   const glowColor = theme.secondary[index % theme.secondary.length];
@@ -314,7 +331,7 @@ const SubtopicNode = ({ subtopic, theme, index, isOpen, onToggle, onConceptSelec
             <div className="text-2xl sm:text-3xl">🔮</div>
             <h4 className="font-bold text-white text-sm sm:text-base mt-2">{subtopic.name}</h4>
             <div className="text-[10px] sm:text-xs text-gray-300 mt-1">
-              {subtopic.concepts?.length || 0} CONCEPTS
+              {subtopic.concepts_count || 0} CONCEPTS
             </div>
             <div className="text-[10px] sm:text-xs text-cyan-300 mt-1">
               {Math.round(efficiency * 100)}% COMPLETE
@@ -332,15 +349,23 @@ const SubtopicNode = ({ subtopic, theme, index, isOpen, onToggle, onConceptSelec
             exit={{ opacity: 0, scale: 0.95 }}
             className="mt-4 flex flex-wrap gap-3 sm:gap-6 justify-center"
           >
-            {subtopic.concepts?.map((concept, i) => (
-              <ConceptOrb
-                key={concept.id}
-                concept={concept}
-                theme={theme}
-                index={i}
-                onClick={() => onConceptSelect(concept)}
-              />
-            ))}
+            {loading ? (
+              <div className="text-gray-400 text-sm animate-pulse flex items-center justify-center gap-2 py-2">
+                <span>⏳</span> Syncing concepts...
+              </div>
+            ) : concepts.length > 0 ? (
+              concepts.map((concept, i) => (
+                <ConceptOrb
+                  key={concept.id}
+                  concept={concept}
+                  theme={theme}
+                  index={i}
+                  onClick={() => onConceptSelect(concept)}
+                />
+              ))
+            ) : (
+              <div className="text-gray-400 text-sm py-2">No concepts found</div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

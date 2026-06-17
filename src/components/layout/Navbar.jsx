@@ -199,18 +199,28 @@ export default function Navbar() {
             DakshAI
           </Link>
 
-          <Link
-            to="/notifications"
-            className="relative pointer-events-auto p-2 rounded-xl bg-white/10 backdrop-blur hover:bg-white/20 transition"
-            aria-label="Notifications"
-          >
-            <Bell size={20} />
-            {notifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-[10px] px-1 rounded-full">
-                {notifications.length}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <Link
+              to="/notifications"
+              className="relative p-2 rounded-xl bg-white/10 backdrop-blur hover:bg-white/20 transition"
+              aria-label="Notifications"
+            >
+              <Bell size={20} />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-[10px] px-1 rounded-full">
+                  {notifications.length}
+                </span>
+              )}
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 backdrop-blur hover:bg-red-500/20 transition"
+              aria-label="Logout"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
         </div>
       )}
 

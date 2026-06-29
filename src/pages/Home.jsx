@@ -10,6 +10,7 @@ import BrainStatus from "../components/home/BrainStatus";
 import WeeklyMomentum from "../components/home/WeeklyMomentum";
 import AICoach from "../components/home/AICoach";
 import LandingPage from "../components/home/LandingPage";
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const { user } = useContext(AuthContext);
@@ -75,7 +76,7 @@ export default function Home() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
       <HeroHeader user={user} streak={streak} />
-      
+
       {/* Alert banner if no active goal is configured */}
       {!dashboard?.goal && (
         <motion.div

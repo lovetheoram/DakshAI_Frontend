@@ -6,8 +6,12 @@ const syllabusApi = {
     return r.data
   },
   getConceptList: async () => {
-const r = await axiosClient.get('/api/syllabus/conceptlist/')
+    const r = await axiosClient.get('/api/syllabus/conceptlist/')
     return r.data     
+  },
+  getSubtopicConcepts: async (subtopicId) => {
+    const r = await axiosClient.get(`/api/syllabus/subtopic/${subtopicId}/concepts/`)
+    return r.data
   }
   
 }

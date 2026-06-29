@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import authApi from "../../api/authApi";
 import syllabusApi from "../../api/syllabusApi";
 import { AuthContext } from "../../context/AuthContext";
-import Button from "../../components/ui/Button";
-import Input from "../../components/ui/Input";
+import GlassCard from "../ui/GlassCard";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -79,45 +78,97 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-center">Create Account</h2>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--color-bg-primary)] relative overflow-hidden">
+      {/* Ambient backgrounds */}
+      <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-purple-600/5 rounded-full blur-[80px]" />
 
-        {error && <p className="text-red-600 mb-4 text-center">{error}</p>}
+      <GlassCard className="w-full max-w-md" padding="p-8">
+        <h2 className="text-2xl font-black mb-6 text-center text-white">Create Account</h2>
 
-        <div className="flex flex-col gap-4">
-          <Input label="Username" name="username" value={form.username} onChange={update} />
-          <Input label="Email" name="email" value={form.email} onChange={update} />
-          <Input label="Password" name="password" type="password" value={form.password} onChange={update} />
+        {error && (
+          <p className="text-red-400 font-semibold bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl text-xs mb-5 text-center">
+            {error}
+          </p>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={form.username}
+              onChange={update}
+              className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={update}
+              className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={update}
+              className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 outline-none"
+            />
+          </div>
 
           {uniqueExamTypes.length > 0 && (
-            <div className="flex flex-col gap-1 w-full">
-              <label className="text-sm font-medium text-gray-700">Selected Syllabus/Exam Type</label>
-              <select
-                name="exam_type"
-                value={form.exam_type}
-                onChange={update}
-                className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none bg-white text-sm"
-              >
-                {uniqueExamTypes.map((et) => (
-                  <option key={et.type} value={et.type}>
-                    {et.name}
-                  </option>
-                ))}
-              </select>
+            <div>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Selected Syllabus/Exam Type</label>
+              <div className="relative w-full">
+                <select
+                  name="exam_type"
+                  value={form.exam_type}
+                  onChange={update}
+                  className="w-full appearance-none bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 outline-none"
+                >
+                  {uniqueExamTypes.map((et) => (
+                    <option key={et.type} value={et.type} className="bg-slate-900 text-white">
+                      {et.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           )}
 
-          <Button onClick={submit} loading={loading}>Sign Up</Button>
+          <button
+            onClick={submit}
+            disabled={loading}
+            className="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all disabled:opacity-50 flex items-center justify-center"
+          >
+            {loading ? "Signing up..." : "Sign Up"}
+          </button>
         </div>
 
-        <p className="text-center mt-4 text-sm">
+        <p className="text-center mt-6 text-xs text-gray-400">
           Already have an account?{" "}
-          <span className="text-blue-600 cursor-pointer" onClick={() => navigate("/login")}>
+          <span 
+            className="text-purple-400 hover:text-purple-300 font-bold cursor-pointer transition-colors" 
+            onClick={() => navigate("/login")}
+          >
             Login
           </span>
         </p>
-      </div>
+      </GlassCard>
     </div>
   );
 }

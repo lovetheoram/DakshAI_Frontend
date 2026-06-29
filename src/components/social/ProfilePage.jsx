@@ -109,7 +109,7 @@ export default function ProfilePage() {
                 <span className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">You</span>
               )}
             </h1>
-            <p className="text-gray-500 font-medium mt-1">Nimides Explorer</p>
+            <p className="text-gray-500 font-medium mt-1">DakshAI Explorer</p>
             <p className="text-gray-600 mt-4 max-w-xl mx-auto md:mx-0 leading-relaxed">
               {profile.bio || "No bio yet. Learning and growing every day."}
             </p>

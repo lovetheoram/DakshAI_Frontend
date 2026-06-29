@@ -1,280 +1,24 @@
-
-
-// // FeedPage.jsx
-// import { useEffect, useState } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import socialApi from "../../api/socialApi";
-// import syllabusApi from "../../api/syllabusApi";
-// import PostCard from "./PostCard";
-// import CreatePost from "./CreatePost";
-// import SuggestedUsers from "./SuggestedUsersPage";
-
-// export default function FeedPage() {
-//   const [posts, setPosts] = useState([]);
-//   const [concepts, setConcepts] = useState([]);
-//   const [selectedConcept, setSelectedConcept] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [feedScore, setFeedScore] = useState(1250);
-//   const [streak, setStreak] = useState(7);
-//   const [dailyGoal, setDailyGoal] = useState({ current: 3, target: 5 });
-
-//   // Fetch concepts for filter
-//   useEffect(() => {
-//     const fetchConcepts = async () => {
-//       try {
-//         const data = await syllabusApi.getConceptList();
-//         setConcepts(data);
-//       } catch (err) {
-//         console.error("Error fetching concepts:", err);
-//         setConcepts([]);
-//       }
-//     };
-//     fetchConcepts();
-//   }, []);
-
-//   // Fetch posts whenever filter changes
-//   useEffect(() => {
-//     const fetchPosts = async () => {
-//       setLoading(true);
-//       try {
-//         console.log("Fetching posts for concept:", selectedConcept);
-//         const filters = selectedConcept ? { concept_id: selectedConcept } : {};
-//         const res = await socialApi.getPosts(filters);
-//         console.log("Posts response:", res.data);
-//         setPosts(res.data?.posts || []);
-//       } catch (err) {
-//         console.error("Error fetching posts:", err);
-//         setPosts([]);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     fetchPosts();
-//   }, [selectedConcept]);
-
-//   const handlePostCreated = (newPost) => {
-//     setPosts((prev) => [newPost, ...prev]);
-//     setFeedScore(prev => prev + 50);
-//     setDailyGoal(prev => ({ ...prev, current: Math.min(prev.current + 1, prev.target) }));
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-//       <div className="flex gap-6 max-w-7xl mx-auto p-6">
-//         {/* MAIN FEED */}
-//         <div className="w-2/3 space-y-6">
-//           {/* GAMIFICATION DASHBOARD */}
-          
-
-//           {/* CREATE POST */}
-//           <motion.div
-//             initial={{ opacity: 0, scale: 0.95 }}
-//             animate={{ opacity: 1, scale: 1 }}
-//             transition={{ delay: 0.2 }}
-//           >
-//             <CreatePost onPostCreated={handlePostCreated} />
-//           </motion.div>
-
-//           {/* FILTER SECTION */}
-//           <motion.div 
-//             initial={{ opacity: 0, x: -20 }}
-//             animate={{ opacity: 1, x: 0 }}
-//             transition={{ delay: 0.3 }}
-//             className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200"
-//           >
-//             <div className="flex items-center justify-between mb-4">
-//               <h3 className="text-xl font-bold text-gray-800 flex items-center">
-//                 <motion.span 
-//                   animate={{ rotate: [0, 10, -10, 0] }}
-//                   transition={{ duration: 2, repeat: Infinity }}
-//                   className="mr-3 text-2xl"
-//                 >
-//                   🎯
-//                 </motion.span>
-//                 Smart Filters
-//               </h3>
-//               <AnimatePresence>
-//                 {selectedConcept && (
-//                   <motion.div
-//                     initial={{ scale: 0, rotate: -180 }}
-//                     animate={{ scale: 1, rotate: 0 }}
-//                     exit={{ scale: 0, rotate: 180 }}
-//                     className="flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold"
-//                   >
-//                     <span className="mr-2">📌</span>
-//                     Filter Active
-//                   </motion.div>
-//                 )}
-//               </AnimatePresence>
-//             </div>
-            
-//             <div className="flex items-center gap-4">
-//               <label className="text-gray-700 font-semibold flex items-center text-lg">
-//                 <span className="mr-3 text-xl">📚</span>
-//                 Concept:
-//               </label>
-//               <div className="relative flex-1 max-w-md">
-//                 <select
-//                   className="appearance-none bg-white border-2 border-gray-200 rounded-xl px-6 py-4 pr-12 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all duration-200 w-full font-medium"
-//                   value={selectedConcept || ""}
-//                   onChange={(e) =>
-//                     setSelectedConcept(e.target.value ? Number(e.target.value) : null)
-//                   }
-//                 >
-//                   <option value="">✨ All Concepts</option>
-//                   {concepts.map((c) => (
-//                     <option key={c.id} value={c.id}>
-//                       🎓 {c.name}
-//                     </option>
-//                   ))}
-//                 </select>
-//                 <motion.div 
-//                   animate={{ rotate: selectedConcept ? 180 : 0 }}
-//                   className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none"
-//                 >
-//                   <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-//                   </svg>
-//                 </motion.div>
-//               </div>
-              
-//               <motion.div 
-//                 layout
-//                 className="flex items-center space-x-3"
-//               >
-//                 <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl px-4 py-3 text-sm">
-//                   <span className="text-gray-600 mr-2">📊 Posts:</span>
-//                   <motion.span 
-//                     key={posts.length}
-//                     initial={{ scale: 1.2 }}
-//                     animate={{ scale: 1 }}
-//                     className="font-bold text-gray-800 text-lg"
-//                   >
-//                     {posts.length}
-//                   </motion.span>
-//                 </div>
-//               </motion.div>
-//             </div>
-//           </motion.div>
-
-//           {/* POSTS SECTION */}
-//           <AnimatePresence mode="wait">
-//             {loading ? (
-//               <motion.div
-//                 key="loading"
-//                 initial={{ opacity: 0 }}
-//                 animate={{ opacity: 1 }}
-//                 exit={{ opacity: 0 }}
-//                 className="flex flex-col items-center justify-center py-20 space-y-6"
-//               >
-//                 <motion.div
-//                   animate={{ rotate: 360 }}
-//                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-//                   className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full"
-//                 />
-//                 <motion.p 
-//                   animate={{ opacity: [0.5, 1, 0.5] }}
-//                   transition={{ duration: 2, repeat: Infinity }}
-//                   className="text-gray-600 font-semibold text-lg"
-//                 >
-//                   Loading amazing content...
-//                 </motion.p>
-//                 <div className="flex space-x-2">
-//                   {[...Array(3)].map((_, i) => (
-//                     <motion.div
-//                       key={i}
-//                       animate={{ scale: [1, 1.2, 1] }}
-//                       transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.2 }}
-//                       className="w-3 h-3 bg-purple-400 rounded-full"
-//                     />
-//                   ))}
-//                 </div>
-//               </motion.div>
-//             ) : posts.length === 0 ? (
-//               <motion.div
-//                 key="empty"
-//                 initial={{ opacity: 0, y: 20 }}
-//                 animate={{ opacity: 1, y: 0 }}
-//                 exit={{ opacity: 0, y: -20 }}
-//                 className="bg-white rounded-3xl p-16 text-center shadow-xl border border-slate-200"
-//               >
-//                 <motion.div 
-//                   animate={{ scale: [1, 1.1, 1] }}
-//                   transition={{ duration: 2, repeat: Infinity }}
-//                   className="text-8xl mb-6"
-//                 >
-//                   🌟
-//                 </motion.div>
-//                 <h3 className="text-2xl font-bold text-gray-800 mb-3">No posts yet</h3>
-//                 <p className="text-gray-500 mb-8 text-lg">Be the first to share something amazing!</p>
-//                 <motion.button
-//                   whileHover={{ scale: 1.05, rotate: 1 }}
-//                   whileTap={{ scale: 0.95 }}
-//                   className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center mx-auto"
-//                 >
-//                   <span className="mr-3">✨</span>
-//                   Create First Post
-//                 </motion.button>
-//               </motion.div>
-//             ) : (
-//               <motion.div
-//                 key="posts"
-//                 initial={{ opacity: 0 }}
-//                 animate={{ opacity: 1 }}
-//                 className="space-y-6"
-//               >
-//                 {posts.map((post, index) => (
-//                   <motion.div
-//                     key={post.id}
-//                     initial={{ opacity: 0, y: 50 }}
-//                     animate={{ opacity: 1, y: 0 }}
-//                     transition={{ delay: index * 0.1 }}
-//                     whileHover={{ y: -4, scale: 1.01 }}
-//                   >
-//                     <PostCard
-//                       post={post}
-//                       onConceptClick={(id) => setSelectedConcept(id)}
-//                     />
-//                   </motion.div>
-//                 ))}
-//               </motion.div>
-//             )}
-//           </AnimatePresence>
-//         </div>
-
-//         {/* SUGGESTED USERS SIDEBAR */}
-//         <motion.div 
-//           initial={{ opacity: 0, x: 20 }}
-//           animate={{ opacity: 1, x: 0 }}
-//           transition={{ delay: 0.4 }}
-//           className="w-1/3"
-//         >
-//           {/* <SuggestedUsers /> */}
-//         </motion.div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import socialApi from "../../api/socialApi";
 import syllabusApi from "../../api/syllabusApi";
 import PostCard from "./PostCard";
 import CreatePost from "./CreatePost";
-import SuggestedUsers from "./SuggestedUsersPage";
+import FollowButton from "./FollowButton";
+import { MessageSquare, Users, Sparkles, UserCheck, Trash2, Loader2 } from "lucide-react";
 
 export default function FeedPage() {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [concepts, setConcepts] = useState([]);
   const [selectedConcept, setSelectedConcept] = useState(null);
+  const [activeTab, setActiveTab] = useState("all"); // "all" | "matchmaking" | "suggestions"
   const [loading, setLoading] = useState(true);
 
-  const [feedScore, setFeedScore] = useState(1250);
-  const [streak, setStreak] = useState(7);
-  const [dailyGoal, setDailyGoal] = useState({ current: 3, target: 5 });
+  // Suggested peers state
+  const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     const fetchConcepts = async () => {
@@ -289,11 +33,17 @@ export default function FeedPage() {
     fetchConcepts();
   }, []);
 
+  // Fetch posts when tab or selected concept changes
   useEffect(() => {
+    if (activeTab === "suggestions") return; // Suggestions handled by its own fetcher
+
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const filters = selectedConcept ? { concept_id: selectedConcept } : {};
+        const filters = {
+          ...(selectedConcept ? { concept_id: selectedConcept } : {}),
+          ...(activeTab === "matchmaking" ? { matchmaking: "true" } : {}),
+        };
         const res = await socialApi.getPosts(filters);
         setPosts(res.data?.posts || []);
       } catch (err) {
@@ -304,185 +54,228 @@ export default function FeedPage() {
       }
     };
     fetchPosts();
-  }, [selectedConcept]);
+  }, [selectedConcept, activeTab]);
+
+  // Fetch suggested peers when entering recommendations tab
+  useEffect(() => {
+    if (activeTab === "suggestions") {
+      const fetchSuggestions = async () => {
+        setLoadingSuggestions(true);
+        try {
+          const res = await socialApi.getSuggestedUsers();
+          setSuggestedUsers(res.data.suggestions || []);
+        } catch (err) {
+          console.error("Error fetching suggestions:", err);
+          setSuggestedUsers([]);
+        } finally {
+          setLoadingSuggestions(false);
+        }
+      };
+      fetchSuggestions();
+    }
+  }, [activeTab]);
 
   const handlePostCreated = (newPost) => {
     setPosts((prev) => [newPost, ...prev]);
-    setFeedScore((prev) => prev + 50);
-    setDailyGoal((prev) => ({ ...prev, current: Math.min(prev.current + 1, prev.target) }));
+  };
+
+  const handleDismissSuggestion = (id) => {
+    setSuggestedUsers((prev) => prev.filter((u) => u.id !== id));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-x-hidden">
-      <div className="flex flex-col md:flex-row gap-6 max-w-7xl mx-auto p-4 md:p-6">
-        {/* MAIN FEED */}
-        <div className="flex-1 space-y-6">
-          {/* CREATE POST */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-            <CreatePost onPostCreated={handlePostCreated} />
-          </motion.div>
-
-          {/* FILTER SECTION */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-slate-200"
+    <div className="min-h-screen bg-[var(--color-bg-primary)] overflow-x-hidden text-white">
+      <div className="max-w-2xl mx-auto p-4 md:p-6 space-y-6">
+        
+        {/* Page Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.04] mb-2">
+          <div>
+            <h1 className="text-2xl font-black text-white tracking-tight">Community Space</h1>
+            <p className="text-xs text-gray-500 mt-1">Connect, share weakness matches, and study with peers.</p>
+          </div>
+          <button
+            onClick={() => navigate("/messages")}
+            className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/[0.04] transition-all"
+            title="Open Inbox"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-              <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                <motion.span
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="mr-3 text-2xl"
-                >
-                  🎯
-                </motion.span>
-                Smart Filters
-              </h3>
-              <AnimatePresence>
-                {selectedConcept && (
-                  <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    exit={{ scale: 0, rotate: 180 }}
-                    className="flex items-center bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-semibold"
-                  >
-                    <span className="mr-2">📌</span>
-                    Filter Active
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <MessageSquare size={18} />
+          </button>
+        </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3">
-              <label className="text-gray-700 font-semibold flex items-center text-lg">
-                <span className="mr-3 text-xl">📚</span>
-                Concept:
+        {/* Tab Filter Navigation (General | Weakness | Snapchat Suggestions) */}
+        <div className="flex gap-2 border-b border-white/[0.02] pb-3 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+              activeTab === "all"
+                ? "bg-purple-600/15 text-purple-300 border-purple-500/30 shadow-lg shadow-purple-500/5"
+                : "bg-white/[0.02] text-gray-400 border-white/5 hover:text-white hover:bg-white/[0.04]"
+            }`}
+          >
+            General Feed
+          </button>
+          <button
+            onClick={() => setActiveTab("matchmaking")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+              activeTab === "matchmaking"
+                ? "bg-gradient-to-r from-purple-600/15 to-indigo-600/15 text-purple-300 border-purple-500/30 shadow-lg shadow-purple-500/5"
+                : "bg-white/[0.02] text-gray-400 border-white/5 hover:text-white hover:bg-white/[0.04]"
+            }`}
+          >
+            <Sparkles size={12} className="text-purple-400" />
+            🧠 Weakness Match
+          </button>
+          <button
+            onClick={() => setActiveTab("suggestions")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+              activeTab === "suggestions"
+                ? "bg-gradient-to-r from-emerald-600/15 to-teal-600/15 text-emerald-400 border-emerald-500/30 shadow-lg shadow-emerald-500/5"
+                : "bg-white/[0.02] text-gray-400 border-white/5 hover:text-white hover:bg-white/[0.04]"
+            }`}
+          >
+            <Users size={12} className="text-emerald-400" />
+            👥 Quick Add (Peers)
+          </button>
+        </div>
+
+        {/* FEED MODE (General vs Matchmaking) */}
+        {activeTab !== "suggestions" && (
+          <div className="space-y-6">
+            
+            {/* Create Post Area */}
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+              <CreatePost onPostCreated={handlePostCreated} />
+            </motion.div>
+
+            {/* Concept Filter (Only on Posts tab) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3"
+            >
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                Filter Concept
               </label>
-              <div className="relative flex-1 max-w-full">
+              <div className="relative flex-1">
                 <select
-                  className="appearance-none bg-white border-2 border-gray-200 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all duration-200 w-full font-medium text-sm sm:text-base"
+                  className="appearance-none bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 pr-12 focus:outline-none focus:border-purple-500 transition-all w-full text-xs text-white"
                   value={selectedConcept || ""}
-                  onChange={(e) =>
-                    setSelectedConcept(e.target.value ? Number(e.target.value) : null)
-                  }
+                  onChange={(e) => setSelectedConcept(e.target.value ? Number(e.target.value) : null)}
                 >
-                  <option value="">✨ All Concepts</option>
+                  <option value="" className="bg-slate-900">✨ All Concepts</option>
                   {concepts.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="bg-slate-900">
                       🎓 {c.name}
                     </option>
                   ))}
                 </select>
-                <motion.div
-                  animate={{ rotate: selectedConcept ? 180 : 0 }}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none"
-                >
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </motion.div>
-              </div>
-
-              <div className="flex items-center space-x-3 mt-2 sm:mt-0">
-                <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-xl px-4 py-2 text-sm">
-                  <span className="text-gray-600 mr-2">📊 Posts:</span>
-                  <motion.span
-                    key={posts.length}
-                    initial={{ scale: 1.2 }}
-                    animate={{ scale: 1 }}
-                    className="font-bold text-gray-800 text-lg"
-                  >
-                    {posts.length}
-                  </motion.span>
+                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400 text-xs">
+                  ▼
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* POSTS SECTION */}
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-20 space-y-6"
-              >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full"
-                />
-                <motion.p
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="text-gray-600 font-semibold text-lg"
-                >
-                  Loading amazing content...
-                </motion.p>
-                <div className="flex space-x-2">
-                  {[...Array(3)].map((_, i) => (
+            {/* Posts Stream */}
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <Loader2 size={24} className="animate-spin text-purple-400" />
+                  <p className="text-xs text-gray-500">Loading feed updates...</p>
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-12 text-center shadow-xl">
+                  <p className="text-gray-500 text-sm">No updates posted here yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {posts.map((post, index) => (
                     <motion.div
-                      key={i}
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.2 }}
-                      className="w-3 h-3 bg-purple-400 rounded-full"
-                    />
+                      key={post.id}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <PostCard post={post} onConceptClick={(id) => setSelectedConcept(id)} />
+                    </motion.div>
                   ))}
                 </div>
-              </motion.div>
-            ) : posts.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-3xl p-12 sm:p-16 text-center shadow-xl border border-slate-200"
-              >
-                <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="text-6xl sm:text-8xl mb-6">
-                  🌟
-                </motion.div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">No posts yet</h3>
-                <p className="text-gray-500 mb-6 sm:mb-8 text-sm sm:text-lg">Be the first to share something amazing!</p>
-                <motion.button
-                  whileHover={{ scale: 1.05, rotate: 1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-bold text-sm sm:text-lg flex items-center mx-auto"
-                >
-                  <span className="mr-2 sm:mr-3">✨</span>
-                  Create First Post
-                </motion.button>
-              </motion.div>
-            ) : (
-              <motion.div key="posts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                {posts.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ y: -4, scale: 1.01 }}
-                  >
-                    <PostCard post={post} onConceptClick={(id) => setSelectedConcept(id)} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
-        {/* SUGGESTED USERS SIDEBAR */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-          className="w-full md:w-1/3 mt-6 md:mt-0"
-        >
-          <SuggestedUsers />
-        </motion.div>
+        {/* SNAPCHAT-STYLE SUGGESTED USERS TAB */}
+        {activeTab === "suggestions" && (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between pb-2">
+              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                Quick Add suggested peers
+              </span>
+              <span className="text-[10px] text-gray-500">{suggestedUsers.length} recommendations</span>
+            </div>
+
+            {loadingSuggestions ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <Loader2 size={24} className="animate-spin text-emerald-400" />
+                <p className="text-xs text-gray-500">Scanning neural matrix matches...</p>
+              </div>
+            ) : suggestedUsers.length === 0 ? (
+              <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-12 text-center shadow-xl">
+                <p className="text-gray-500 text-sm">No recommended study peers found.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3.5">
+                <AnimatePresence>
+                  {suggestedUsers.map((u, index) => (
+                    <motion.div
+                      key={u.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -30 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4 hover:border-white/20 transition-all"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {/* Avatar */}
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-300 font-extrabold text-base flex items-center justify-center shadow-inner flex-shrink-0">
+                          {u.username?.charAt(0).toUpperCase() || "P"}
+                        </div>
+                        {/* Meta */}
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-white text-sm truncate">{u.username}</h4>
+                          <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1">
+                            <UserCheck size={10} className="text-emerald-400" />
+                            Complementary study match
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Snapchat Style Action Toolbar */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <FollowButton userId={u.id} isFollowing={u.is_following} />
+                        
+                        <button
+                          onClick={() => navigate(`/messages/${u.id}`)}
+                          className="px-3.5 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all"
+                        >
+                          Chat
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDismissSuggestion(u.id)}
+                          className="w-8 h-8 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-white/[0.04] transition-all"
+                          title="Quick Ignore"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

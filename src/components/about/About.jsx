@@ -159,7 +159,7 @@ export default function About() {
           </h1>
 
           <p className="text-gray-300 max-w-2xl mx-auto text-lg leading-relaxed">
-            Nimides helps you understand what you truly know,
+            DakshAI helps you understand what you truly know,
             what you don’t, and how ready you really are.
           </p>
 
@@ -202,7 +202,7 @@ export default function About() {
             <p className="text-gray-300 leading-relaxed">
               Every concept you practice builds visible mastery.
               Over time, mastery decays — just like memory.
-              Nimides tracks this so you always know your real level.
+              DakshAI tracks this so you always know your real level.
             </p>
           </div>
 

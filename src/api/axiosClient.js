@@ -1,8 +1,7 @@
 // src/api/axiosClient.js
 import axios from "axios";
 
-const API_BASE = "http://127.0.0.1:8000";
-// const API_BASE ="https://lovetheoram.pythonanywhere.com"
+const API_BASE = "https://dakshai.onrender.com";
 
 const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -17,15 +16,71 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor
+// Response Interceptor with Automated Token Rotation
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 axiosClient.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("user");
+  async (err) => {
+    const originalRequest = err.config;
+
+    if (err.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers["Authorization"] = `Bearer ${token}`;
+            return axiosClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) {
+        // No refresh token available, clear session and reject
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
+        return Promise.reject(err);
+      }
+
+      try {
+        const response = await axios.post(`${API_BASE}/auth/refresh/`, {
+          refresh: refreshToken,
+        });
+        const { access } = response.data;
+        localStorage.setItem("access_token", access);
+        axiosClient.defaults.headers.common["Authorization"] = `Bearer ${access}`;
+        originalRequest.headers["Authorization"] = `Bearer ${access}`;
+        processQueue(null, access);
+        return axiosClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+
     return Promise.reject(err);
   }
 );

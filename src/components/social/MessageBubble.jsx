@@ -1,127 +1,38 @@
-// export default function MessageBubble({ message, isMine }) {
-//   return (
-//     <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-//       <div
-//         className={`px-3 py-2 rounded-lg max-w-xs text-sm ${
-//           isMine
-//             ? "bg-blue-500 text-white"
-//             : "bg-gray-200 text-gray-800"
-//         }`}
-//       >
-//         {message.text}
-//         <div className="text-[10px] opacity-70 mt-1">
-//           {new Date(message.created_at).toLocaleTimeString()}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-// MessageBubble.jsx
-import { motion, AnimatePresence } from "framer-motion";
-
-import { Check, CheckCheck, Heart, Reply } from "lucide-react";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { CheckCheck } from "lucide-react";
 
 export default function MessageBubble({ message, isMine }) {
-  const [liked, setLiked] = useState(false);
-  const [showActions, setShowActions] = useState(false);
-
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      whileHover={{ scale: 1.02 }}
-      className={`flex w-full my-3 ${isMine ? "justify-end" : "justify-start"}`}
-      onHoverStart={() => setShowActions(true)}
-      onHoverEnd={() => setShowActions(false)}
+      className={`flex w-full my-1.5 ${isMine ? "justify-end" : "justify-start"}`}
     >
-      <div className={`flex items-end space-x-2 max-w-xs ${isMine ? "flex-row-reverse space-x-reverse" : ""}`}>
-        {!isMine && (
-          <motion.div 
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-sm font-bold border border-purple-500/20 mb-1"
-          >
-            U
-          </motion.div>
-        )}
+      <div
+        className={`relative max-w-[70%] px-3.5 py-2.5 rounded-2xl shadow-md text-sm text-white ${
+          isMine
+            ? "bg-[#056162] rounded-tr-none text-white ml-12"
+            : "bg-[#262d31] rounded-tl-none mr-12 border border-white/[0.02]"
+        }`}
+      >
+        <p className="leading-relaxed break-words whitespace-pre-wrap pr-10 pb-1">
+          {message.text}
+        </p>
 
-        <div className="relative group">
-          <motion.div
-            whileHover={{ y: -2 }}
-            className={`
-              px-4 py-3 rounded-2xl shadow-lg relative overflow-hidden
-              ${isMine 
-                ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-none" 
-                : "bg-slate-800/80 text-white rounded-bl-none border border-white/5"
-              }
-            `}
-          >
-            {/* Background Pattern for own messages */}
-            {isMine && (
-              <motion.div
-                animate={{ x: ["0%", "100%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="absolute top-0 left-0 h-full w-1/4 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              />
-            )}
-
-            <div className="relative z-10">
-              <p className="text-sm leading-relaxed">{message.text}</p>
-              
-              <div className={`flex items-center justify-between mt-2 ${isMine ? "text-blue-100" : "text-gray-400"}`}>
-                <p className="text-[10px] opacity-70">
-                  {new Date(message.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-                
-                {isMine && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <CheckCheck size={14} className="text-blue-200" />
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            {/* Reaction indicator */}
-            {liked && (
-              <motion.div
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                className="absolute -bottom-2 -right-2 bg-red-500 rounded-full p-1"
-              >
-                <Heart size={12} fill="white" className="text-white" />
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Quick Actions */}
-          <AnimatePresence>
-            {showActions && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                className={`absolute top-0 ${isMine ? "-left-10" : "-right-10"} flex bg-slate-950 border border-white/10 rounded-full shadow-lg p-1 backdrop-blur-md z-20`}
-              >
-                <motion.button
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setLiked(!liked)}
-                  className={`p-2 rounded-full ${liked ? "bg-red-500/20 text-red-400 border border-red-500/30" : "bg-white/5 text-gray-400 border border-white/5 hover:bg-red-500/20 hover:text-red-400"} transition-colors`}
-                >
-                  <Heart size={12} fill={liked ? "currentColor" : "none"} />
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* WhatsApp style bottom-right timestamp and checkmarks */}
+        <div className="absolute bottom-1 right-2 flex items-center space-x-1 select-none">
+          <span className="text-[9px] text-white/50">
+            {message.created_at
+              ? new Date(message.created_at).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })
+              : ""}
+          </span>
+          {isMine && (
+            <CheckCheck size={12} className="text-emerald-400" />
+          )}
         </div>
       </div>
     </motion.div>

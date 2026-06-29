@@ -29,6 +29,7 @@ export default function AppShell({ children }) {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Hide shell on auth pages and fullscreen experiences
   const hideShell = ["/login", "/signup"].includes(location.pathname) || location.pathname.startsWith("/quiz");
@@ -129,6 +130,85 @@ export default function AppShell({ children }) {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors w-full text-left"
                     >
                       <LogOut size={16} />
+                      Sign out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </header>
+      )}
+
+      {/* ============= Mobile Top Bar ============= */}
+      {showNav && (
+        <header className="flex md:hidden items-center justify-between px-5 py-3 border-b border-white/[0.04] bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40">
+          {/* Brand */}
+          <NavLink to="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <span className="text-white font-black text-xs">D</span>
+            </div>
+            <span className="text-base font-bold text-white tracking-tight">
+              Daksh<span className="text-purple-400">AI</span>
+            </span>
+          </NavLink>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-3">
+            <NavLink
+              to="/notifications"
+              className={({ isActive }) =>
+                `w-8.5 h-8.5 flex items-center justify-center rounded-xl transition-colors ${
+                  isActive ? "bg-purple-500/15 text-purple-300" : "text-gray-400 hover:text-white"
+                }`
+              }
+            >
+              <Bell size={18} />
+            </NavLink>
+
+            {/* Profile menu */}
+            <div className="relative">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold hover:opacity-90 transition-opacity"
+              >
+                {user?.username?.[0]?.toUpperCase() || "U"}
+              </button>
+
+              <AnimatePresence>
+                {mobileMenuOpen && (
+                  <motion.div
+                    className="absolute right-0 top-11 w-48 glass p-2 z-50"
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <NavLink
+                      to="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
+                    >
+                      <User size={14} />
+                      Profile
+                    </NavLink>
+                    <NavLink
+                      to="/settings"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
+                    >
+                      <Settings size={14} />
+                      Settings
+                    </NavLink>
+                    <hr className="border-white/[0.06] my-1" />
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors w-full text-left"
+                    >
+                      <LogOut size={14} />
                       Sign out
                     </button>
                   </motion.div>

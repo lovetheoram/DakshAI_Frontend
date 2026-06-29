@@ -8,6 +8,7 @@ import socialApi from "../../api/socialApi";
 import syllabusApi from "../../api/syllabusApi";
 import { AuthContext } from "../../context/AuthContext";
 import { Image, FileText, Video, X, Sparkles } from "lucide-react";
+import Modal from "../ui/Modal";
 
 const toYouTubeEmbed = (url) => {
   const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
@@ -27,6 +28,10 @@ export default function CreatePost({ onPostCreated }) {
   const [concepts, setConcepts] = useState([]);
   const [selectedConcept, setSelectedConcept] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Custom concept picker state
+  const [showConceptPicker, setShowConceptPicker] = useState(false);
+  const [conceptSearch, setConceptSearch] = useState("");
 
 
   useEffect(() => {
@@ -115,20 +120,68 @@ export default function CreatePost({ onPostCreated }) {
         </div>
       </div>
 
-      {/* Concept Select */}
-      <div className="mb-3 relative">
-        <select
-          value={selectedConcept}
-          onChange={(e) => setSelectedConcept(e.target.value)}
-          className="w-full appearance-none bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 pr-10 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
-        >
-          <option value="" className="bg-slate-900 text-white">🎓 Select Concept (optional)</option>
-          {concepts.map((c) => (
-            <option key={c.id} value={c.id} className="bg-slate-900 text-white">📚 {c.name}</option>
-          ))}
-        </select>
-        <Sparkles className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-purple-400 pointer-events-none" />
+      {/* Concept Select (Custom Search Modal Picker) */}
+      <div className="mb-3">
+        {selectedConcept ? (
+          <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/30 rounded-xl px-4 py-2.5 text-xs text-purple-300">
+            <span className="truncate pr-2 font-medium">
+              🎓 Linked: {concepts.find((c) => String(c.id) === String(selectedConcept))?.name}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedConcept("")}
+              className="text-purple-400 hover:text-white transition-colors p-1"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowConceptPicker(true)}
+            className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-left text-xs text-gray-400 hover:border-purple-500/50 hover:text-white transition-all flex items-center justify-between"
+          >
+            <span>🎓 Link a Concept (optional)</span>
+            <Sparkles className="w-4 h-4 text-purple-400" />
+          </button>
+        )}
       </div>
+
+      {/* Concept Picker Modal */}
+      <Modal isOpen={showConceptPicker} onClose={() => setShowConceptPicker(false)} title="Select Concept">
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Search concepts..."
+            value={conceptSearch}
+            onChange={(e) => setConceptSearch(e.target.value)}
+            className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-colors"
+          />
+
+          <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+            {concepts.filter((c) => c.name.toLowerCase().includes(conceptSearch.toLowerCase())).length === 0 ? (
+              <p className="text-xs text-gray-500 text-center py-6">No matching concepts</p>
+            ) : (
+              concepts
+                .filter((c) => c.name.toLowerCase().includes(conceptSearch.toLowerCase()))
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedConcept(String(c.id));
+                      setShowConceptPicker(false);
+                      setConceptSearch("");
+                    }}
+                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs text-gray-300 hover:text-purple-300 hover:bg-purple-500/5 transition-colors block truncate"
+                  >
+                    📚 {c.name}
+                  </button>
+                ))
+            )}
+          </div>
+        </div>
+      </Modal>
 
       {/* Content Textarea */}
       <textarea

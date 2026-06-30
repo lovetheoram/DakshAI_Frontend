@@ -16,7 +16,6 @@ export default function Home() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
-  const [streak, setStreak] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,12 +25,8 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [dashData, streakData] = await Promise.all([
-          progressApi.getDashboard(),
-          progressApi.getStreakStats(),
-        ]);
+        const dashData = await progressApi.getDashboard();
         setDashboard(dashData);
-        setStreak(streakData);
       } catch (err) {
         console.error("Home data fetch failed:", err);
         setError(err);
@@ -75,7 +70,7 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      <HeroHeader user={user} streak={streak} />
+      <HeroHeader user={user} streak={dashboard?.streak_stats} dashboard={dashboard} />
 
       {/* Alert banner if no active goal is configured */}
       {!dashboard?.goal && (
@@ -104,7 +99,7 @@ export default function Home() {
       <TodayGrowth dashboard={dashboard} />
       <ContinueLearning dashboard={dashboard} />
       <BrainStatus dashboard={dashboard} />
-      <WeeklyMomentum dashboard={dashboard} streak={streak} />
+      <WeeklyMomentum dashboard={dashboard} streak={dashboard?.streak_stats} />
       <AICoach dashboard={dashboard} />
     </div>
   );

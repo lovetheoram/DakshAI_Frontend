@@ -18,7 +18,7 @@ import {
 
 // Bottom nav items (mobile - 5 max)
 const NAV_ITEMS = [
-  { to: "/",          icon: Home,      label: "Home" },
+  { to: "/",          icon: Home,      label: "Today" },
   { to: "/learn",     icon: BookOpen,  label: "Learn" },
   { to: "/practice",  icon: Swords,    label: "Practice" },
   { to: "/community", icon: Users,     label: "Community" },

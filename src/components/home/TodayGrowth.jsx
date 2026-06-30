@@ -6,8 +6,10 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 export default function TodayGrowth({ dashboard }) {
   const today = dashboard?.today_growth ?? 0;
+  const targetGrowth = dashboard?.target_growth ?? 0;
   const yesterday = dashboard?.yesterday_growth ?? 0;
   const weekAvg = dashboard?.week_avg_growth ?? 0;
+  const todayCompliance = dashboard?.streak_stats?.today_compliance ?? 0;
 
   const diff = today - yesterday;
   const TrendIcon = diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus;
@@ -16,20 +18,27 @@ export default function TodayGrowth({ dashboard }) {
   return (
     <GlassCard className="flex items-center gap-6">
       <ProgressRing
-        value={today}
+        value={todayCompliance}
         size={110}
         strokeWidth={10}
-        sublabel="today"
+        sublabel="of quota"
       />
 
       <div className="flex-1 space-y-3">
         <div>
           <p className="text-caption">Today's Growth</p>
-          <AnimatedCounter
-            value={today}
-            suffix="%"
-            className="text-3xl font-black text-white"
-          />
+          <div className="flex items-baseline gap-1 mt-1">
+            <AnimatedCounter
+              value={today}
+              decimals={2}
+              prefix="+"
+              suffix="%"
+              className="text-3xl font-black text-white"
+            />
+            <span className="text-xs text-gray-500 font-medium ml-1">
+              / target +{targetGrowth.toFixed(2)}%
+            </span>
+          </div>
         </div>
 
         {/* Comparison chips */}
@@ -42,7 +51,7 @@ export default function TodayGrowth({ dashboard }) {
           >
             <TrendIcon size={12} className={trendColor} />
             <span className="text-gray-400">
-              vs yesterday <span className={`font-bold ${trendColor}`}>{yesterday}%</span>
+              vs yesterday <span className={`font-bold ${trendColor}`}>+{yesterday.toFixed(2)}%</span>
             </span>
           </motion.div>
 
@@ -52,7 +61,7 @@ export default function TodayGrowth({ dashboard }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
           >
-            Week avg: <span className="font-bold text-gray-300">{weekAvg}%</span>
+            Week avg: <span className="font-bold text-gray-300">+{weekAvg.toFixed(2)}%</span>
           </motion.div>
         </div>
       </div>

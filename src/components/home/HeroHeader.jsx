@@ -2,12 +2,13 @@ import { motion } from "framer-motion";
 import StatusBadge from "../ui/StatusBadge";
 import { Flame } from "lucide-react";
 
-export default function HeroHeader({ user, streak }) {
+export default function HeroHeader({ user, streak, dashboard }) {
   const hours = new Date().getHours();
   const greeting =
     hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";
 
-  const streakDays = streak?.current_streak || 0;
+  const streakDays = streak?.current_streak ?? 0;
+  const missionDay = dashboard?.mission_day ?? null;
 
   return (
     <motion.div
@@ -23,10 +24,21 @@ export default function HeroHeader({ user, streak }) {
       <div className="relative px-6 py-8">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-caption mb-1">{greeting}</p>
+            <p className="text-caption mb-0.5">{greeting}</p>
             <h1 className="text-heading text-white">
               {user?.username || "Learner"}
             </h1>
+            {/* Mission Day — shown only once goal is active */}
+            {missionDay && (
+              <motion.p
+                className="text-[11px] text-purple-400/80 font-semibold mt-1 tracking-wide"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                Mission Day {missionDay}
+              </motion.p>
+            )}
           </div>
 
           {streakDays > 0 && (

@@ -1,12 +1,13 @@
 import GlassCard from "../ui/GlassCard";
 import { motion } from "framer-motion";
 
+// New 5 psychological dimensions mapped to brain_state keys
 const BRAIN_METRICS = [
   { key: "knowledge",   label: "Knowledge",   color: "#a855f7", emoji: "🧠" },
-  { key: "memory",      label: "Memory",      color: "#3b82f6", emoji: "💾" },
-  { key: "accuracy",    label: "Accuracy",    color: "#22c55e", emoji: "🎯" },
-  { key: "consistency", label: "Consistency", color: "#f59e0b", emoji: "⚡" },
-  { key: "focus",       label: "Focus",       color: "#ef4444", emoji: "🔥" },
+  { key: "retention",   label: "Retention",   color: "#3b82f6", emoji: "🔁" },
+  { key: "confidence",  label: "Confidence",  color: "#22c55e", emoji: "🛡" },
+  { key: "momentum",    label: "Momentum",    color: "#f59e0b", emoji: "⚡" },
+  { key: "discipline",  label: "Discipline",  color: "#ef4444", emoji: "🔥" },
 ];
 
 function MiniRing({ value, color, emoji, label, delay }) {
@@ -45,26 +46,29 @@ function MiniRing({ value, color, emoji, label, delay }) {
         </div>
       </div>
 
-      {/* Label appears on hover */}
       <span className="text-[10px] font-semibold text-gray-600 group-hover:text-gray-300 transition-colors">
         {Math.round(value)}%
+      </span>
+      <span className="text-[9px] text-gray-700 group-hover:text-gray-500 transition-colors text-center leading-tight">
+        {label}
       </span>
     </motion.div>
   );
 }
 
 export default function BrainStatus({ dashboard }) {
-  const stats = dashboard?.brain_stats || {};
+  // Read from brain_state (v2) with brain_stats fallback (v1 compat)
+  const state = dashboard?.brain_state || dashboard?.brain_stats || {};
 
   return (
     <GlassCard>
-      <p className="text-caption mb-4">Brain Status</p>
+      <p className="text-caption mb-4">Brain State</p>
 
       <div className="flex items-center justify-between px-2">
         {BRAIN_METRICS.map((metric, i) => (
           <MiniRing
             key={metric.key}
-            value={stats[metric.key] ?? 0}
+            value={state[metric.key] ?? 0}
             color={metric.color}
             emoji={metric.emoji}
             label={metric.label}

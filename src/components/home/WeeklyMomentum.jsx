@@ -1,16 +1,57 @@
 import GlassCard from "../ui/GlassCard";
 import StatusBadge from "../ui/StatusBadge";
 import { motion } from "framer-motion";
-import { Zap, Trophy } from "lucide-react";
+import { Zap, Trophy, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
+// ─── Prediction Band ──────────────────────────────────────────────────────────
+function PredictionBand({ prediction }) {
+  if (!prediction) return null;
+
+  const { status, days_delta, need_extra, required_daily, actual_daily } = prediction;
+
+  if (status === "on_track") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+        <Minus size={12} />
+        <span>On track — averaging <span className="font-bold">+{actual_daily.toFixed(2)}%</span>/day</span>
+      </div>
+    );
+  }
+  if (status === "ahead") {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+        <TrendingUp size={12} />
+        <span>
+          Ahead <span className="font-bold">{days_delta} day{days_delta !== 1 ? "s" : ""}</span>
+          {" "}· avg <span className="font-bold">+{actual_daily.toFixed(2)}%</span>/day
+        </span>
+      </div>
+    );
+  }
+  // behind
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-amber-400">
+      <TrendingDown size={12} />
+      <span>
+        Behind <span className="font-bold">{days_delta} day{days_delta !== 1 ? "s" : ""}</span>
+        {need_extra > 0 && (
+          <> · need <span className="font-bold">+{need_extra.toFixed(2)}%</span> more/day</>
+        )}
+      </span>
+    </div>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function WeeklyMomentum({ dashboard, streak }) {
   const weekData = dashboard?.weekly_data || [];
   const maxVal = Math.max(...weekData.map((d) => d?.value ?? 0), 1);
   const bestDay = dashboard?.best_day;
-  const weeklyGrowth = dashboard?.weekly_growth ?? 0;
+  const weeklyGrowth = dashboard?.week_avg_growth ?? 0;
   const currentStreak = streak?.current_streak ?? 0;
+  const prediction = dashboard?.prediction;
 
   // Pad to 7 days
   const bars = DAY_LABELS.map((label, i) => ({
@@ -24,7 +65,7 @@ export default function WeeklyMomentum({ dashboard, streak }) {
       <div className="flex items-center justify-between mb-5">
         <p className="text-caption">Weekly Momentum</p>
         <StatusBadge variant="accent" icon={<Zap size={10} />}>
-          {weeklyGrowth > 0 ? "+" : ""}{weeklyGrowth}% this week
+          avg +{weeklyGrowth.toFixed(2)}%/day
         </StatusBadge>
       </div>
 
@@ -54,18 +95,23 @@ export default function WeeklyMomentum({ dashboard, streak }) {
         })}
       </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-4 text-xs text-gray-400">
-        {bestDay && (
+      {/* Stats + prediction row */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 text-xs text-gray-400">
+          {bestDay && (
+            <div className="flex items-center gap-1.5">
+              <Trophy size={12} className="text-amber-400" />
+              <span>Best: <span className="text-white font-medium">{bestDay}</span></span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
-            <Trophy size={12} className="text-amber-400" />
-            <span>Best: <span className="text-white font-medium">{bestDay}</span></span>
+            <Zap size={12} className="text-purple-400" />
+            <span>Streak: <span className="text-white font-medium">{currentStreak}d</span></span>
           </div>
-        )}
-        <div className="flex items-center gap-1.5">
-          <Zap size={12} className="text-purple-400" />
-          <span>Streak: <span className="text-white font-medium">{currentStreak}d</span></span>
         </div>
+
+        {/* Prediction band — the "Ahead/Behind" signal */}
+        <PredictionBand prediction={prediction} />
       </div>
     </GlassCard>
   );

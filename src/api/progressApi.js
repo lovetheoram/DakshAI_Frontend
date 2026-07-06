@@ -71,6 +71,11 @@ const progressApi = {
   getStreakStats: async () => {
     const r = await axiosClient.get('/api/progress/streak/')
     return r.data
+  },
+
+  getGalaxy: async () => {
+    const r = await axiosClient.get('/api/progress/galaxy/')
+    return r.data
   }
 }
 

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import progressApi from "../../api/progressApi";
 import syllabusApi from "../../api/syllabusApi";
+import socialApi from "../../api/socialApi";
 import GlassCard from "../ui/GlassCard";
 import ProgressRing from "../ui/ProgressRing";
 import SkeletonLoader from "../ui/SkeletonLoader";
@@ -67,6 +68,9 @@ export default function ConceptSession({ conceptId }) {
 
   useEffect(() => {
     fetchConceptData();
+    // Register live check-in event for cost-efficient presence
+    socialApi.pingSession("reading", conceptId).catch(() => {});
+
     // Reset load flags when conceptId changes
     setFormulasLoaded(false);
     setFormulas([]);
@@ -79,6 +83,11 @@ export default function ConceptSession({ conceptId }) {
     setSummary(null);
     setIsHistoryExpanded(false);
     setOpenSessionId(null);
+
+    // Cleanup: clear active session state when navigating away or unmounting
+    return () => {
+      socialApi.pingSession(null).catch(() => {});
+    };
   }, [conceptId]);
 
   // Load detailed formulas from backend on expand

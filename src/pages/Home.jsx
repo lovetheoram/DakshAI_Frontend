@@ -3,25 +3,36 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import progressApi from "../api/progressApi";
 import SkeletonLoader from "../components/ui/SkeletonLoader";
+import LandingPage from "../components/home/LandingPage";
+import ServerStatusChecker from "../components/home/ServerStatusChecker";
+import { motion } from "framer-motion";
+
+// Living OS Components — ordered by emotional priority
 import HeroHeader from "../components/home/HeroHeader";
-import TodayGrowth from "../components/home/TodayGrowth";
 import ContinueLearning from "../components/home/ContinueLearning";
+import DecayAlerts from "../components/home/DecayAlerts";
+import DiscoveryFeed from "../components/home/DiscoveryFeed";
+import KnowledgeGalaxy from "../components/home/KnowledgeGalaxy";
 import BrainStatus from "../components/home/BrainStatus";
 import WeeklyMomentum from "../components/home/WeeklyMomentum";
 import AICoach from "../components/home/AICoach";
-import LandingPage from "../components/home/LandingPage";
-import { motion } from 'framer-motion';
 
 export default function Home() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
+  const [galaxyData, setGalaxyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // --- FREE TIER SERVER CHECKER ---
+  // Set initial state to 'true' to completely disable the wakeup check when shifting to a paid server.
+  const [isServerReady, setIsServerReady] = useState(false);
+
   useEffect(() => {
-    if (!user) return;
+    // If not logged in, or if we are still waiting for the server to wake up, do not fetch data.
+    if (!user || !isServerReady) return;
 
     const fetchData = async () => {
       try {
@@ -32,6 +43,11 @@ export default function Home() {
         ]);
         setDashboard(dashData);
         setStreak(streakData);
+
+        // Galaxy is secondary — fetch after main data loads, don't block
+        if (dashData?.goal) {
+          progressApi.getGalaxy().then(setGalaxyData).catch(() => {});
+        }
       } catch (err) {
         console.error("Home data fetch failed:", err);
         setError(err);
@@ -41,7 +57,12 @@ export default function Home() {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, isServerReady]);
+
+  // If backend server is asleep, show the wakeup progress component
+  if (!isServerReady) {
+    return <ServerStatusChecker onReady={() => setIsServerReady(true)} />;
+  }
 
   // Logged-out users see the landing page
   if (!user) {
@@ -75,7 +96,8 @@ export default function Home() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      <HeroHeader user={user} streak={streak} />
+      {/* ① Compact Hero — greeting + streak + today's target bar */}
+      <HeroHeader user={user} streak={streak} dashboard={dashboard} />
 
       {/* Alert banner if no active goal is configured */}
       {!dashboard?.goal && (
@@ -86,10 +108,10 @@ export default function Home() {
         >
           <div className="space-y-1">
             <h3 className="text-sm font-bold flex items-center gap-2">
-              <span>🔮</span> Initialize Growth OS Engine
+              <span>🎯</span> Set Your Goal
             </h3>
             <p className="text-[10px] text-gray-400 max-w-md leading-relaxed">
-              Define your target exam and daily study hours to start logging cognitive metrics, energy telemetry, and daily revision logs.
+              Define your target exam and daily study hours to start tracking your progress and predictions.
             </p>
           </div>
           <button
@@ -101,11 +123,26 @@ export default function Home() {
         </motion.div>
       )}
 
-      <TodayGrowth dashboard={dashboard} />
+      {/* ② Continue Learning — MOST IMPORTANT card ⭐⭐⭐⭐⭐ */}
       <ContinueLearning dashboard={dashboard} />
-      <BrainStatus dashboard={dashboard} />
+
+      {/* ③ Memory Fading — conditional urgency ⭐⭐⭐⭐ */}
+      <DecayAlerts decayAlerts={dashboard?.decay_alerts} />
+
+      {/* ④ Discovery Feed — "What's New" events ⭐⭐⭐⭐ */}
+      <DiscoveryFeed dashboard={dashboard} streak={streak} />
+
+      {/* ⑤ Knowledge Galaxy — living constellation ⭐⭐⭐ */}
+      <KnowledgeGalaxy galaxyData={galaxyData} />
+
+      {/* ⑥ Brain Report — human language ⭐⭐⭐ */}
+      <BrainStatus dashboard={dashboard} streak={streak} />
+
+      {/* ⑦ Weekly Momentum — bar chart ⭐⭐ */}
       <WeeklyMomentum dashboard={dashboard} streak={streak} />
-      <AICoach dashboard={dashboard} />
+
+      {/* ⑧ AI Coach — specific insights ⭐⭐ */}
+      <AICoach dashboard={dashboard} streak={streak} />
     </div>
   );
 }

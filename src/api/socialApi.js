@@ -88,6 +88,24 @@ const socialApi = {
 
   getSuggestedUsers: () =>
     axiosClient.get(`${BASE}/users/suggested/`),
+
+  // ======================================================
+  // MULTIPLAYER LEARNING WORLD (DakshAI Social v4)
+  // ======================================================
+  getLobby: () =>
+    axiosClient.get(`${BASE}/lobby/`),
+
+  pingSession: (status, conceptId = null) =>
+    axiosClient.post(`${BASE}/session/ping/`, { status, concept_id: conceptId }),
+
+  getTickets: (eligible = false) =>
+    axiosClient.get(`${BASE}/exchange/tickets/`, { params: { eligible: eligible ? "true" : "false" } }),
+
+  createTicket: (conceptId) =>
+    axiosClient.post(`${BASE}/exchange/tickets/`, { concept_id: conceptId }),
+
+  performTicketAction: (ticketId, action) =>
+    axiosClient.post(`${BASE}/exchange/tickets/${ticketId}/action/`, { action }),
 };
 
 export default socialApi;

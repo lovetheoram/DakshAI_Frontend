@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import quizApi from "../../api/quizApi";
+import socialApi from "../../api/socialApi";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 
 const OPTIONS = ["A", "B", "C", "D"];
@@ -21,6 +22,16 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Check in user as actively solving quiz
+    socialApi.pingSession("quiz", conceptId).catch(() => {});
+
+    // Cleanup: clear active session state when exiting quiz
+    return () => {
+      socialApi.pingSession(null).catch(() => {});
+    };
+  }, [conceptId]);
 
   useEffect(() => {
     const initializeQuiz = async () => {

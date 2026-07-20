@@ -8,12 +8,12 @@ import CreatePost from "./CreatePost";
 import FollowButton from "./FollowButton";
 import { MessageSquare, Users, Sparkles, UserCheck, Trash2, Loader2 } from "lucide-react";
 
-export default function FeedPage() {
+export default function FeedPage({ initialTab = "all" }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [concepts, setConcepts] = useState([]);
   const [selectedConcept, setSelectedConcept] = useState(null);
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "matchmaking" | "suggestions"
+  const [activeTab, setActiveTab] = useState(initialTab); // "all" | "projects" | "matchmaking" | "suggestions"
   const [loading, setLoading] = useState(true);
 
   // Suggested peers state
@@ -90,8 +90,8 @@ export default function FeedPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/[0.04] mb-2">
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Community Space</h1>
-            <p className="text-xs text-gray-500 mt-1">Connect, share weakness matches, and study with peers.</p>
+            <h1 className="text-2xl font-black text-white tracking-tight">World & Community</h1>
+            <p className="text-xs text-gray-500 mt-1">Explore student projects, global opportunities, and peer collaboration.</p>
           </div>
           <button
             onClick={() => navigate("/messages")}
@@ -102,7 +102,7 @@ export default function FeedPage() {
           </button>
         </div>
 
-        {/* Tab Filter Navigation (General | Weakness | Snapchat Suggestions) */}
+        {/* Tab Filter Navigation */}
         <div className="flex gap-2 border-b border-white/[0.02] pb-3 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab("all")}
@@ -115,15 +115,25 @@ export default function FeedPage() {
             General Feed
           </button>
           <button
+            onClick={() => setActiveTab("projects")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+              activeTab === "projects"
+                ? "bg-indigo-600/15 text-indigo-300 border-indigo-500/30 shadow-lg shadow-indigo-500/5"
+                : "bg-white/[0.02] text-gray-400 border-white/5 hover:text-white hover:bg-white/[0.04]"
+            }`}
+          >
+            🛸 Students are Building
+          </button>
+          <button
             onClick={() => setActiveTab("matchmaking")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
               activeTab === "matchmaking"
-                ? "bg-gradient-to-r from-purple-600/15 to-indigo-600/15 text-purple-300 border-purple-500/30 shadow-lg shadow-purple-500/5"
+                ? "bg-purple-600/15 text-purple-300 border-purple-500/30 shadow-lg shadow-purple-500/5"
                 : "bg-white/[0.02] text-gray-400 border-white/5 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
             <Sparkles size={12} className="text-purple-400" />
-            🧠 Weakness Match
+            Peer Matchmaking
           </button>
           <button
             onClick={() => setActiveTab("suggestions")}

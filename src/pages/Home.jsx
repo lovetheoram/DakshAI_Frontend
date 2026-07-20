@@ -135,10 +135,7 @@ export default function Home() {
       {/* ⑤ Knowledge Galaxy — living constellation ⭐⭐⭐ */}
       <KnowledgeGalaxy galaxyData={galaxyData} />
 
-      {/* ⑥ Brain Report — human language ⭐⭐⭐ */}
-      <BrainStatus dashboard={dashboard} streak={streak} />
-
-      {/* ⑦ Weekly Momentum — bar chart ⭐⭐ */}
+      {/* ⑥ Weekly Momentum — bar chart ⭐⭐ */}
       <WeeklyMomentum dashboard={dashboard} streak={streak} />
 
       {/* ⑧ AI Coach — specific insights ⭐⭐ */}

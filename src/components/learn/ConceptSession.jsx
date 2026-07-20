@@ -8,12 +8,16 @@ import GlassCard from "../ui/GlassCard";
 import ProgressRing from "../ui/ProgressRing";
 import SkeletonLoader from "../ui/SkeletonLoader";
 import { getMasteryPercent } from "../../pages/LearnPage";
-import { BookOpen, Swords, FileText, LineChart, Shield, ChevronDown, ChevronUp, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { BookOpen, Swords, FileText, LineChart, Shield, ChevronDown, ChevronUp, CheckCircle2, XCircle, Loader2, Globe, Rocket, Sparkles } from "lucide-react";
 
 export default function ConceptSession({ conceptId }) {
   const navigate = useNavigate();
   const [concept, setConcept] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Concept Sparks ("Beyond Your Chapter")
+  const [sparksData, setSparksData] = useState(null);
+  const [loadingSparks, setLoadingSparks] = useState(false);
   
   // Formulas lazy loading
   const [formulas, setFormulas] = useState([]);
@@ -68,7 +72,15 @@ export default function ConceptSession({ conceptId }) {
 
   useEffect(() => {
     fetchConceptData();
-    // Register live check-in event for cost-efficient presence
+
+    // Fetch Beyond Your Chapter sparks
+    setLoadingSparks(true);
+    socialApi.getConceptSparks(conceptId)
+      .then((res) => setSparksData(res.data))
+      .catch((err) => console.error("Failed to load concept sparks:", err))
+      .finally(() => setLoadingSparks(false));
+
+    // Register live check-in event for presence
     socialApi.pingSession("reading", conceptId).catch(() => {});
 
     // Reset load flags when conceptId changes
@@ -404,6 +416,60 @@ export default function ConceptSession({ conceptId }) {
             </motion.div>
           )}
         </AnimatePresence>
+      </GlassCard>
+
+      {/* Beyond Your Chapter (Contextual World Exposure) */}
+      <GlassCard padding="p-5" className="border border-purple-500/20 bg-purple-950/10">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Globe size={18} className="text-purple-400" />
+            <h3 className="text-sm font-bold text-white tracking-tight">Beyond Your Chapter</h3>
+          </div>
+          <span className="text-[10px] uppercase font-bold text-purple-300 tracking-wider px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+            Real-World Connection
+          </span>
+        </div>
+
+        {loadingSparks ? (
+          <SkeletonLoader lines={2} />
+        ) : (
+          <div className="space-y-3">
+            {sparksData?.sparks && sparksData.sparks.length > 0 ? (
+              sparksData.sparks.map((spark) => (
+                <div key={spark.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-300">
+                    <Rocket size={12} />
+                    <span>{spark.user?.username || "Student Innovator"}</span>
+                    <span className="text-[10px] text-gray-500">• {spark.post_type}</span>
+                  </div>
+                  <p className="text-xs text-gray-200 mt-1 line-clamp-2">{spark.content}</p>
+                </div>
+              ))
+            ) : (
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-purple-300">
+                  <Sparkles size={14} />
+                  <span>Real-World Application</span>
+                </div>
+                <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+                  This concept forms the mathematical & physical foundation for autonomous navigation, vector physics, and computer graphics engines worldwide.
+                </p>
+              </div>
+            )}
+
+            {sparksData?.opportunities && sparksData.opportunities.length > 0 && (
+              <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-xs">
+                <span className="text-gray-400">🏆 Active Olympiad & Challenges:</span>
+                <button
+                  onClick={() => navigate("/community")}
+                  className="text-purple-400 hover:text-purple-300 font-medium text-xs flex items-center gap-1"
+                >
+                  Explore World Opportunities →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </GlassCard>
 
       {/* Expandable History Attempts (Loaded on Demand) */}

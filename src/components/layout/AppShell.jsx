@@ -5,24 +5,23 @@ import { AuthContext } from "../../context/AuthContext";
 import {
   Home,
   BookOpen,
-  Swords,
-  Users,
+  Globe,
   TrendingUp,
-  Bell,
   User,
+  Bell,
   Settings,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
 
-// Bottom nav items (mobile - 5 max)
+// 5 Primary Navigation Tabs
 const NAV_ITEMS = [
-  { to: "/",          icon: Home,      label: "Home" },
-  { to: "/learn",     icon: BookOpen,  label: "Learn" },
-  { to: "/practice",  icon: Swords,    label: "Practice" },
-  { to: "/community", icon: Users,     label: "Community" },
-  { to: "/growth",    icon: TrendingUp,label: "Growth" },
+  { to: "/",          icon: Home,       label: "Home" },
+  { to: "/learn",     icon: BookOpen,   label: "Learn" },
+  { to: "/community", icon: Globe,      label: "Community" },
+  { to: "/growth",    icon: TrendingUp, label: "Growth" },
+  { to: "/profile",   icon: User,       label: "Profile" },
 ];
 
 export default function AppShell({ children }) {

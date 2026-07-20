@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import StatusBadge from "../ui/StatusBadge";
-import { Flame, Check, AlertCircle } from "lucide-react";
+import { Flame, Check, AlertCircle, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function HeroHeader({ user, streak, dashboard }) {
+  const navigate = useNavigate();
   const hours = new Date().getHours();
   const greeting =
     hours < 12 ? "Good morning" : hours < 17 ? "Good afternoon" : "Good evening";
@@ -65,7 +67,7 @@ export default function HeroHeader({ user, streak, dashboard }) {
       <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
 
       <div className="relative px-6 py-6">
-        {/* Row 1: Greeting + Streak */}
+        {/* Row 1: Greeting + Light-up About Us + Streak */}
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-xs text-gray-400 mb-0.5">{greeting}</p>
@@ -74,15 +76,27 @@ export default function HeroHeader({ user, streak, dashboard }) {
             </h1>
           </div>
 
-          {streakDays > 0 && (
-            <StatusBadge
-              variant="warning"
-              icon={<Flame size={12} />}
-              pulse={streakDays >= 7}
+          <div className="flex items-center gap-2">
+            {/* Glowing / Light-up About Us Shape */}
+            <button
+              onClick={() => navigate("/about")}
+              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/40 text-purple-300 text-xs font-bold shadow-lg shadow-purple-500/10 hover:shadow-purple-500/30 hover:border-purple-400 transition-all flex items-center gap-1.5 animate-pulse"
+              title="Learn about DakshAI purpose & vision"
             >
-              {streakDays}d streak
-            </StatusBadge>
-          )}
+              <Sparkles size={12} className="text-purple-300" />
+              <span>About Us</span>
+            </button>
+
+            {streakDays > 0 && (
+              <StatusBadge
+                variant="warning"
+                icon={<Flame size={12} />}
+                pulse={streakDays >= 7}
+              >
+                {streakDays}d streak
+              </StatusBadge>
+            )}
+          </div>
         </div>
 
         {/* Row 2: Today's Progress */}

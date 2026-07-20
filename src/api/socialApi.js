@@ -106,6 +106,28 @@ const socialApi = {
 
   performTicketAction: (ticketId, action) =>
     axiosClient.post(`${BASE}/exchange/tickets/${ticketId}/action/`, { action }),
+
+  getMentorshipTickets: () =>
+    axiosClient.get(`${BASE}/exchange/tickets/`),
+
+  createMentorshipTicket: (conceptId, topicTitle, problemDescription) =>
+    axiosClient.post(`${BASE}/exchange/tickets/`, {
+      concept_id: conceptId,
+      topic_title: topicTitle,
+      problem_description: problemDescription,
+    }),
+
+  takeMentorshipAction: (ticketId, action) =>
+    axiosClient.post(`${BASE}/exchange/tickets/${ticketId}/action/`, { action }),
+
+  // ======================================================
+  // CONCEPT SPARKS & DETERMINISTIC INSIGHTS
+  // ======================================================
+  getConceptSparks: (conceptId) =>
+    axiosClient.get(`${BASE}/concept-sparks/${conceptId}/`),
+
+  getProgressInsights: () =>
+    axiosClient.get(`${BASE}/insights/`),
 };
 
 export default socialApi;

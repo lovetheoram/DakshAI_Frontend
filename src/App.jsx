@@ -88,6 +88,14 @@ export default function App() {
           }
         />
         <Route
+          path="/world"
+          element={
+            <ProtectedRoute>
+              <CommunityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/growth"
           element={
             <ProtectedRoute>

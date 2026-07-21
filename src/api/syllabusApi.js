@@ -12,10 +12,11 @@ const syllabusApi = {
   getSubtopicConcepts: async (subtopicId) => {
     const r = await axiosClient.get(`/api/syllabus/subtopic/${subtopicId}/concepts/`)
     return r.data
+  },
+  getConceptDetail: async (conceptId) => {
+    const r = await axiosClient.get(`/api/syllabus/concept/${conceptId}/`)
+    return r.data
   }
-  
 }
 
 export default syllabusApi
-
-

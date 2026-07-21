@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Share2, Bookmark, TrendingUp, FileText, X, Send, Sparkles, Rocket, HelpCircle, Compass, Award } from "lucide-react";
 import Comments from "./Comments";
 import socialApi from "../../api/socialApi";
+import { parseYouTubeEmbedUrl } from "./CreatePost";
 
 const CARD_THEMES = [
   {
@@ -73,15 +74,7 @@ const CARD_THEMES = [
 ];
 
 const getYouTubeEmbedUrl = (url) => {
-  if (!url) return null;
-  if (url.includes('youtube.com/embed/')) {
-    return url.replace('youtube.com', 'youtube-nocookie.com');
-  }
-  if (url.includes('youtube-nocookie.com/embed/')) return url;
-  const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
-  const long = url.match(/v=([a-zA-Z0-9_-]+)/);
-  const id = short?.[1] || long?.[1];
-  return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+  return parseYouTubeEmbedUrl(url) || url;
 };
 
 export default function PostCard({ post, onConceptClick }) {
@@ -129,20 +122,6 @@ export default function PostCard({ post, onConceptClick }) {
 
   const toggleBookmark = () => setBookmarked(!bookmarked);
 
-  const getTypeLabel = (type) => {
-    switch (type) {
-      case "project": return "🛸 Project Showcase";
-      case "milestone": return "🎯 Milestone";
-      case "help": return "❓ Help Request";
-      case "discovery": return "💡 Discovery";
-      case "opportunity": return "🏆 Opportunity";
-      case "discussion": return "💬 Discussion";
-      case "story": return "📖 Student Story";
-      case "progress": return "📊 Progress Update";
-      default: return "✨ Insight";
-    }
-  };
-
   return (
     <motion.div 
       layout 
@@ -175,7 +154,7 @@ export default function PostCard({ post, onConceptClick }) {
               <div className="flex items-center gap-2">
                 <h4 className="font-bold text-white text-sm sm:text-base leading-tight">{post.user?.username}</h4>
                 <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${theme.badgeBg}`}>
-                  {getTypeLabel(post.post_type)}
+                  ✨ Post
                 </span>
               </div>
 

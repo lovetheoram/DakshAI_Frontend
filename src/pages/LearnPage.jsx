@@ -8,6 +8,7 @@ import SkeletonLoader from "../components/ui/SkeletonLoader";
 import ConceptSession from "../components/learn/ConceptSession";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, ChevronRight, ArrowLeft, Network, List, RefreshCw } from "lucide-react";
+import { getConceptIcon } from "../components/learn/ConceptVisualTheme";
 
 export const getMasteryPercent = (mastery) => {
   if (Array.isArray(mastery)) {
@@ -185,7 +186,7 @@ function ConceptOrb({ concept, theme, index, onClick }) {
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-0.5 z-10">
-          <span className="text-[10px] sm:text-xs">💎</span>
+          <span className="text-[10px] sm:text-xs">{getConceptIcon(concept.name, concept.id)}</span>
           <span className="text-[7px] sm:text-[9px] font-bold text-white leading-tight mt-0.5 px-0.5 text-center line-clamp-2">
             {concept.name}
           </span>

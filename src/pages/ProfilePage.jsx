@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { useExperience } from "../context/ThemeContext";
 import progressApi from "../api/progressApi";
 import GlassCard from "../components/ui/GlassCard";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -17,10 +18,12 @@ import {
   CheckCircle2,
   Flame,
   Brain,
+  Palette,
 } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, logout } = useContext(AuthContext);
+  const { activeThemeMeta, openCustomizer } = useExperience();
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
@@ -115,6 +118,38 @@ export default function ProfilePage() {
           <StatusBadge variant="accent" icon="⚡">Concept Builder</StatusBadge>
           <StatusBadge variant="success" icon="🎯">Target Goal Active</StatusBadge>
         </div>
+      </GlassCard>
+
+      {/* Study Environment Selector Card */}
+      <GlassCard
+        padding="p-4"
+        hover
+        onClick={() => openCustomizer()}
+        className="border-purple-500/30 bg-purple-950/20 flex items-center justify-between cursor-pointer"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
+            <Palette size={18} />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Active Study Environment</div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
+              <span>{activeThemeMeta?.name || "Classic Focus"}</span>
+              <span className="text-sm">{activeThemeMeta?.badge || "⚡"}</span>
+            </h3>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            openCustomizer();
+          }}
+          className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer relative z-10"
+        >
+          Change Environment
+        </button>
       </GlassCard>
 
       {/* Segmented Sub-Navigation Tabs (3 Columns) */}

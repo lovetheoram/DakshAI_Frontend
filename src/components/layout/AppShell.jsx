@@ -2,6 +2,9 @@ import { useContext, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../../context/AuthContext";
+import { useExperience } from "../../context/ThemeContext";
+import AmbientBackgroundEngine from "../ui/AmbientBackgroundEngine";
+import ThemeCustomizerModal from "../ui/ThemeCustomizerModal";
 import {
   Home,
   BookOpen,
@@ -11,8 +14,7 @@ import {
   Bell,
   Settings,
   LogOut,
-  Menu,
-  X,
+  Palette,
 } from "lucide-react";
 
 // 5 Primary Navigation Tabs
@@ -26,6 +28,7 @@ const NAV_ITEMS = [
 
 export default function AppShell({ children }) {
   const { user, logout } = useContext(AuthContext);
+  const { openCustomizer, activeThemeMeta } = useExperience();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,14 +37,24 @@ export default function AppShell({ children }) {
   const hideShell = ["/login", "/signup"].includes(location.pathname) || location.pathname.startsWith("/quiz");
 
   if (hideShell) {
-    return <>{children}</>;
+    return (
+      <>
+        <AmbientBackgroundEngine />
+        <ThemeCustomizerModal />
+        {children}
+      </>
+    );
   }
 
   // Don't show nav for logged-out users (landing page handles its own nav)
   const showNav = !!user;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)] flex flex-col">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] flex flex-col relative">
+      {/* Ambient Background Particle Engine & Theme Customizer Modal */}
+      <AmbientBackgroundEngine />
+      <ThemeCustomizerModal />
+
       {/* ============= Desktop Top Bar ============= */}
       {showNav && (
         <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-white/[0.04] bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40">
@@ -76,8 +89,19 @@ export default function AppShell({ children }) {
             ))}
           </nav>
 
-          {/* Right section */}
+          {/* Right section: Theme Selector + Notifications + Profile */}
           <div className="flex items-center gap-3">
+            {/* Theme Environment Trigger Button */}
+            <button
+              onClick={openCustomizer}
+              className="px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 hover:bg-purple-500/25 flex items-center gap-2 text-xs font-bold transition-all shadow-sm cursor-pointer"
+              title="Choose Your Study Environment"
+            >
+              <Palette size={15} className="text-purple-400" />
+              <span className="hidden lg:inline">{activeThemeMeta?.name || "Environment"}</span>
+              <span className="text-xs">{activeThemeMeta?.badge || "⚡"}</span>
+            </button>
+
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
@@ -107,6 +131,13 @@ export default function AppShell({ children }) {
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                   >
+                    <button
+                      onClick={() => { openCustomizer(); setMenuOpen(false); }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-purple-300 hover:bg-purple-500/10 transition-colors w-full text-left font-bold cursor-pointer"
+                    >
+                      <Palette size={16} />
+                      Study Environment
+                    </button>
                     <NavLink
                       to="/profile"
                       onClick={() => setMenuOpen(false)}
@@ -153,7 +184,16 @@ export default function AppShell({ children }) {
           </NavLink>
 
           {/* Right actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={openCustomizer}
+              className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center gap-1 text-xs font-bold cursor-pointer"
+              title="Choose Study Environment"
+            >
+              <Palette size={16} />
+              <span>{activeThemeMeta?.badge || "⚡"}</span>
+            </button>
+
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
@@ -183,6 +223,13 @@ export default function AppShell({ children }) {
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                   >
+                    <button
+                      onClick={() => { openCustomizer(); setMobileMenuOpen(false); }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-purple-300 font-bold hover:bg-purple-500/10 transition-colors w-full text-left cursor-pointer"
+                    >
+                      <Palette size={14} />
+                      Study Environment
+                    </button>
                     <NavLink
                       to="/profile"
                       onClick={() => setMobileMenuOpen(false)}

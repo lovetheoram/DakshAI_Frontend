@@ -1,11 +1,13 @@
 import { useState } from "react";
 import GlassCard from "../components/ui/GlassCard";
 import StatusBadge from "../components/ui/StatusBadge";
-import { ArrowLeft, Moon, Sun, Bell, Shield, BookOpen, Volume2 } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Bell, Shield, BookOpen, Volume2, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useExperience } from "../context/ThemeContext";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { activeThemeMeta, openCustomizer } = useExperience();
   const [notifications, setNotifications] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
@@ -26,10 +28,35 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Study Environment Selector Card */}
+      <GlassCard padding="p-5" className="border-purple-500/30 bg-purple-950/20 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Palette size={20} className="text-purple-400" />
+            <div>
+              <p className="text-sm font-semibold text-white">Study Environment</p>
+              <p className="text-xs text-purple-300">
+                Active: {activeThemeMeta?.name || "Classic Focus"} {activeThemeMeta?.badge || "⚡"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={openCustomizer}
+            className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all"
+          >
+            Change Environment
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-400">
+          Particles, cards, glass opacity, copy tone, and typography adapt dynamically to your chosen world.
+        </p>
+      </GlassCard>
+
       {/* Preferences Section */}
       <GlassCard padding="p-5" className="space-y-4">
         <h3 className="text-caption">Preferences</h3>
-        
+
         {/* Theme Toggle */}
         <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-3">

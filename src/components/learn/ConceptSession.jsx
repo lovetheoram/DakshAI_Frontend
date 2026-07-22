@@ -72,12 +72,28 @@ export default function ConceptSession({ conceptId }) {
         setRules(meta.layer_2_rule_based_logics || []);
         if (sId) setSubtopicId(sId);
 
+        const examReadiness = typeof progressData?.exam_readiness === "number"
+          ? progressData.exam_readiness
+          : typeof targetConcept?.raw_mastry?.[0] === "number"
+          ? targetConcept.raw_mastry[0]
+          : 0;
+
+        const chapterUnderstanding = typeof progressData?.chapter_understanding === "number"
+          ? progressData.chapter_understanding
+          : typeof targetConcept?.raw_mastry?.[1] === "number"
+          ? targetConcept.raw_mastry[1]
+          : 0;
+
+        const masteryArray = progressData?.mastery || targetConcept?.mastery || [examReadiness, chapterUnderstanding];
+
         setConcept({
           name: targetConcept.name || "Concept",
           chapter_name: targetConcept.subtopic_name || targetConcept.topic_name || targetConcept.subject_name || "Syllabus Topic",
-          exam_readiness: progressData.exam_readiness || 0.8,
-          chapter_understanding: progressData.chapter_understanding || 0.75,
-          mastery: [progressData.exam_readiness || 0.8, progressData.chapter_understanding || 0.75],
+          exam_readiness: examReadiness,
+          chapter_understanding: chapterUnderstanding,
+          mastery: masteryArray,
+          last_practiced: progressData?.last_practiced || targetConcept?.last_practiced || null,
+          total_questions_solved: progressData?.total_questions_solved || 0,
           description: desc || `${targetConcept.name} is a key concept under ${targetConcept.subtopic_name || "this topic"}.`,
         });
       } else {
@@ -87,6 +103,8 @@ export default function ConceptSession({ conceptId }) {
           exam_readiness: 0,
           chapter_understanding: 0,
           mastery: [0, 0],
+          last_practiced: null,
+          total_questions_solved: 0,
           description: "Concept details loading from syllabus database...",
         });
       }
@@ -131,7 +149,7 @@ export default function ConceptSession({ conceptId }) {
     return <SkeletonLoader lines={6} avatar />;
   }
 
-  const masteryPercent = concept ? getMasteryPercent(concept.mastery) : 80;
+  const masteryPercent = concept ? getMasteryPercent(concept.mastery) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
@@ -190,8 +208,10 @@ export default function ConceptSession({ conceptId }) {
               transition={{ duration: 0.2 }}
             >
               <ConceptProgressSection
-                examMastery={concept?.exam_readiness || 0.8}
-                chapterMastery={concept?.chapter_understanding || 0.75}
+                examMastery={concept?.exam_readiness ?? 0}
+                chapterMastery={concept?.chapter_understanding ?? 0}
+                lastPracticed={concept?.last_practiced}
+                questionsSolved={concept?.total_questions_solved}
                 historySummary={historySummary}
               />
             </motion.div>

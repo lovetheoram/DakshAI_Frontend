@@ -54,7 +54,7 @@ export default function ConceptHeaderHero({ conceptName, chapterName, masteryPer
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              {conceptName || "Electricity"}
+              {conceptName || "Concept"}
             </h1>
 
             <div className="flex items-center gap-2 pt-0.5">

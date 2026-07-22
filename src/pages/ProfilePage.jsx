@@ -11,19 +11,12 @@ import {
   Settings,
   LogOut,
   Award,
-  BarChart3,
-  BookOpen,
   ChevronRight,
-  Bell,
   Sparkles,
   Rocket,
-  History,
   CheckCircle2,
   Flame,
   Brain,
-  Clock,
-  TrendingUp,
-  Zap
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -31,29 +24,21 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
-  const [diaryEntries, setDiaryEntries] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
 
-  // Tab State: 'history' | 'achievements' | 'analytics' | 'projects'
-  const [activeTab, setActiveTab] = useState("history");
+  // Tab State: 'achievements' | 'analytics' | 'projects'
+  const [activeTab, setActiveTab] = useState("achievements");
 
   useEffect(() => {
     const fetchProfileStats = async () => {
       try {
-        const [dashData, streakData, diaryData] = await Promise.all([
+        const [dashData, streakData] = await Promise.all([
           progressApi.getDashboard(),
           progressApi.getStreakStats(),
-          progressApi.getDiary()
         ]);
         setDashboard(dashData);
         setStreak(streakData);
-        
-        const historyList = Array.isArray(diaryData) ? diaryData : (diaryData?.results || []);
-        setDiaryEntries(historyList);
       } catch (err) {
         console.error("Failed to load profile telemetry:", err);
-      } finally {
-        setLoadingHistory(false);
       }
     };
     if (user) fetchProfileStats();
@@ -67,51 +52,50 @@ export default function ProfilePage() {
   const dakshScore = dashboard?.overall_score ?? 0;
 
   const achievementsList = [
-    { 
-      emoji: "🔥", 
-      title: "3-Day Streak", 
+    {
+      emoji: "🔥",
+      title: "3-Day Streak",
       unlocked: streakDays >= 3,
       progressVal: streakDays,
       targetVal: 3,
-      label: streakDays >= 3 ? "✓ Unlocked" : `${streakDays}/3 days`
+      label: streakDays >= 3 ? "✓ Unlocked" : `${streakDays}/3 days`,
     },
-    { 
-      emoji: "🧠", 
-      title: "100 Questions Solved", 
+    {
+      emoji: "🧠",
+      title: "100 Questions Solved",
       unlocked: questionsSolved >= 100,
       progressVal: questionsSolved,
       targetVal: 100,
-      label: questionsSolved >= 100 ? "✓ Unlocked" : `${questionsSolved}/100 questions`
+      label: questionsSolved >= 100 ? "✓ Unlocked" : `${questionsSolved}/100 questions`,
     },
-    { 
-      emoji: "🎯", 
-      title: "High Accuracy Master", 
+    {
+      emoji: "🎯",
+      title: "High Accuracy Master",
       unlocked: avgAccuracy >= 80,
       progressVal: avgAccuracy,
       targetVal: 80,
-      label: avgAccuracy >= 80 ? "✓ Unlocked" : `${Math.round(avgAccuracy)}/80% accuracy`
+      label: avgAccuracy >= 80 ? "✓ Unlocked" : `${Math.round(avgAccuracy)}/80% accuracy`,
     },
-    { 
-      emoji: "⚡", 
-      title: "Week On Fire", 
+    {
+      emoji: "⚡",
+      title: "Week On Fire",
       unlocked: weekCompliance >= 80,
       progressVal: weekCompliance,
       targetVal: 80,
-      label: weekCompliance >= 80 ? "✓ Unlocked" : `${Math.round(weekCompliance)}/80% compliance`
+      label: weekCompliance >= 80 ? "✓ Unlocked" : `${Math.round(weekCompliance)}/80% compliance`,
     },
-    { 
-      emoji: "🏆", 
-      title: "Halfway Exam Readiness", 
+    {
+      emoji: "🏆",
+      title: "Halfway Exam Readiness",
       unlocked: dakshScore >= 50,
       progressVal: dakshScore,
       targetVal: 50,
-      label: dakshScore >= 50 ? "✓ Unlocked" : `${Math.round(dakshScore)}/50% readiness`
-    }
+      label: dakshScore >= 50 ? "✓ Unlocked" : `${Math.round(dakshScore)}/50% readiness`,
+    },
   ];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-      
       {/* Identity Header Card */}
       <GlassCard glow className="text-center py-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -129,128 +113,50 @@ export default function ProfilePage() {
 
         <div className="flex items-center justify-center gap-2 mt-3">
           <StatusBadge variant="accent" icon="⚡">Concept Builder</StatusBadge>
-          <StatusBadge variant="success" icon="🎯">Target: JEE 2028</StatusBadge>
+          <StatusBadge variant="success" icon="🎯">Target Goal Active</StatusBadge>
         </div>
       </GlassCard>
 
-      {/* Segmented Sub-Navigation Tabs */}
-      <div className="grid grid-cols-4 gap-1.5 p-1 rounded-2xl bg-slate-950/60 border border-white/[0.04] text-[11px] font-bold">
-        <button
-          onClick={() => setActiveTab("history")}
-          className={`py-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ${
-            activeTab === "history"
-              ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <History size={13} />
-          <span>History</span>
-        </button>
-
+      {/* Segmented Sub-Navigation Tabs (3 Columns) */}
+      <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-950/60 border border-white/[0.04] text-[11px] font-bold">
         <button
           onClick={() => setActiveTab("achievements")}
-          className={`py-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ${
+          className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === "achievements"
               ? "bg-amber-600/20 text-amber-300 border border-amber-500/30 shadow-md"
               : "text-gray-400 hover:text-white"
           }`}
         >
-          <Award size={13} />
-          <span>Badges</span>
+          <Award size={14} />
+          <span>Badges & Achievements</span>
         </button>
 
         <button
           onClick={() => setActiveTab("analytics")}
-          className={`py-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ${
+          className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === "analytics"
               ? "bg-purple-600/20 text-purple-300 border border-purple-500/30 shadow-md"
               : "text-gray-400 hover:text-white"
           }`}
         >
-          <Brain size={13} />
+          <Brain size={14} />
           <span>Analytics</span>
         </button>
 
         <button
           onClick={() => setActiveTab("projects")}
-          className={`py-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 ${
+          className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === "projects"
               ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 shadow-md"
               : "text-gray-400 hover:text-white"
           }`}
         >
-          <Rocket size={13} />
+          <Rocket size={14} />
           <span>Projects</span>
         </button>
       </div>
 
-      {/* Tab 1: Study History & Activity Log (FULL TIMELINE) */}
-      {activeTab === "history" && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <GlassCard padding="p-5" className="space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.04] pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <History size={18} className="text-indigo-400" />
-                  <span>Study History Timeline</span>
-                </h3>
-                <p className="text-[10px] text-gray-400 mt-0.5">Your chronological learning sessions and revision history</p>
-              </div>
-              <span className="text-[10px] text-indigo-300 font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-                {diaryEntries.length} Sessions Logged
-              </span>
-            </div>
-
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-1 scrollbar-hide">
-              {loadingHistory ? (
-                <p className="text-xs text-gray-400 text-center py-4 animate-pulse">Loading study history...</p>
-              ) : diaryEntries.length > 0 ? (
-                diaryEntries.map((entry, idx) => {
-                  const dateObj = new Date(entry.date);
-                  const dayStr = dateObj.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-                  const revisionMins = Math.round((entry.time_spent_seconds || 0) / 60) || entry.revision_minutes || 0;
-                  const solvedCount = entry.questions_solved ?? 0;
-                  const growthPercent = entry.daily_growth_percentage ?? 0;
-
-                  return (
-                    <div 
-                      key={idx} 
-                      className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-indigo-500/20 transition-all space-y-2"
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <Clock size={14} className="text-indigo-400" />
-                          <span className="font-bold text-white">{dayStr}</span>
-                        </div>
-                        {growthPercent > 0 && (
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                            +{growthPercent.toFixed(2)}% Growth
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-gray-300 pt-1">
-                        <span>{solvedCount} MCQs Solved · {revisionMins} min Revision</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-purple-300">Energy: {entry.energy_score ?? 70}%</span>
-                          <span className="text-emerald-300">Accuracy: {Math.round(entry.accuracy_rate ?? 80)}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-6 text-xs text-gray-500 space-y-1">
-                  <p className="font-semibold text-gray-400">No study history recorded yet.</p>
-                  <p>Complete learning concepts or practice sessions to record your history.</p>
-                </div>
-              )}
-            </div>
-          </GlassCard>
-        </motion.div>
-      )}
-
-      {/* Tab 2: Achievements & Badges */}
+      {/* Tab 1: Achievements & Badges */}
       {activeTab === "achievements" && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           <GlassCard padding="p-5" className="space-y-4">
@@ -292,27 +198,36 @@ export default function ProfilePage() {
                 const ratioPercent = Math.min(100, (ach.progressVal / ach.targetVal) * 100);
 
                 return (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      unlocked 
-                        ? 'bg-amber-500/5 border-amber-500/20 opacity-100' 
-                        : 'bg-white/[0.01] border-white/[0.04] opacity-65'
+                      unlocked
+                        ? "bg-amber-500/5 border-amber-500/20 opacity-100"
+                        : "bg-white/[0.01] border-white/[0.04] opacity-65"
                     }`}
                   >
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 ${unlocked ? 'bg-amber-500/10' : 'bg-white/[0.04]'}`}>
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 ${
+                        unlocked ? "bg-amber-500/10" : "bg-white/[0.04]"
+                      }`}
+                    >
                       {ach.emoji}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between text-xs font-semibold mb-1">
                         <span className="text-white">{ach.title}</span>
-                        <span className={unlocked ? "text-amber-400 font-bold" : "text-gray-400"}>{ach.label}</span>
+                        <span className={unlocked ? "text-amber-400 font-bold" : "text-gray-400"}>
+                          {ach.label}
+                        </span>
                       </div>
-                      
+
                       {!unlocked && (
                         <div className="w-full h-1 bg-slate-950 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-500 rounded-full" style={{ width: `${ratioPercent}%` }} />
+                          <div
+                            className="h-full bg-amber-500 rounded-full"
+                            style={{ width: `${ratioPercent}%` }}
+                          />
                         </div>
                       )}
                     </div>
@@ -324,14 +239,14 @@ export default function ProfilePage() {
         </motion.div>
       )}
 
-      {/* Tab 3: Brain Core & Telemetry Analytics */}
+      {/* Tab 2: Brain Core & Telemetry Analytics */}
       {activeTab === "analytics" && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           <BrainStatus dashboard={dashboard} streak={streak} />
         </motion.div>
       )}
 
-      {/* Tab 4: Showcase & Projects */}
+      {/* Tab 3: Showcase & Projects */}
       {activeTab === "projects" && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           <GlassCard padding="p-5" className="space-y-3">

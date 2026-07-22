@@ -1,18 +1,33 @@
 // src/components/learn/ConceptProgressSection.jsx
 import React from "react";
 import { motion } from "framer-motion";
-import { BarChart2, ShieldCheck, Clock, CheckCircle2, Award } from "lucide-react";
+import { BarChart2, Clock, CheckCircle2, Award } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 import ProgressBar from "../ui/ProgressBar";
 
-export default function ConceptProgressSection({ examMastery = 0, chapterMastery = 0, historySummary = null }) {
+export default function ConceptProgressSection({
+  examMastery = 0,
+  chapterMastery = 0,
+  lastPracticed = null,
+  questionsSolved = 0,
+  historySummary = null,
+}) {
   // Knowledge, Retention, Confidence calculation
   const knowledgePercent = Math.min(100, Math.round(chapterMastery * 100));
   const retentionPercent = Math.min(100, Math.round((examMastery * 0.6 + chapterMastery * 0.4) * 100));
   const confidencePercent = Math.min(100, Math.round(examMastery * 100));
 
-  const questionsSolved = historySummary?.total_attempts ? historySummary.total_attempts * 5 : 42;
-  const timeStudied = historySummary?.total_attempts ? (historySummary.total_attempts * 0.4).toFixed(1) : "2.4";
+  const totalQuestionsDisplay = historySummary?.total_attempts
+    ? historySummary.total_attempts * 5
+    : questionsSolved || 0;
+
+  const timeStudiedDisplay = historySummary?.total_attempts
+    ? (historySummary.total_attempts * 0.4).toFixed(1)
+    : "0.0";
+
+  const formattedLastPracticed = lastPracticed
+    ? new Date(lastPracticed).toLocaleDateString([], { month: "short", day: "numeric" })
+    : "Not practiced yet";
 
   return (
     <div className="space-y-6">
@@ -56,20 +71,20 @@ export default function ConceptProgressSection({ examMastery = 0, chapterMastery
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 text-center space-y-1">
           <Clock size={16} className="mx-auto text-amber-400" />
-          <span className="text-xs sm:text-sm font-extrabold text-white block">Yesterday</span>
-          <span className="text-[10px] text-gray-400 uppercase font-semibold block">Last Practiced</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block truncate">{formattedLastPracticed}</span>
+          <span className="text-[9px] text-gray-400 uppercase font-semibold block">Last Practiced</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 text-center space-y-1">
           <CheckCircle2 size={16} className="mx-auto text-emerald-400" />
-          <span className="text-xs sm:text-sm font-extrabold text-white block">{questionsSolved}</span>
-          <span className="text-[10px] text-gray-400 uppercase font-semibold block">Questions Solved</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block">{totalQuestionsDisplay}</span>
+          <span className="text-[9px] text-gray-400 uppercase font-semibold block">Questions Solved</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 text-center space-y-1">
           <Award size={16} className="mx-auto text-blue-400" />
-          <span className="text-xs sm:text-sm font-extrabold text-white block">{timeStudied} Hours</span>
-          <span className="text-[10px] text-gray-400 uppercase font-semibold block">Time Studied</span>
+          <span className="text-xs sm:text-sm font-extrabold text-white block">{timeStudiedDisplay} Hours</span>
+          <span className="text-[9px] text-gray-400 uppercase font-semibold block">Time Studied</span>
         </div>
       </div>
     </div>

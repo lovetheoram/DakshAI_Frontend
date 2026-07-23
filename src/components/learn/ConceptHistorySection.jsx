@@ -1,7 +1,7 @@
 // src/components/learn/ConceptHistorySection.jsx
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { History, ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock, Award, Loader2 } from "lucide-react";
+import { History, ChevronDown, ChevronUp, CheckCircle2, XCircle, Clock, Loader2 } from "lucide-react";
 import GlassCard from "../ui/GlassCard";
 
 export default function ConceptHistorySection({ historyRecords = [], summary = null, loading = false, onLoadHistory }) {
@@ -20,7 +20,7 @@ export default function ConceptHistorySection({ historyRecords = [], summary = n
             <History size={18} className="text-emerald-400" />
             Quiz Sessions & History
           </h3>
-          <p className="text-xs text-gray-400">Lazy-loaded records of past practice sessions</p>
+          <p className="text-xs text-gray-400">Records of past practice sessions</p>
         </div>
 
         {!historyRecords.length && !loading && (
@@ -40,26 +40,22 @@ export default function ConceptHistorySection({ historyRecords = [], summary = n
         </div>
       ) : historyRecords.length === 0 ? (
         <GlassCard padding="p-8" className="text-center space-y-3">
-          <p className="text-sm font-semibold text-gray-300">No quiz history loaded yet.</p>
+          <p className="text-sm font-semibold text-gray-300">No quiz history recorded for this concept yet.</p>
           <button
             onClick={onLoadHistory}
             className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-lg"
           >
-            Fetch Past Quiz Sessions
+            Fetch Recorded Sessions
           </button>
         </GlassCard>
       ) : (
         <div className="space-y-3">
           {historyRecords.map((item, idx) => {
             const isExpanded = expandedSessionId === (item.session_id || idx);
-            const scoreDisplay = `${item.score ?? item.correct_count ?? 4}/${item.total_questions ?? 5}`;
+            const scoreDisplay = `${item.score ?? item.correct_count ?? 0}/${item.total_questions ?? 5}`;
             const timeAgo = item.created_at
-              ? new Date(item.created_at).toLocaleDateString([], { month: "short", day: "numeric" })
-              : idx === 0
-              ? "Yesterday, 7:30 PM"
-              : idx === 1
-              ? "Monday, 6:15 PM"
-              : "Sunday, 8:00 PM";
+              ? new Date(item.created_at).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+              : `Session #${idx + 1}`;
 
             return (
               <div
@@ -78,7 +74,7 @@ export default function ConceptHistorySection({ historyRecords = [], summary = n
                     <div>
                       <h4 className="text-sm font-bold text-white">{timeAgo}</h4>
                       <span className="text-xs text-gray-400">
-                        Accuracy: {Math.round(((item.score ?? 4) / (item.total_questions ?? 5)) * 100)}%
+                        Accuracy: {Math.round(((item.score ?? 0) / (item.total_questions || 5)) * 100)}%
                       </span>
                     </div>
                   </div>
@@ -133,7 +129,7 @@ export default function ConceptHistorySection({ historyRecords = [], summary = n
                         </div>
                       ) : (
                         <p className="text-xs text-gray-400">
-                          Questions solved cleanly with 80%+ accuracy. Key focus: formula applications.
+                          Recorded session summary: {scoreDisplay} questions answered.
                         </p>
                       )}
                     </motion.div>

@@ -4,12 +4,19 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
+import { EmotionEngineProvider } from './context/EmotionEngineContext'
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+      <ThemeProvider>
+        <EmotionEngineProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </EmotionEngineProvider>
+      </ThemeProvider>
     </AuthProvider>
   </React.StrictMode>,
 )

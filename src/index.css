@@ -9,23 +9,23 @@
    ============================================ */
 
 :root {
-  /* ---- Colors ---- */
-  --color-bg-primary:    #030712;   /* gray-950 */
-  --color-bg-secondary:  #0f172a;   /* slate-900 */
+  /* ---- Default Classic Focus ---- */
+  --color-bg-primary:    #030712;
+  --color-bg-secondary:  #0f172a;
   --color-bg-card:       rgba(15, 23, 42, 0.6);
   --color-bg-card-hover: rgba(15, 23, 42, 0.8);
 
-  --color-border:        rgba(255, 255, 255, 0.06);
-  --color-border-hover:  rgba(255, 255, 255, 0.12);
-  --color-border-active: rgba(168, 85, 247, 0.4);
+  --color-border:        rgba(255, 255, 255, 0.08);
+  --color-border-hover:  rgba(255, 255, 255, 0.16);
+  --color-border-active: rgba(59, 130, 246, 0.5);
 
   --color-text-primary:   #f8fafc;
   --color-text-secondary: #94a3b8;
   --color-text-muted:     #475569;
 
-  --color-accent:         #a855f7;  /* purple-500 */
-  --color-accent-light:   #c084fc;  /* purple-400 */
-  --color-accent-dark:    #7c3aed;  /* violet-600 */
+  --color-accent:         #3b82f6;
+  --color-accent-light:   #60a5fa;
+  --color-accent-dark:    #1d4ed8;
 
   --color-success:        #22c55e;
   --color-warning:        #f59e0b;
@@ -44,9 +44,9 @@
   --radius-pill: 9999px;
 
   /* ---- Shadows ---- */
-  --shadow-glow-sm:  0 0 20px rgba(168, 85, 247, 0.1);
-  --shadow-glow-md:  0 0 40px rgba(168, 85, 247, 0.15);
-  --shadow-glow-lg:  0 0 60px rgba(168, 85, 247, 0.2);
+  --shadow-glow-sm:  0 0 20px rgba(59, 130, 246, 0.15);
+  --shadow-glow-md:  0 0 40px rgba(59, 130, 246, 0.25);
+  --shadow-glow-lg:  0 0 60px rgba(59, 130, 246, 0.35);
   --shadow-card:     0 4px 24px rgba(0, 0, 0, 0.4);
 
   /* ---- Animation ---- */
@@ -54,6 +54,78 @@
   --duration-fast:   150ms;
   --duration-normal: 250ms;
   --duration-slow:   400ms;
+}
+
+/* Theme 1: Classic Focus */
+[data-theme="classic"] {
+  --color-bg-primary: #030712;
+  --color-bg-secondary: #0f172a;
+  --color-bg-card: rgba(15, 23, 42, 0.7);
+  --color-accent: #3b82f6;
+  --color-accent-light: #60a5fa;
+  --color-accent-dark: #1d4ed8;
+  --color-border-active: rgba(59, 130, 246, 0.5);
+  --shadow-glow-md: 0 0 40px rgba(59, 130, 246, 0.3);
+}
+
+/* Theme 2: Galaxy Explorer */
+[data-theme="galaxy"] {
+  --color-bg-primary: #0a081d;
+  --color-bg-secondary: #130f30;
+  --color-bg-card: rgba(19, 15, 48, 0.7);
+  --color-accent: #8b5cf6;
+  --color-accent-light: #a78bfa;
+  --color-accent-dark: #6d28d9;
+  --color-border-active: rgba(139, 92, 246, 0.5);
+  --shadow-glow-md: 0 0 40px rgba(139, 92, 246, 0.35);
+}
+
+/* Theme 3: Focused Forest */
+[data-theme="forest"] {
+  --color-bg-primary: #051911;
+  --color-bg-secondary: #0d2e22;
+  --color-bg-card: rgba(13, 46, 34, 0.7);
+  --color-accent: #10b981;
+  --color-accent-light: #34d399;
+  --color-accent-dark: #047857;
+  --color-border-active: rgba(16, 185, 129, 0.5);
+  --shadow-glow-md: 0 0 40px rgba(16, 185, 129, 0.3);
+}
+
+/* Theme 4: Morning Sunrise */
+[data-theme="sunrise"] {
+  --color-bg-primary: #170d08;
+  --color-bg-secondary: #27160d;
+  --color-bg-card: rgba(39, 22, 13, 0.7);
+  --color-accent: #f97316;
+  --color-accent-light: #fb923c;
+  --color-accent-dark: #c2410c;
+  --color-border-active: rgba(249, 115, 22, 0.5);
+  --shadow-glow-md: 0 0 40px rgba(249, 115, 22, 0.3);
+}
+
+/* Theme 5: Candy Studio */
+[data-theme="candy"] {
+  --color-bg-primary: #15091b;
+  --color-bg-secondary: #240e2e;
+  --color-bg-card: rgba(36, 14, 46, 0.7);
+  --color-accent: #ec4899;
+  --color-accent-light: #f472b6;
+  --color-accent-dark: #be185d;
+  --color-border-active: rgba(236, 72, 153, 0.5);
+  --shadow-glow-md: 0 0 40px rgba(236, 72, 153, 0.35);
+}
+
+/* Theme 6: Midnight Focus */
+[data-theme="midnight"] {
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #09090b;
+  --color-bg-card: rgba(9, 9, 11, 0.9);
+  --color-accent: #94a3b8;
+  --color-accent-light: #cbd5e1;
+  --color-accent-dark: #475569;
+  --color-border-active: rgba(148, 163, 184, 0.4);
+  --shadow-glow-md: 0 0 20px rgba(148, 163, 184, 0.2);
 }
 
 /* ============================================
@@ -100,22 +172,51 @@ body {
    ============================================ */
 
 .glass {
-  background: var(--color-bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--color-border);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-xl);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .glass-hover:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border-hover);
-  box-shadow: var(--shadow-glow-sm);
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .glass-active {
   border-color: var(--color-border-active);
-  box-shadow: var(--shadow-glow-md);
+  box-shadow: var(--shadow-glow-md), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Premium stat number style */
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Colored bar progress */
+.bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ============================================

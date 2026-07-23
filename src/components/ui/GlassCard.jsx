@@ -1,4 +1,7 @@
+// GlassCard.jsx — premium card foundation with experience token support
+import React from "react";
 import { motion } from "framer-motion";
+import { useExperience } from "../../context/ThemeContext";
 
 export default function GlassCard({
   children,
@@ -6,28 +9,63 @@ export default function GlassCard({
   hover = false,
   glow = false,
   onClick,
-  padding = "p-6",
+  padding = "p-5",
+  accent = false, // new: add colored top border strip
+  accentColor = "purple",
   ...props
 }) {
+  const { experienceTokens } = useExperience();
   const Component = onClick || hover ? motion.div : "div";
-  const motionProps = onClick || hover
-    ? { whileHover: { y: -2, scale: 1.01 }, whileTap: onClick ? { scale: 0.99 } : {} }
-    : {};
+  const hoverScale = experienceTokens?.motion?.hoverScale || 1.015;
+
+  const motionProps =
+    onClick || hover
+      ? {
+          whileHover: { y: -2, scale: hoverScale },
+          whileTap: onClick ? { scale: 0.99 } : {},
+        }
+      : {};
+
+  const accentColors = {
+    purple: "from-purple-500 via-violet-500 to-indigo-500",
+    emerald: "from-emerald-500 via-teal-500 to-cyan-500",
+    amber: "from-amber-500 via-orange-500 to-yellow-500",
+    rose: "from-rose-500 via-pink-500 to-fuchsia-500",
+    blue: "from-blue-500 via-sky-500 to-cyan-500",
+  };
 
   return (
     <Component
       className={`
-        glass
-        ${hover ? "glass-hover cursor-pointer" : ""}
-        ${glow ? "glass-active" : ""}
-        ${padding}
+        relative
+        rounded-2xl
+        border border-white/[0.07]
+        bg-slate-900/60
+        backdrop-blur-xl
+        shadow-xl shadow-black/30
+        ${hover || onClick ? "hover:border-white/[0.14] hover:bg-slate-900/80 cursor-pointer" : ""}
+        ${glow ? "ring-1 ring-purple-500/20 shadow-purple-500/10" : ""}
         transition-all duration-300
+        overflow-hidden
+        ${padding}
         ${className}
       `}
       onClick={onClick}
       {...motionProps}
       {...props}
     >
+      {/* Subtle inner top-edge highlight */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+
+      {/* Optional colored accent top strip */}
+      {accent && (
+        <div
+          className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${
+            accentColors[accentColor] || accentColors.purple
+          } pointer-events-none`}
+        />
+      )}
+
       {children}
     </Component>
   );

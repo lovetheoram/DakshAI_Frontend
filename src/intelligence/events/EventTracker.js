@@ -1,17 +1,44 @@
 // src/intelligence/events/EventTracker.js
 // Universal behavioral event logger — fire-and-forget, never blocks UI.
+// Also provides a local pub/sub channel so ObserverEngine can react to events
+// without polling. Subscribers receive (eventType, metadata) synchronously.
 
 import axiosClient from "../../api/axiosClient";
 
+// ── Local pub/sub ──────────────────────────────────────────────────────────
+const _listeners = [];
+
 const EventTracker = {
   /**
+   * Subscribe to all behavior events fired locally.
+   * Used exclusively by ObserverEngine to trigger OIDPI evaluation.
+   * Returns an unsubscribe function.
+   */
+  subscribe(fn) {
+    _listeners.push(fn);
+    return () => {
+      const idx = _listeners.indexOf(fn);
+      if (idx !== -1) _listeners.splice(idx, 1);
+    };
+  },
+
+  /** Internal — notify all local subscribers. Never throws. */
+  _notify(eventType, metadata) {
+    _listeners.forEach((fn) => {
+      try { fn(eventType, metadata); } catch (_) {}
+    });
+  },
+
+  /**
    * Core log method. Sends event to backend asynchronously.
+   * Also notifies local subscribers synchronously (ObserverEngine).
    * Silently fails — behavioral tracking must never break the app.
    */
   log(eventType, metadata = {}) {
     axiosClient
       .post("/api/behavior/event/", { event_type: eventType, metadata })
       .catch(() => {}); // Always swallow errors
+    this._notify(eventType, metadata); // Local notification — synchronous, no network
   },
 
   // ── Learning ────────────────────────────────────────────────────────────
@@ -70,3 +97,4 @@ const EventTracker = {
 };
 
 export default EventTracker;
+

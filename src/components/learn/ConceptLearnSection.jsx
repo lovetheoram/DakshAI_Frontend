@@ -87,6 +87,35 @@ export default function ConceptLearnSection({
   const dbRules = aiMeta.layer_2_rule_based_logics || rules || [];
   const dbConsequences = aiMeta.layer_3_derived_consequences || consequences || [];
 
+  // Scroll observer — tells Daksh about each module as it enters the viewport
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const moduleId = entry.target.id;
+            if (moduleId) {
+              window.dispatchEvent(
+                new CustomEvent("daksh:module_view", {
+                  detail: { moduleId },
+                  bubbles: true,
+                })
+              );
+            }
+          }
+        });
+      },
+      { threshold: 0.4 }
+    );
+
+    ["module-formulas", "module-rules", "module-consequences"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* 1. TOP HERO: Description Card */}
@@ -107,9 +136,10 @@ export default function ConceptLearnSection({
         </p>
       </div>
 
-      {/* 2. THREE SECTION SLIDERS / CAROUSELS */}
-      <div className="space-y-6">
+      {/* 2. THREE SECTION SLIDERS / CAROUSELS WITH ACTIVE RECALL CHIPS */}
+      <div id="active-recall-notes-dashboard" className="space-y-6 scroll-mt-6">
         {/* SLIDER 1: Part 1 — Hard Formulas */}
+        <div id="module-formulas">
         <LearnSectionCarousel
           title="Part 1 — Hard Formulas"
           icon={Layers}
@@ -131,11 +161,36 @@ export default function ConceptLearnSection({
                   <strong>Used for:</strong> {formula.used_for}
                 </p>
               )}
+
+              {/* Active Recall Self-Assessment Chips */}
+              <div className="pt-2 border-t border-white/10 mt-2 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-medium">Recall Check:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => EventTracker.conceptStarted(formula.id || idx, "Formula Recall", "Active Recall")}
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all cursor-pointer"
+                  >
+                    ✓ I know
+                  </button>
+                  <button
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-all cursor-pointer"
+                  >
+                    ? Not sure
+                  </button>
+                  <button
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all cursor-pointer"
+                  >
+                    ✗ Review
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         />
+        </div>
 
         {/* SLIDER 2: Part 2 — Rule-Based Logics */}
+        <div id="module-rules">
         <LearnSectionCarousel
           title="Part 2 — Rule-Based Logics"
           icon={CheckCircle2}
@@ -157,11 +212,35 @@ export default function ConceptLearnSection({
                   <strong>Applied when:</strong> {rule.applied_when}
                 </p>
               )}
+
+              {/* Active Recall Self-Assessment Chips */}
+              <div className="pt-2 border-t border-white/10 mt-2 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-medium">Recall Check:</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all cursor-pointer"
+                  >
+                    ✓ I know
+                  </button>
+                  <button
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-all cursor-pointer"
+                  >
+                    ? Not sure
+                  </button>
+                  <button
+                    className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-all cursor-pointer"
+                  >
+                    ✗ Review
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         />
+        </div>
 
         {/* SLIDER 3: Part 3 — Derived Consequences */}
+        <div id="module-consequences">
         <LearnSectionCarousel
           title="Part 3 — Derived Consequences & Traps"
           icon={Lightbulb}
@@ -186,6 +265,7 @@ export default function ConceptLearnSection({
             </div>
           )}
         />
+        </div>
       </div>
 
       {/* Start Practice CTA */}

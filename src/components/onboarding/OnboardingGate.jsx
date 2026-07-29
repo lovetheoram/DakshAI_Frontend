@@ -30,10 +30,11 @@ export default function OnboardingGate({ dashboard, exams, onComplete, children 
   const { user } = useContext(AuthContext);
   const [forceDone, setForceDone] = useState(false);
 
+  // User needs onboarding if logged in, dashboard has loaded, user has no goal set, and hasn't skipped in this session
   const needsOnboarding =
     user &&
+    dashboard !== null &&
     !dashboard?.goal &&
-    !hasCompletedOnboarding() &&
     !forceDone;
 
   if (needsOnboarding) {

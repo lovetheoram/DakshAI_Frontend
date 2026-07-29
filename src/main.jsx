@@ -10,16 +10,16 @@ import { MindModelProvider } from './context/MindModelContext'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <ThemeProvider>
-        <EmotionEngineProvider>
-          <MindModelProvider>
-            <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider>
+          <EmotionEngineProvider>
+            <MindModelProvider>
               <App />
-            </BrowserRouter>
-          </MindModelProvider>
-        </EmotionEngineProvider>
-      </ThemeProvider>
-    </AuthProvider>
+            </MindModelProvider>
+          </EmotionEngineProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>,
 )

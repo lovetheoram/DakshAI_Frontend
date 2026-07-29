@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import progressApi from "../api/progressApi";
 import syllabusApi from "../api/syllabusApi";
+import EventTracker from "../intelligence/events/EventTracker";
 import GlassCard from "../components/ui/GlassCard";
 import ProgressBar from "../components/ui/ProgressBar";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -107,14 +108,15 @@ export default function GrowthPage() {
 
     try {
       setSubmittingGoal(true);
-      await progressApi.createGoal({
-        title: setupGoalName,
-        exam_id: setupExamId ? parseInt(setupExamId) : undefined,
+      await progressApi.setGoal({
+        goal_name: setupGoalName,
+        exam: setupExamId ? parseInt(setupExamId) : undefined,
         target_date: setupTargetDate,
         available_hours_per_day: setupHours,
       });
 
       setIsEditingGoal(false);
+      EventTracker.goalSet(setupGoalName);
       await loadAllData();
     } catch (err) {
       console.error("Create goal error:", err);
@@ -135,6 +137,7 @@ export default function GrowthPage() {
         mood: mood
       });
       setTelemetryMessage("Daily check-in logged! ✨");
+      EventTracker.energyReported(energy, focus, mood);
       await loadAllData();
       setTimeout(() => setTelemetryMessage(""), 3000);
     } catch (err) {

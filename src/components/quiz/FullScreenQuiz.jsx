@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import quizApi from "../../api/quizApi";
 import socialApi from "../../api/socialApi";
+import { useMindModel } from "../../context/MindModelContext";
 import { ArrowLeft, RefreshCw, Sparkles, Flame, CheckCircle2, Award, Zap, ArrowRight } from "lucide-react";
 
 const OPTIONS = ["A", "B", "C", "D"];
@@ -14,6 +15,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
 
   const conceptId = propConceptId || routeConceptId;
   const onClose = propOnClose || (() => navigate(`/learn/${conceptId}`));
+  const { refreshCatalyst } = useMindModel();
 
   const [session, setSession] = useState(null);
   const [answers, setAnswers] = useState([]);
@@ -134,6 +136,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
       } else {
         setResult(res);
       }
+      refreshCatalyst();
     } catch (err) {
       console.error(err);
       setError("Failed to submit answers.");

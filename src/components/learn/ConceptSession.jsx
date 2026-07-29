@@ -7,6 +7,7 @@ import syllabusApi from "../../api/syllabusApi";
 import socialApi from "../../api/socialApi";
 import SkeletonLoader from "../ui/SkeletonLoader";
 import { getMasteryPercent } from "../../pages/LearnPage";
+import EventTracker from "../../intelligence/events/EventTracker";
 
 import ConceptHeaderHero from "./ConceptHeaderHero";
 import ConceptTabNav from "./ConceptTabNav";
@@ -86,7 +87,7 @@ export default function ConceptSession({ conceptId }) {
 
         const masteryArray = progressData?.mastery || targetConcept?.mastery || [examReadiness, chapterUnderstanding];
 
-        setConcept({
+        const conceptObj = {
           name: targetConcept.name || "Concept",
           chapter_name: targetConcept.subtopic_name || targetConcept.topic_name || targetConcept.subject_name || "Syllabus Topic",
           exam_readiness: examReadiness,
@@ -95,7 +96,10 @@ export default function ConceptSession({ conceptId }) {
           last_practiced: progressData?.last_practiced || targetConcept?.last_practiced || null,
           total_questions_solved: progressData?.total_questions_solved || 0,
           description: desc || `${targetConcept.name} is a key concept under ${targetConcept.subtopic_name || "this topic"}.`,
-        });
+        };
+        setConcept(conceptObj);
+        EventTracker.conceptStarted(conceptId, conceptObj.name, conceptObj.chapter_name);
+
       } else {
         setConcept({
           name: "Concept Space",

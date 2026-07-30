@@ -1,7 +1,91 @@
-// src/components/learn/ConceptNotesModal.jsx
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileText, Layers, BookOpen, Lightbulb, CheckCircle2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { X, FileText, Layers, BookOpen, Lightbulb, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, HelpCircle, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import CuriosityEngine from "../../intelligence/curiosity/CuriosityEngine";
+
+// Interactive Active Recall widget inside Notes modal
+function CuriosityQuickCheck({ formulas = [], conceptName, onCloseModal }) {
+  const navigate = useNavigate();
+  const [selectedMap, setSelectedMap] = useState({});
+  const [evaluated, setEvaluated] = useState(null);
+
+  const toggleCheck = (idx) => {
+    setSelectedMap((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const handleEvaluate = () => {
+    const res = CuriosityEngine.evaluateRecall(formulas, selectedMap);
+    setEvaluated(res);
+  };
+
+  const handleAction = () => {
+    if (onCloseModal) onCloseModal();
+    if (evaluated?.recommendation === "TAKE_QUIZ_DIRECT") {
+      navigate(`/practice?concept=${encodeURIComponent(conceptName)}`);
+    } else {
+      // scroll notes into view
+    }
+  };
+
+  return (
+    <div className="p-4 rounded-xl bg-slate-900/80 border border-purple-500/20 space-y-3">
+      <div className="text-xs font-bold text-purple-200">
+        Without looking at the details — check which formulas you already know:
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {formulas.slice(0, 4).map((f, idx) => {
+          const formulaStr = typeof f === "string" ? f : f.formula || f.equation || `Formula #${idx + 1}`;
+          const isChecked = !!selectedMap[idx];
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => toggleCheck(idx)}
+              className={`flex items-center gap-2 p-2.5 rounded-lg text-xs text-left transition-all border ${
+                isChecked
+                  ? "bg-purple-600/30 border-purple-400 text-purple-100 font-bold"
+                  : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+              }`}
+            >
+              <div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? "bg-purple-500 border-purple-300 text-white" : "border-gray-500"}`}>
+                {isChecked && <CheckCircle2 size={12} />}
+              </div>
+              <span className="truncate font-mono">{formulaStr}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {!evaluated ? (
+        <button
+          onClick={handleEvaluate}
+          className="w-full py-2 px-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+        >
+          <span>See How Good You Are 🙂</span>
+          <ArrowRight size={14} />
+        </button>
+      ) : (
+        <div className="p-3 rounded-lg bg-purple-950/60 border border-purple-400/30 space-y-2">
+          <p className="text-xs font-semibold text-purple-200">{evaluated.message}</p>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[11px] text-gray-400">Score: {evaluated.knownCount}/{evaluated.totalCount} recalled</span>
+            {evaluated.recommendation === "TAKE_QUIZ_DIRECT" && (
+              <button
+                onClick={handleAction}
+                className="px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-xs font-extrabold transition-all"
+              >
+                Take Challenge Quiz ⚡
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // Reusable Horizontal Slider / Carousel for each section
 function HorizontalSectionSlider({ title, icon: Icon, badge, accentColor, items = [], renderItem }) {
@@ -126,15 +210,31 @@ export default function ConceptNotesModal({
           {/* Content Body */}
           <div className="p-6 overflow-y-auto flex-1 space-y-6">
             
-            {/* 1. TOP HERO: Concept Description */}
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-indigo-950/40 to-slate-900 border border-purple-500/30 shadow-xl space-y-2">
-              <div className="flex items-center gap-2 text-purple-300 font-extrabold text-xs uppercase tracking-wider">
-                <BookOpen size={16} className="text-purple-400" />
-                <span>Concept Overview & Description</span>
+            {/* 1. TOP HERO: Curiosity Spark & Active Recall Banner */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-indigo-950/40 to-slate-900 border border-purple-500/30 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-purple-300 font-extrabold text-xs uppercase tracking-wider">
+                  <Sparkles size={16} className="text-purple-400 animate-pulse" />
+                  <span>Curiosity & Active Recall Challenge</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Retrieval Practice
+                </span>
               </div>
+
+              {/* Curiosity Question */}
               <p className="text-xs sm:text-sm text-gray-100 font-medium leading-relaxed">
-                {description || `${conceptName} represents a key concept under ${chapterName}. Refer to slider cards below for detailed formulas, rules, and applications.`}
+                {description || `${conceptName} represents a key concept under ${chapterName}. Before scrolling through the notes, test your memory!`}
               </p>
+
+              {/* Formula Quick Check Widget if formulas exist */}
+              {dbFormulas.length > 0 && (
+                <CuriosityQuickCheck
+                  formulas={dbFormulas}
+                  conceptName={conceptName}
+                  onCloseModal={onClose}
+                />
+              )}
             </div>
 
             {/* 2. SECTION 1 CAROUSEL: Part 1 — Hard Formulas */}

@@ -1,8 +1,55 @@
 // src/intelligence/catalyst/messages.js
 // Local fallback Catalyst messages — used when API is unavailable or on cold start.
-// Mirrors the seed data in seed_catalyst_messages.py.
 
 export const LOCAL_CATALYST_MESSAGES = {
+  CURIOSITY_PROMPT: {
+    title: "Before we begin.",
+    body: "Can I ask you something before we start? Without looking — how many of these formulas do you think you already know?",
+    cta_text: "Let me check",
+    cta_action: "curiosity:notes",
+  },
+  DIRECT_CHALLENGE: {
+    title: "Ready to prove your mastery?",
+    body: "Five questions ahead. Don't worry about the score — I'm watching how you think under pressure.",
+    cta_text: "Start Challenge",
+    cta_action: "navigate:/learn",
+  },
+  ENCOURAGEMENT: {
+    title: "One step at a time.",
+    body: "This concept used to feel difficult. Focus on understanding one core idea first — you don't need to conquer all of it today.",
+    cta_text: "Focus on Foundation",
+    cta_action: "navigate:/learn",
+  },
+  CELEBRATION: {
+    title: "Breakthrough achieved!",
+    body: "You just conquered this concept! Your knowledge universe has expanded. Every step builds true independence.",
+    cta_text: "Keep Momentum",
+    cta_action: "navigate:/learn",
+  },
+  FOCUSED_EXPLAIN: {
+    title: "I noticed something.",
+    body: "Your brain isn't weak here — one foundation piece is missing. When we repair it, everything else will click.",
+    cta_text: "Repair Foundation",
+    cta_action: "navigate:/learn",
+  },
+  REFLECTION_PROMPT: {
+    title: "Active Recall Coach.",
+    body: "Can you derive these formulas from memory, or explain this idea in your own words without looking?",
+    cta_text: "Try Recalling",
+    cta_action: "curiosity:notes",
+  },
+  PREDICTION_NARRATIVE: {
+    title: "Welcome to your Study Universe.",
+    body: "Pick a subject or concept below to start building your foundation. Where would you like to begin today?",
+    cta_text: "Explore Syllabus",
+    cta_action: "navigate:/learn",
+  },
+  IDENTITY_ARRIVAL: {
+    title: "Daily Focus Ritual.",
+    body: "How is your fuel and focus today? Logging your energy helps me tune your daily study load to match your state.",
+    cta_text: "Log Today's Energy",
+    cta_action: "navigate:/growth",
+  },
   FIRST_LOGIN: {
     title: "Transmission received.",
     body: "Hello, explorer. I am Daksh. I have been waiting for someone who wants to upgrade their mind. Your journey starts now — and I will be with you for all of it.",
@@ -33,34 +80,10 @@ export const LOCAL_CATALYST_MESSAGES = {
     cta_text: "Keep Going",
     cta_action: "navigate:/learn",
   },
-  AT_RISK: {
-    title: "Transmission incoming.",
-    body: "Your universe has been quiet. I am detecting signal loss. Even 10 minutes today restores the connection and protects what you have already built.",
-    cta_text: "Restore Signal",
-    cta_action: "navigate:/learn",
-  },
   LOW_ENERGY: {
     title: "Energy scan complete.",
     body: "I detect low fuel today. Choose one small concept — not ten. One deep understanding built on low energy is worth more than ten shallow attempts.",
     cta_text: "One Concept Today",
-    cta_action: "navigate:/learn",
-  },
-  THRIVING: {
-    title: "Outstanding signal.",
-    body: "Your knowledge field is expanding rapidly. You are operating at one of the highest levels I have observed. Keep this pace.",
-    cta_text: "Push Further",
-    cta_action: "navigate:/learn",
-  },
-  DAILY_TARGET_HIT: {
-    title: "Mission complete.",
-    body: "Today's target reached. Everything beyond this point is bonus momentum. Most learners stop here. You do not have to.",
-    cta_text: "Go Beyond",
-    cta_action: "navigate:/learn",
-  },
-  GOAL_SET: {
-    title: "Mission coordinates locked.",
-    body: "Your target has been set. I have computed your path. The journey ahead is real — and every day you study brings it closer. Let's begin.",
-    cta_text: "Start First Session",
     cta_action: "navigate:/learn",
   },
   GENERIC_INSIGHT: {

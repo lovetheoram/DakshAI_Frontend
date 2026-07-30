@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import progressApi from "../api/progressApi";
 import syllabusApi from "../api/syllabusApi";
 import EventTracker from "../intelligence/events/EventTracker";
+import PredictionEngine from "../intelligence/prediction/PredictionEngine";
+import IdentityEngine from "../intelligence/identity/IdentityEngine";
 import GlassCard from "../components/ui/GlassCard";
 import ProgressBar from "../components/ui/ProgressBar";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -217,13 +219,49 @@ export default function GrowthPage() {
         )}
       </div>
 
-      {/* ② Exam Readiness Summary */}
+      {/* ② Predictive Growth Story & Exam Readiness Summary */}
       {goal && !isEditingGoal && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
+          className="space-y-4"
         >
+          {/* Daksh Predictive Story Card */}
+          {(() => {
+            const narrative = PredictionEngine.narrate(
+              {
+                targetDate: targetDateStr,
+                predictedFinishDate: predictedDateStr,
+                daysDelta,
+                dailyMinutes: Math.round((goal.available_hours_per_day || 2) * 60),
+                status: statusType,
+              },
+              "companion"
+            );
+            return (
+              <GlassCard className="border border-purple-500/30 bg-gradient-to-r from-slate-900 via-purple-950/20 to-slate-900">
+                <div className="flex items-center gap-2 mb-2 text-purple-400 font-bold text-xs uppercase tracking-wider">
+                  <Sparkles size={14} className="text-purple-400 animate-pulse" />
+                  <span>Daksh Predictive Story</span>
+                </div>
+                <h3 className="text-sm font-extrabold text-white mb-1">{narrative.headline}</h3>
+                <p className="text-xs text-gray-300 leading-relaxed mb-3">{narrative.body}</p>
+                <button
+                  onClick={() => {
+                    if (narrative.ctaAction.startsWith("growth:adjust")) {
+                      setSetupHours((prev) => Math.min(12, prev + 0.5));
+                      setIsEditingGoal(true);
+                    }
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-xs font-bold transition shadow-sm"
+                >
+                  {narrative.ctaText}
+                </button>
+              </GlassCard>
+            );
+          })()}
+
           <GlassCard className="relative overflow-hidden">
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
             <div className="relative">
@@ -394,13 +432,13 @@ export default function GrowthPage() {
         </GlassCard>
       )}
 
-      {/* ④ Daily Check-in & Post Progress Card */}
+      {/* ④ Daily Check-in & Single-Tap Emoji Arrival Ritual Card */}
       {goal && !isEditingGoal && (
         <GlassCard padding="p-5" className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Smile className="text-purple-400" size={18} />
-              <h3 className="text-sm font-bold text-white">Daily Check-in & Post Progress</h3>
+              <h3 className="text-sm font-bold text-white">Daily Arrival & Energy Ritual</h3>
             </div>
             <button
               onClick={() => setShowTelemetryForm(!showTelemetryForm)}
@@ -418,51 +456,84 @@ export default function GrowthPage() {
                 exit={{ height: 0 }}
                 className="overflow-hidden space-y-4 pt-2 border-t border-white/[0.04]"
               >
+                {/* Single-Tap Emoji Ritual */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-extrabold text-purple-300 uppercase tracking-wider block">
+                    How are you arriving today?
+                  </span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {IdentityEngine.getOptions().map((opt) => {
+                      const selected = mood === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setMood(opt.key);
+                            setEnergy(opt.prefillEnergy);
+                            setFocus(opt.prefillFocus);
+                          }}
+                          className={`p-3 rounded-2xl flex flex-col items-center gap-1 border transition-all ${
+                            selected
+                              ? "bg-purple-600/30 border-purple-400 text-white scale-105 shadow-lg"
+                              : "bg-white/[0.03] border-white/10 text-gray-400 hover:bg-white/[0.07]"
+                          }`}
+                        >
+                          <span className="text-2xl">{opt.emoji}</span>
+                          <span className="text-[10px] font-bold">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Daksh State Naming Banner */}
+                  {(() => {
+                    const moodDetails = IdentityEngine.getMoodDetails(mood);
+                    return (
+                      <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/20 text-xs text-purple-200 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-purple-300">
+                          <Sparkles size={13} />
+                          <span>Daksh State: {moodDetails.dakshName}</span>
+                        </div>
+                        <p className="text-gray-300 leading-snug">{moodDetails.message}</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 <form onSubmit={handleLogTelemetry} className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      <span>Cognitive Energy</span>
-                      <span className="text-purple-400 font-extrabold">{energy}%</span>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                        <span>Energy</span>
+                        <span className="text-purple-400 font-extrabold">{energy}%</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="100" 
+                        step="5"
+                        value={energy}
+                        onChange={(e) => setEnergy(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                      />
                     </div>
-                    <input 
-                      type="range" 
-                      min="10" 
-                      max="100" 
-                      step="5"
-                      value={energy}
-                      onChange={(e) => setEnergy(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                    />
-                  </div>
 
-                  <div>
-                    <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                      <span>Focus Capability</span>
-                      <span className="text-purple-400 font-extrabold">{focus}%</span>
+                    <div>
+                      <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                        <span>Focus</span>
+                        <span className="text-purple-400 font-extrabold">{focus}%</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="10" 
+                        max="100" 
+                        step="5"
+                        value={focus}
+                        onChange={(e) => setFocus(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                      />
                     </div>
-                    <input 
-                      type="range" 
-                      min="10" 
-                      max="100" 
-                      step="5"
-                      value={focus}
-                      onChange={(e) => setFocus(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Mood State</label>
-                    <select
-                      value={mood}
-                      onChange={(e) => setMood(e.target.value)}
-                      className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 transition"
-                    >
-                      <option value="motivated" className="bg-slate-900">Motivated 🔥</option>
-                      <option value="focused" className="bg-slate-900">Focused 🎯</option>
-                      <option value="calm" className="bg-slate-900">Calm 🧘</option>
-                      <option value="tired" className="bg-slate-900">Tired 🥱</option>
-                    </select>
                   </div>
 
                   <div className="flex items-center gap-2 pt-1">
@@ -471,7 +542,7 @@ export default function GrowthPage() {
                       disabled={loggingTelemetry}
                       className="flex-1 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs font-bold transition disabled:opacity-50 border border-purple-500/30"
                     >
-                      {loggingTelemetry ? "Syncing..." : "Log Daily Check-in ✨"}
+                      {loggingTelemetry ? "Syncing..." : "Log Daily State ✨"}
                     </button>
 
                     <button

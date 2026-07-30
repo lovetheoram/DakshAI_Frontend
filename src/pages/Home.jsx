@@ -64,14 +64,14 @@ export default function Home() {
     fetchData();
   }, [user, isServerReady]);
 
-  // If backend server is asleep, show the wakeup progress component
-  if (!isServerReady) {
-    return <ServerStatusChecker onReady={() => setIsServerReady(true)} />;
-  }
-
-  // Logged-out users see the landing page
+  // Logged-out (unauthorized) users see the landing page immediately
   if (!user) {
     return <LandingPage />;
+  }
+
+  // If backend server is asleep, show the wakeup progress component for logged-in user
+  if (!isServerReady) {
+    return <ServerStatusChecker onReady={() => setIsServerReady(true)} />;
   }
 
   if (loading) {

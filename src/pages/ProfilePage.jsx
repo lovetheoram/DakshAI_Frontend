@@ -299,6 +299,58 @@ export default function ProfilePage() {
         </motion.div>
       )}
 
+      {/* Daksh Companion Guidance Pace Controller */}
+      <GlassCard padding="p-5" className="space-y-3 border-purple-500/30 bg-purple-950/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              <Brain size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>👽 Daksh Companion Guidance Pace</span>
+              </h3>
+              <p className="text-[11px] text-gray-400">Control how frequently Daksh proactively guides you across modules and pages.</p>
+            </div>
+          </div>
+          <span className="text-xs font-black text-purple-400 px-2.5 py-1 rounded-full bg-purple-500/20 border border-purple-500/30">
+            {localStorage.getItem("daksh_companion_pace") || "100"}% Pace
+          </span>
+        </div>
+
+        <div className="grid grid-cols-5 gap-1.5 pt-2">
+          {[
+            { val: 100, label: "100%", desc: "Max (Default)" },
+            { val: 75, label: "75%", desc: "Frequent" },
+            { val: 50, label: "50%", desc: "Balanced" },
+            { val: 25, label: "25%", desc: "Minimal" },
+            { val: 0, label: "0%", desc: "Silent (Orb)" },
+          ].map((item) => {
+            const currentPace = Number(localStorage.getItem("daksh_companion_pace") ?? "100");
+            const isActive = currentPace === item.val;
+            return (
+              <button
+                key={item.val}
+                onClick={() => {
+                  localStorage.setItem("daksh_companion_pace", item.val.toString());
+                  window.dispatchEvent(new CustomEvent("daksh:pace_change", { detail: { pace: item.val } }));
+                  // force re-render
+                  setActiveTab((prev) => prev);
+                }}
+                className={`py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center transition-all border cursor-pointer select-none ${
+                  isActive
+                    ? "bg-purple-600/40 border-purple-400 text-white shadow-lg shadow-purple-900/40 font-black"
+                    : "bg-slate-900/80 border-white/10 text-gray-400 hover:text-white hover:bg-white/5 font-semibold"
+                }`}
+              >
+                <span className="text-xs font-extrabold">{item.label}</span>
+                <span className="text-[9px] text-gray-400">{item.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+      </GlassCard>
+
       {/* Account Settings & Sign Out */}
       <div className="pt-2 space-y-2">
         <button

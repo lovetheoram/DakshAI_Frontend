@@ -34,6 +34,24 @@ export default function ConceptSession({ conceptId }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
+  // Listen for Daksh CTA custom events (e.g. Test My Memory -> switch to Revision Notes & Active Recall)
+  useEffect(() => {
+    const handleDakshCta = (e) => {
+      const action = e.detail?.action || "";
+      if (action.includes("notes") || action.includes("learn") || action.includes("curiosity")) {
+        setActiveTab("learn");
+        setTimeout(() => {
+          const el = document.getElementById("active-recall-notes-dashboard");
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 150);
+      }
+    };
+    window.addEventListener("daksh:cta", handleDakshCta);
+    return () => window.removeEventListener("daksh:cta", handleDakshCta);
+  }, []);
+
   const fetchConceptData = async () => {
     try {
       setLoading(true);

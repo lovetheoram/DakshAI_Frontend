@@ -5,6 +5,8 @@ import { AuthContext } from "../../context/AuthContext";
 import { useExperience } from "../../context/ThemeContext";
 import AmbientBackgroundEngine from "../ui/AmbientBackgroundEngine";
 import ThemeCustomizerModal from "../ui/ThemeCustomizerModal";
+import DakshPersona from "../intelligence/DakshPersona";
+
 import {
   Home,
   BookOpen,
@@ -46,6 +48,7 @@ export default function AppShell({ children }) {
     );
   }
 
+
   // Don't show nav for logged-out users (landing page handles its own nav)
   const showNav = !!user;
 
@@ -54,6 +57,9 @@ export default function AppShell({ children }) {
       {/* Ambient Background Particle Engine & Theme Customizer Modal */}
       <AmbientBackgroundEngine />
       <ThemeCustomizerModal />
+
+      {/* Behavioral Intelligence Layer — Daksh Persona (silent by default) */}
+      {user && <DakshPersona />}
 
       {/* ============= Desktop Top Bar ============= */}
       {showNav && (
@@ -89,8 +95,20 @@ export default function AppShell({ children }) {
             ))}
           </nav>
 
-          {/* Right section: Theme Selector + Notifications + Profile */}
+          {/* Right section: Daksh Alien Companion + Theme Selector + Notifications + Profile */}
           <div className="flex items-center gap-3">
+            {/* Daksh Alien Companion Trigger Button */}
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("daksh:summon", { bubbles: true }));
+              }}
+              className="px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 flex items-center gap-2 text-xs font-bold transition-all shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+              title="Talk to Daksh Alien Companion"
+            >
+              <span className="text-base animate-pulse">👽</span>
+              <span className="hidden sm:inline">Daksh</span>
+            </button>
+
             {/* Theme Environment Trigger Button */}
             <button
               onClick={openCustomizer}
@@ -185,6 +203,16 @@ export default function AppShell({ children }) {
 
           {/* Right actions */}
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("daksh:summon", { bubbles: true }));
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 flex items-center gap-1 text-xs font-bold cursor-pointer"
+              title="Talk to Daksh Alien Companion"
+            >
+              <span className="text-base">👽</span>
+            </button>
+
             <button
               onClick={openCustomizer}
               className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center gap-1 text-xs font-bold cursor-pointer"

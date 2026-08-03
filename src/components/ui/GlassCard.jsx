@@ -39,12 +39,13 @@ export default function GlassCard({
       className={`
         relative
         rounded-2xl
-        border border-white/[0.07]
-        bg-slate-900/60
+        border border-[var(--color-border)]
+        bg-[var(--color-surface)]
+        text-[var(--color-text-main)]
         backdrop-blur-xl
-        shadow-xl shadow-black/30
-        ${hover || onClick ? "hover:border-white/[0.14] hover:bg-slate-900/80 cursor-pointer" : ""}
-        ${glow ? "ring-1 ring-purple-500/20 shadow-purple-500/10" : ""}
+        shadow-xl shadow-black/5
+        ${hover || onClick ? "hover:border-[var(--color-border-active)] cursor-pointer" : ""}
+        ${glow ? "ring-1 ring-sky-500/20 shadow-sky-500/10" : ""}
         transition-all duration-300
         overflow-hidden
         ${padding}

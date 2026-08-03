@@ -5,6 +5,7 @@ import quizApi from "../../api/quizApi";
 import socialApi from "../../api/socialApi";
 import { useMindModel } from "../../context/MindModelContext";
 import { ArrowLeft, RefreshCw, Sparkles, Flame, CheckCircle2, Award, Zap, ArrowRight } from "lucide-react";
+import JourneyComplete from "../learn/JourneyComplete";
 
 const OPTIONS = ["A", "B", "C", "D"];
 const MAIN = "__main__";
@@ -164,64 +165,12 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     }
 
     return (
-      <div className="fixed inset-0 bg-slate-950 text-white flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-xl">
-        <div className="w-full max-w-xl bg-slate-900 border border-purple-500/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl flex flex-col max-h-[90vh]">
-          {/* Header & Streak Celebration */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold">
-              <Sparkles size={14} className="text-amber-400" />
-              {streakBadge}
-            </div>
-
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">{messageHeading}</h1>
-            <p className="text-xs text-emerald-400 font-bold">
-              You improved Accuracy by +{accuracyGain}% in this mission
-            </p>
-          </div>
-
-          {/* Strengths & Weakness Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-1">
-              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide block">Strength</span>
-              <span className="text-xs font-extrabold text-white block">Formula Recall & Units</span>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center space-y-1">
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide block">Needs Practice</span>
-              <span className="text-xs font-extrabold text-white block">Series Resistance Math</span>
-            </div>
-          </div>
-
-          {/* Detailed Question Review */}
-          {result?.answers && (
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 border-t border-white/10 pt-4">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Mission Answers</h4>
-              {result.answers.map((ans, idx) => (
-                <div key={idx} className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-medium text-white flex-1">
-                      Q{idx + 1}. {ans.question_text}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                      ans.is_correct ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"
-                    }`}>
-                      {ans.is_correct ? "Correct" : "Incorrect"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Continue Action */}
-          <button
-            onClick={onClose}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-xl flex items-center justify-center gap-2 transition-all mt-auto"
-          >
-            <span>Continue to Concept Space</span>
-            <ArrowRight size={16} />
-          </button>
-        </div>
+      <div className="fixed inset-0 bg-[#090d16] text-white z-50 overflow-y-auto">
+        <JourneyComplete
+          conceptName={result.concept_name || propConcept?.name || "Concept Mastery"}
+          questionsSolved={result.total_questions || session?.questions?.length || 5}
+          onCompleteSession={() => navigate("/")}
+        />
       </div>
     );
   }

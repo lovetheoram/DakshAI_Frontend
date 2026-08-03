@@ -22,9 +22,15 @@ import {
   Sparkles
 } from "lucide-react";
 
+// Relocated Analytical Observatory Components
+import DecayAlerts from "../components/home/DecayAlerts";
+import KnowledgeGalaxy from "../components/home/KnowledgeGalaxy";
+import WeeklyMomentum from "../components/home/WeeklyMomentum";
+
 export default function GrowthPage() {
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
+  const [galaxyData, setGalaxyData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Exams / Setup Wizard states
@@ -63,6 +69,10 @@ export default function GrowthPage() {
 
       const examList = treeData.exams || [];
       setExams(examList);
+
+      if (dashData?.goal) {
+        progressApi.getGalaxy().then(setGalaxyData).catch(() => {});
+      }
 
       if (dashData.goal) {
         setSetupGoalName(dashData.goal.name || dashData.goal.title || "Become Interview Ready");
@@ -197,7 +207,7 @@ export default function GrowthPage() {
       {/* ① Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Academic Growth</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">The Observatory</h1>
           {goal && (
             <p className="text-xs text-gray-500 mt-0.5">
               Day {dashboard?.mission_day ?? 1} · {goal.exam || "Preparation Plan"}
@@ -217,6 +227,21 @@ export default function GrowthPage() {
         {statusType === "on_track" && (
           <StatusBadge variant="accent">On track</StatusBadge>
         )}
+      </div>
+
+      {/* Meaning-First Observatory Overview (Meaning First, Evidence Second) */}
+      <div className="p-5 rounded-3xl bg-indigo-950/30 border border-indigo-500/20 backdrop-blur-xl space-y-2">
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 block">
+          Observatory Summary • Meaning First
+        </span>
+        <h3 className="text-sm font-bold text-white leading-relaxed">
+          This Week: Finished {streak?.current_streak ?? dashboard?.weekly_completed_count ?? 0} journeys
+          {dashboard?.accuracy_gain ? ` · Accuracy +${Math.round(dashboard.accuracy_gain)}%` : ""}
+          {dashboard?.decay_alerts?.length ? ` · ${dashboard.decay_alerts.length} concepts at risk` : " · Memory Healthy"}.
+        </h3>
+        <p className="text-xs text-gray-400 leading-relaxed font-medium">
+          Every statement is derived strictly from verified backend evidence. Detailed evidence charts follow below.
+        </p>
       </div>
 
       {/* ② Predictive Growth Story & Exam Readiness Summary */}
@@ -568,6 +593,19 @@ export default function GrowthPage() {
           </AnimatePresence>
         </GlassCard>
       )}
+
+      {/* ── Relocated Observatory Analytical Sections ───────────────────── */}
+      <div className="space-y-6 pt-4">
+        {/* Memory Fading Alerts */}
+        <DecayAlerts decayAlerts={dashboard?.decay_alerts} />
+
+        {/* Knowledge Galaxy Tree Constellation */}
+        <KnowledgeGalaxy galaxyData={galaxyData} />
+
+        {/* Weekly Study Momentum Chart */}
+        <WeeklyMomentum dashboard={dashboard} streak={streak} />
+      </div>
     </div>
   );
 }
+

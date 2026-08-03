@@ -1,132 +1,105 @@
+// src/pages/SettingsPage.jsx
+// Compact, Logical Settings Page for DakshAI.
+
 import { useState } from "react";
-import GlassCard from "../components/ui/GlassCard";
-import StatusBadge from "../components/ui/StatusBadge";
-import { ArrowLeft, Moon, Sun, Bell, Shield, BookOpen, Volume2, Palette } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Bell, Volume2, BookOpen, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useExperience } from "../context/ThemeContext";
+import PreferenceStore from "../product/preferenceStore";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { activeThemeMeta, openCustomizer } = useExperience();
+  const { theme, toggleTheme } = useExperience();
+
   const [notifications, setNotifications] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
   const [selectedExam, setSelectedExam] = useState("JEE Main");
 
+  const [prefs, setPrefs] = useState(() => PreferenceStore.getPreferences());
+
+  const handleMentorChange = (intensity) => {
+    const updated = PreferenceStore.updatePreferences({ mentorIntensity: intensity });
+    setPrefs(updated);
+  };
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-      <div className="flex items-center gap-3 mb-4">
+    <div className="max-w-md mx-auto px-4 py-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-2">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.06] flex items-center justify-center text-gray-400 hover:text-white transition-all"
+          className="w-8 h-8 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={15} />
         </button>
         <div>
-          <h1 className="text-heading text-white">Settings</h1>
-          <p className="text-body text-sm mt-0.5">Customize your learning experience.</p>
+          <h1 className="text-base font-bold text-white tracking-tight">Settings</h1>
+          <p className="text-xs text-gray-400">Preferences & environment.</p>
         </div>
       </div>
 
-      {/* Study Environment Selector Card */}
-      <GlassCard padding="p-5" className="border-purple-500/30 bg-purple-950/20 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Palette size={20} className="text-purple-400" />
-            <div>
-              <p className="text-sm font-semibold text-white">Study Environment</p>
-              <p className="text-xs text-purple-300">
-                Active: {activeThemeMeta?.name || "Classic Focus"} {activeThemeMeta?.badge || "⚡"}
-              </p>
-            </div>
+      {/* 1. Environment Mode (Night / Day) */}
+      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          {theme === "night" ? <Moon size={16} className="text-sky-400" /> : <Sun size={16} className="text-amber-400" />}
+          <div>
+            <p className="text-xs font-bold text-white">Sanctuary Mode</p>
+            <p className="text-[10px] text-gray-400">
+              {theme === "night" ? "Night Sanctuary (Dark Obsidian)" : "Daylight Sanctuary (Soft Warm)"}
+            </p>
           </div>
-
-          <button
-            onClick={openCustomizer}
-            className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all"
-          >
-            Change Environment
-          </button>
         </div>
-        <p className="text-[11px] text-gray-400">
-          Particles, cards, glass opacity, copy tone, and typography adapt dynamically to your chosen world.
+
+        <button
+          onClick={toggleTheme}
+          className="px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 font-extrabold text-[11px] transition-all cursor-pointer"
+        >
+          {theme === "night" ? "Switch to Day" : "Switch to Night"}
+        </button>
+      </div>
+
+      {/* 2. Companion Intensity (Low / Balanced / Guided) */}
+      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl space-y-2.5">
+        <div className="flex items-center gap-2 text-xs font-bold text-white">
+          <Shield size={14} className="text-sky-400" />
+          <span>Companion Guidance Level</span>
+        </div>
+        <p className="text-[10px] text-gray-400">
+          Controls how often Daksh offers learning hints or friction support.
         </p>
-      </GlassCard>
 
-      {/* Preferences Section */}
-      <GlassCard padding="p-5" className="space-y-4">
-        <h3 className="text-caption">Preferences</h3>
+        <div className="grid grid-cols-3 gap-1.5 pt-1">
+          {["low", "balanced", "guided"].map((level) => (
+            <button
+              key={level}
+              onClick={() => handleMentorChange(level)}
+              className={`py-1.5 rounded-xl text-[10px] font-extrabold capitalize border transition-all cursor-pointer ${
+                prefs.mentorIntensity === level
+                  ? "bg-sky-500/20 border-sky-500/40 text-sky-300"
+                  : "bg-white/[0.02] border-white/[0.06] text-gray-400 hover:text-white"
+              }`}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Theme Toggle */}
-        <div className="flex items-center justify-between py-2">
-          <div className="flex items-center gap-3">
-            {darkMode ? <Moon size={18} className="text-purple-400" /> : <Sun size={18} className="text-amber-400" />}
-            <div>
-              <p className="text-sm font-semibold text-white">Dark Mode</p>
-              <p className="text-xs text-gray-500">Enable premium glassmorphic dark theme</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-1 ${darkMode ? "bg-purple-600" : "bg-white/[0.08]"}`}
-          >
-            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${darkMode ? "translate-x-5" : "translate-x-0"}`} />
-          </button>
+      {/* 3. Target Exam */}
+      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl space-y-2.5">
+        <div className="flex items-center gap-2 text-xs font-bold text-white">
+          <BookOpen size={14} className="text-sky-400" />
+          <span>Target Syllabus</span>
         </div>
 
-        {/* Notifications Toggle */}
-        <div className="flex items-center justify-between py-2 border-t border-white/[0.04]">
-          <div className="flex items-center gap-3">
-            <Bell size={18} className="text-gray-400" />
-            <div>
-              <p className="text-sm font-semibold text-white">Push Notifications</p>
-              <p className="text-xs text-gray-500">Get reminders for scheduled reviews</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setNotifications(!notifications)}
-            className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-1 ${notifications ? "bg-purple-600" : "bg-white/[0.08]"}`}
-          >
-            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${notifications ? "translate-x-5" : "translate-x-0"}`} />
-          </button>
-        </div>
-
-        {/* Sound Effects Toggle */}
-        <div className="flex items-center justify-between py-2 border-t border-white/[0.04]">
-          <div className="flex items-center gap-3">
-            <Volume2 size={18} className="text-gray-400" />
-            <div>
-              <p className="text-sm font-semibold text-white">Sound Effects</p>
-              <p className="text-xs text-gray-500">Play feedback sounds during quizzes</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setSoundEffects(!soundEffects)}
-            className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-1 ${soundEffects ? "bg-purple-600" : "bg-white/[0.08]"}`}
-          >
-            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${soundEffects ? "translate-x-5" : "translate-x-0"}`} />
-          </button>
-        </div>
-      </GlassCard>
-
-      {/* Target Exam Section */}
-      <GlassCard padding="p-5" className="space-y-4">
-        <h3 className="text-caption">Target Exam</h3>
-        <div className="flex items-center gap-3">
-          <BookOpen size={18} className="text-purple-400" />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white">Selected Syllabus</p>
-            <p className="text-xs text-gray-500">Concepts and revision cycles will adapt to this syllabus</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mt-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {["JEE Main", "JEE Advanced", "NEET", "Board Exam"].map((exam) => (
             <button
               key={exam}
               onClick={() => setSelectedExam(exam)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+              className={`py-1.5 px-3 rounded-xl text-[10px] font-extrabold border transition-all cursor-pointer ${
                 selectedExam === exam
-                  ? "bg-purple-500/15 border-purple-500/30 text-purple-300"
+                  ? "bg-sky-500/20 border-sky-500/40 text-sky-300"
                   : "bg-white/[0.02] border-white/[0.06] text-gray-400 hover:text-white"
               }`}
             >
@@ -134,20 +107,40 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-      </GlassCard>
+      </div>
 
-      {/* Account Info / Settings */}
-      <GlassCard padding="p-5" className="space-y-3">
-        <h3 className="text-caption">Account & Security</h3>
-        <div className="flex items-center justify-between text-sm py-2">
-          <span className="text-gray-400">Account Type</span>
-          <StatusBadge variant="accent">Standard</StatusBadge>
+      {/* 4. Preferences: Notifications & Sound */}
+      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-gray-300">
+            <Bell size={14} className="text-gray-400" />
+            <span className="font-semibold">Push Notifications</span>
+          </div>
+          <button
+            onClick={() => setNotifications(!notifications)}
+            className={`w-9 h-5 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
+              notifications ? "bg-sky-500" : "bg-white/10"
+            }`}
+          >
+            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${notifications ? "translate-x-4" : "translate-x-0"}`} />
+          </button>
         </div>
-        <div className="flex items-center justify-between text-sm py-2 border-t border-white/[0.04]">
-          <span className="text-gray-400">Version</span>
-          <span className="text-white font-mono text-xs">v2.0.0-beta</span>
+
+        <div className="flex items-center justify-between text-xs pt-2 border-t border-white/[0.04]">
+          <div className="flex items-center gap-2 text-gray-300">
+            <Volume2 size={14} className="text-gray-400" />
+            <span className="font-semibold">Sound Effects</span>
+          </div>
+          <button
+            onClick={() => setSoundEffects(!soundEffects)}
+            className={`w-9 h-5 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
+              soundEffects ? "bg-sky-500" : "bg-white/10"
+            }`}
+          >
+            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${soundEffects ? "translate-x-4" : "translate-x-0"}`} />
+          </button>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 }

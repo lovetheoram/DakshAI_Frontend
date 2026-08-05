@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../../context/AuthContext";
 import { useExperience } from "../../context/ThemeContext";
 import AmbientBackgroundEngine from "../ui/AmbientBackgroundEngine";
-import ThemeCustomizerModal from "../ui/ThemeCustomizerModal";
 import DakshPersona from "../intelligence/DakshPersona";
 
 import {
@@ -16,7 +15,8 @@ import {
   Bell,
   Settings,
   LogOut,
-  Palette,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 // 5 Primary Navigation Tabs
@@ -30,7 +30,7 @@ const NAV_ITEMS = [
 
 export default function AppShell({ children }) {
   const { user, logout } = useContext(AuthContext);
-  const { openCustomizer, activeThemeMeta } = useExperience();
+  const { theme, toggleTheme } = useExperience();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,21 +42,18 @@ export default function AppShell({ children }) {
     return (
       <>
         <AmbientBackgroundEngine />
-        <ThemeCustomizerModal />
         {children}
       </>
     );
   }
-
 
   // Don't show nav for logged-out users (landing page handles its own nav)
   const showNav = !!user;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] flex flex-col relative">
-      {/* Ambient Background Particle Engine & Theme Customizer Modal */}
+      {/* Ambient Background Particle Engine */}
       <AmbientBackgroundEngine />
-      <ThemeCustomizerModal />
 
       {/* Behavioral Intelligence Layer — Daksh Persona (silent by default) */}
       {user && <DakshPersona />}
@@ -66,11 +63,11 @@ export default function AppShell({ children }) {
         <header className="hidden md:flex items-center justify-between px-8 py-4 border-b border-white/[0.04] bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40">
           {/* Brand */}
           <NavLink to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-shadow">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center shadow-lg shadow-sky-500/20 group-hover:shadow-sky-500/40 transition-shadow">
               <span className="text-white font-black text-sm">D</span>
             </div>
             <span className="text-lg font-bold text-white tracking-tight">
-              Daksh<span className="text-purple-400">AI</span>
+              Daksh<span className="text-sky-400">AI</span>
             </span>
           </NavLink>
 
@@ -84,7 +81,7 @@ export default function AppShell({ children }) {
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? "bg-purple-500/15 text-purple-300 shadow-sm shadow-purple-500/10"
+                      ? "bg-sky-500/15 text-sky-300 shadow-sm shadow-sky-500/10"
                       : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
                   }`
                 }
@@ -95,36 +92,13 @@ export default function AppShell({ children }) {
             ))}
           </nav>
 
-          {/* Right section: Daksh Alien Companion + Theme Selector + Notifications + Profile */}
+          {/* Right section: Notifications + Profile */}
           <div className="flex items-center gap-3">
-            {/* Daksh Alien Companion Trigger Button */}
-            <button
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("daksh:summon", { bubbles: true }));
-              }}
-              className="px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/30 flex items-center gap-2 text-xs font-bold transition-all shadow-sm cursor-pointer hover:scale-105 active:scale-95"
-              title="Talk to Daksh Alien Companion"
-            >
-              <span className="text-base animate-pulse">👽</span>
-              <span className="hidden sm:inline">Daksh</span>
-            </button>
-
-            {/* Theme Environment Trigger Button */}
-            <button
-              onClick={openCustomizer}
-              className="px-3 py-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 hover:bg-purple-500/25 flex items-center gap-2 text-xs font-bold transition-all shadow-sm cursor-pointer"
-              title="Choose Your Study Environment"
-            >
-              <Palette size={15} className="text-purple-400" />
-              <span className="hidden lg:inline">{activeThemeMeta?.name || "Environment"}</span>
-              <span className="text-xs">{activeThemeMeta?.badge || "⚡"}</span>
-            </button>
-
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
                 `w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
-                  isActive ? "bg-purple-500/15 text-purple-300" : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                  isActive ? "bg-sky-500/15 text-sky-300" : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
                 }`
               }
             >
@@ -135,7 +109,7 @@ export default function AppShell({ children }) {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
               >
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </button>
@@ -143,41 +117,42 @@ export default function AppShell({ children }) {
               <AnimatePresence>
                 {menuOpen && (
                   <motion.div
-                    className="absolute right-0 top-12 w-56 glass p-2 z-50"
+                    className="absolute right-0 top-12 w-56 glass p-2 z-50 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl"
                     initial={{ opacity: 0, y: -8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                   >
+                    <div className="px-3 py-2 border-b border-white/[0.06] mb-1">
+                      <p className="text-xs font-bold text-white truncate">{user?.username}</p>
+                      <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+                    </div>
+
                     <button
-                      onClick={() => { openCustomizer(); setMenuOpen(false); }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-purple-300 hover:bg-purple-500/10 transition-colors w-full text-left font-bold cursor-pointer"
+                      onClick={() => { toggleTheme(); setMenuOpen(false); }}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-gray-300 font-bold hover:bg-white/[0.05] transition-colors w-full text-left cursor-pointer"
                     >
-                      <Palette size={16} />
-                      Study Environment
+                      <span className="flex items-center gap-2">
+                        {theme === "night" ? <Moon size={14} className="text-sky-400" /> : <Sun size={14} className="text-amber-400" />}
+                        {theme === "night" ? "Night Mode" : "Day Mode"}
+                      </span>
+                      <span className="text-[10px] uppercase text-gray-500">{theme}</span>
                     </button>
-                    <NavLink
-                      to="/profile"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
-                    >
-                      <User size={16} />
-                      Profile
-                    </NavLink>
+
                     <NavLink
                       to="/settings"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/[0.04] transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors"
                     >
-                      <Settings size={16} />
+                      <Settings size={14} />
                       Settings
                     </NavLink>
-                    <hr className="border-white/[0.06] my-1" />
+
                     <button
-                      onClick={() => { logout(); setMenuOpen(false); }}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors w-full text-left"
+                      onClick={logout}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition-colors w-full text-left cursor-pointer mt-1 border-t border-white/[0.06]"
                     >
-                      <LogOut size={16} />
+                      <LogOut size={14} />
                       Sign out
                     </button>
                   </motion.div>
@@ -193,40 +168,21 @@ export default function AppShell({ children }) {
         <header className="flex md:hidden items-center justify-between px-5 py-3 border-b border-white/[0.04] bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40">
           {/* Brand */}
           <NavLink to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center shadow-md">
               <span className="text-white font-black text-xs">D</span>
             </div>
             <span className="text-base font-bold text-white tracking-tight">
-              Daksh<span className="text-purple-400">AI</span>
+              Daksh<span className="text-sky-400">AI</span>
             </span>
           </NavLink>
 
           {/* Right actions */}
           <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("daksh:summon", { bubbles: true }));
-              }}
-              className="px-2.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 flex items-center gap-1 text-xs font-bold cursor-pointer"
-              title="Talk to Daksh Alien Companion"
-            >
-              <span className="text-base">👽</span>
-            </button>
-
-            <button
-              onClick={openCustomizer}
-              className="p-2 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center gap-1 text-xs font-bold cursor-pointer"
-              title="Choose Study Environment"
-            >
-              <Palette size={16} />
-              <span>{activeThemeMeta?.badge || "⚡"}</span>
-            </button>
-
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
                 `w-8.5 h-8.5 flex items-center justify-center rounded-xl transition-colors ${
-                  isActive ? "bg-purple-500/15 text-purple-300" : "text-gray-400 hover:text-white"
+                  isActive ? "bg-sky-500/15 text-sky-300" : "text-gray-400 hover:text-white"
                 }`
               }
             >
@@ -237,7 +193,7 @@ export default function AppShell({ children }) {
             <div className="relative">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold hover:opacity-90 transition-opacity"
+                className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer"
               >
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </button>
@@ -245,18 +201,18 @@ export default function AppShell({ children }) {
               <AnimatePresence>
                 {mobileMenuOpen && (
                   <motion.div
-                    className="absolute right-0 top-11 w-48 glass p-2 z-50"
+                    className="absolute right-0 top-11 w-48 glass p-2 z-50 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl"
                     initial={{ opacity: 0, y: -8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
                   >
                     <button
-                      onClick={() => { openCustomizer(); setMobileMenuOpen(false); }}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-purple-300 font-bold hover:bg-purple-500/10 transition-colors w-full text-left cursor-pointer"
+                      onClick={() => { toggleTheme(); setMobileMenuOpen(false); }}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-sky-300 font-bold hover:bg-sky-500/10 transition-colors w-full text-left cursor-pointer"
                     >
-                      <Palette size={14} />
-                      Study Environment
+                      {theme === "night" ? <Moon size={14} /> : <Sun size={14} />}
+                      {theme === "night" ? "Night Mode" : "Day Mode"}
                     </button>
                     <NavLink
                       to="/profile"

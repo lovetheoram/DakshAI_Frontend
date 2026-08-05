@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { EmotionEngineProvider } from './context/EmotionEngineContext'
 import { MindModelProvider } from './context/MindModelContext'
+import { ExperienceProvider } from './context/ExperienceContext'
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')).render(
         <ThemeProvider>
           <EmotionEngineProvider>
             <MindModelProvider>
-              <App />
+              <ExperienceProvider>
+                <App />
+              </ExperienceProvider>
             </MindModelProvider>
           </EmotionEngineProvider>
         </ThemeProvider>

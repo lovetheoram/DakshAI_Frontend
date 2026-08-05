@@ -83,7 +83,13 @@ export default function DakshPersona() {
   const handleCta = useCtaHandler(navigate, dismissIntervention);
   const autoDismissRef = useRef(null);
 
-  const shouldSpeak = !!(intervention && intervention.shouldSpeak);
+  // Only speak if explicitly requested, confidence is high, and not silenced
+  const shouldSpeak = !!(
+    intervention &&
+    intervention.shouldSpeak &&
+    intervention.confidenceLevel !== "LOW" &&
+    !intervention.isSilenced
+  );
 
   // Typing animation on body text
   const { displayed: typedBody, done: typingDone } = useTypingText(
@@ -91,13 +97,13 @@ export default function DakshPersona() {
     28
   );
 
-  // Auto-dismiss transient speech bubble after 10 seconds (returns to permanent orb)
+  // Auto-dismiss transient speech bubble after 5 seconds
   useEffect(() => {
     if (!shouldSpeak) return;
     if (autoDismissRef.current) clearTimeout(autoDismissRef.current);
     autoDismissRef.current = setTimeout(() => {
       dismissIntervention();
-    }, 10_000);
+    }, 5_000);
     return () => clearTimeout(autoDismissRef.current);
   }, [shouldSpeak, intervention, dismissIntervention]);
 

@@ -9,28 +9,34 @@
    ============================================ */
 
 :root {
-  /* ---- Default Classic Focus ---- */
-  --color-bg-primary:    #030712;
-  --color-bg-secondary:  #0f172a;
-  --color-bg-card:       rgba(15, 23, 42, 0.6);
-  --color-bg-card-hover: rgba(15, 23, 42, 0.8);
+  /* ---- Signature Brand Semantic Tokens ---- */
+  --color-primary:        #5CC8FF; /* Sky Blue */
+  --color-primary-hover:  #38bdf8;
+  --color-success:        #FF8FB1; /* Soft Pink Accent */
+  --color-background:     #070A12; /* Night Obsidian */
+  --color-bg-primary:     #070A12;
+  --color-bg-secondary:   #0D111A;
+  --color-surface:        rgba(13, 17, 26, 0.85); /* Glass Surface */
+  --color-bg-card:        rgba(13, 17, 26, 0.85);
+  --color-bg-card-hover:  rgba(20, 26, 38, 0.9);
 
-  --color-border:        rgba(255, 255, 255, 0.08);
-  --color-border-hover:  rgba(255, 255, 255, 0.16);
-  --color-border-active: rgba(59, 130, 246, 0.5);
+  --color-border:         rgba(92, 200, 255, 0.15);
+  --color-border-hover:   rgba(92, 200, 255, 0.3);
+  --color-border-active:  rgba(92, 200, 255, 0.5);
 
+  --color-text-main:      #f8fafc; /* Platinum Text */
   --color-text-primary:   #f8fafc;
   --color-text-secondary: #94a3b8;
-  --color-text-muted:     #475569;
+  --color-text-muted:     #64748b;
 
-  --color-accent:         #3b82f6;
-  --color-accent-light:   #60a5fa;
-  --color-accent-dark:    #1d4ed8;
+  --color-accent:         #5CC8FF;
+  --color-accent-light:   #FF8FB1;
+  --color-accent-dark:    #0284c7;
 
-  --color-success:        #22c55e;
   --color-warning:        #f59e0b;
-  --color-error:          #ef4444;
-  --color-info:           #3b82f6;
+  --color-danger:         #f43f5e;
+  --color-error:          #f43f5e;
+  --color-info:           #5CC8FF;
 
   /* ---- Typography ---- */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -44,9 +50,9 @@
   --radius-pill: 9999px;
 
   /* ---- Shadows ---- */
-  --shadow-glow-sm:  0 0 20px rgba(59, 130, 246, 0.15);
-  --shadow-glow-md:  0 0 40px rgba(59, 130, 246, 0.25);
-  --shadow-glow-lg:  0 0 60px rgba(59, 130, 246, 0.35);
+  --shadow-glow-sm:  0 0 20px rgba(92, 200, 255, 0.15);
+  --shadow-glow-md:  0 0 40px rgba(92, 200, 255, 0.25);
+  --shadow-glow-lg:  0 0 60px rgba(92, 200, 255, 0.35);
   --shadow-card:     0 4px 24px rgba(0, 0, 0, 0.4);
 
   /* ---- Animation ---- */
@@ -54,6 +60,78 @@
   --duration-fast:   150ms;
   --duration-normal: 250ms;
   --duration-slow:   400ms;
+}
+
+/* ── Night Mode (Bluish Dark Obsidian Sanctuary) ── */
+[data-theme="night"] {
+  --color-background:     #090D16;
+  --color-bg-primary:     #090D16;
+  --color-bg-secondary:   #0F172A;
+  --color-surface:        rgba(15, 23, 42, 0.85);
+  --color-bg-card:        rgba(15, 23, 42, 0.85);
+  --color-text-main:      #F8FAFC;
+  --color-text-primary:   #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-border:         rgba(92, 200, 255, 0.18);
+}
+
+/* ── Day Mode (Soft Clean Whitish Sanctuary & Adaptive Component Colors) ── */
+[data-theme="day"] {
+  --color-background:     #F8FAFC;
+  --color-bg-primary:     #F8FAFC;
+  --color-bg-secondary:   #F1F5F9;
+  --color-surface:        #FFFFFF;
+  --color-bg-card:        #FFFFFF;
+  --color-text-main:      #0F172A;
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #475569;
+  --color-border:         #E2E8F0;
+}
+
+[data-theme="day"] body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+[data-theme="day"] header {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #E2E8F0 !important;
+}
+
+[data-theme="day"] .bg-slate-950,
+[data-theme="day"] .bg-slate-900,
+[data-theme="day"] .bg-\[\#090D16\],
+[data-theme="day"] .bg-\[\#111827\] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+[data-theme="day"] .text-white {
+  color: #0F172A !important;
+}
+
+[data-theme="day"] .text-gray-300,
+[data-theme="day"] .text-gray-400,
+[data-theme="day"] .text-slate-300 {
+  color: #475569 !important;
+}
+
+[data-theme="day"] .text-gray-500 {
+  color: #64748B !important;
+}
+
+[data-theme="day"] .border-white\/10,
+[data-theme="day"] .border-white\/\[0\.04\],
+[data-theme="day"] .border-white\/\[0\.06\],
+[data-theme="day"] .border-white\/\[0\.08\] {
+  border-color: #E2E8F0 !important;
+}
+
+[data-theme="day"] .glass,
+[data-theme="day"] .glass-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Theme 1: Classic Focus */

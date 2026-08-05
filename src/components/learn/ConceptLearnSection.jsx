@@ -1,7 +1,8 @@
 // src/components/learn/ConceptLearnSection.jsx
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Layers, CheckCircle2, Lightbulb, ChevronLeft, ChevronRight, Swords, Sparkles } from "lucide-react";
+import { BookOpen, Layers, CheckCircle2, Lightbulb, ChevronLeft, ChevronRight, Swords, Sparkles, Brain } from "lucide-react";
+import WorldMirrorCard from "../ui/WorldMirrorCard";
 
 // Reusable Horizontal Section Carousel
 function LearnSectionCarousel({ title, icon: Icon, badgeColor, items = [], renderCard }) {
@@ -118,6 +119,34 @@ export default function ConceptLearnSection({
 
   return (
     <div className="space-y-6">
+
+      {/* Cognitive Progress Indicator */}
+      <div className="flex items-center justify-between p-3 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 text-xs">
+        <span className="text-indigo-300 font-bold flex items-center gap-1.5">
+          <Brain size={14} /> Cognitive State
+        </span>
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-gray-400">
+          <span className="text-indigo-400 font-bold">● Understanding</span>
+          <span>──</span>
+          <span>○ Applying</span>
+          <span>──</span>
+          <span>○ Reflecting</span>
+        </div>
+      </div>
+
+      {/* World Mirror Connection Window */}
+      <WorldMirrorCard conceptName={conceptName || "Concept Mastery"} compact />
+
+      {/* Active Recall Behavioral Prompt */}
+      <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-500/20 text-xs space-y-1">
+        <span className="font-extrabold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+          <Sparkles size={13} /> Active Recall Prompt
+        </span>
+        <p className="text-gray-300 font-medium leading-relaxed">
+          Before reading the notes below, pause and recall: What do you already remember about <strong className="text-white">{conceptName}</strong>?
+        </p>
+      </div>
+
       {/* 1. TOP HERO: Description Card */}
       <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-950/80 via-indigo-950/50 to-slate-900 border border-purple-500/30 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -128,6 +157,7 @@ export default function ConceptLearnSection({
             Concept Description
           </span>
         </div>
+
 
         <h2 className="text-xl font-extrabold text-white tracking-tight">{conceptName}</h2>
 

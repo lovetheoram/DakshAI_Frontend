@@ -9,6 +9,9 @@ import StatusBadge from "../components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import { Swords, RotateCcw, BookOpen, Brain, Target, Timer } from "lucide-react";
 
+import MemoryRing from "../components/ui/MemoryRing";
+import EmptyState from "../components/ui/EmptyState";
+
 const MODES = [
   {
     id: "revision",
@@ -82,14 +85,17 @@ export default function PracticePage() {
   const revisionConcepts = concepts.filter((c) => c.mastery < 60 && c.mastery > 0);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-heading text-white">Practice Arena</h1>
-        <p className="text-body text-sm mt-1">Choose your mode and sharpen your mind.</p>
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div>
+        <h1 className="text-xl font-black text-white">Practice Arena</h1>
+        <p className="text-xs text-gray-400 mt-0.5">Select a mode and challenge your understanding.</p>
       </div>
 
+      {/* Cognition MemoryRing */}
+      <MemoryRing decayAlerts={revisionConcepts} onReview={() => navigate("/learn")} />
+
       {/* Mode selector grid */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3">
         {MODES.map((mode, i) => {
           const Icon = mode.icon;
           return (
@@ -117,53 +123,30 @@ export default function PracticePage() {
         })}
       </div>
 
-      {/* Revision queue */}
-      {revisionConcepts.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-caption">Needs Revision</p>
-            <StatusBadge variant="warning">{revisionConcepts.length} concepts</StatusBadge>
-          </div>
-
-          <div className="space-y-2">
-            {revisionConcepts.slice(0, 5).map((concept) => (
-              <button
-                key={concept.id}
-                onClick={() => navigate(`/learn/${concept.id}`)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-amber-500/15 transition-all text-left group"
-              >
-                <span className="text-sm text-gray-300 group-hover:text-white">
-                  {concept.name}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-amber-400 font-medium">
-                    {Math.round(concept.mastery)}%
-                  </span>
-                  <RotateCcw size={12} className="text-gray-600 group-hover:text-amber-400" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Start button */}
-      {selectedMode && (
+      {/* Start button or Actionable Empty State */}
+      {selectedMode ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          className="text-center pt-2"
         >
-          <p className="text-body text-sm mb-4">
-            Select a concept from the Learning Space, then start a {MODES.find(m => m.id === selectedMode)?.label} session.
+          <p className="text-xs text-gray-300 mb-3 font-medium">
+            Select a concept from the Learning Space to start a {MODES.find(m => m.id === selectedMode)?.label} session.
           </p>
           <button
             onClick={() => navigate("/learn")}
-            className="px-8 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-sm shadow-xl shadow-purple-500/20 hover:shadow-purple-500/40 transition-shadow"
+            className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-xl cursor-pointer"
           >
             Pick a Concept →
           </button>
         </motion.div>
+      ) : (
+        <EmptyState
+          title="Practice Session Ready"
+          description="Select any mode above to start an active retrieval challenge."
+          actionText="Pick a Concept"
+          onAction={() => navigate("/learn")}
+        />
       )}
     </div>
   );

@@ -6,27 +6,29 @@ export default function StatusBadge({
   className = "",
 }) {
   const variants = {
-    default: "bg-white/[0.06] text-gray-300 border-white/[0.06]",
-    accent:  "bg-purple-500/15 text-purple-300 border-purple-500/20",
-    success: "bg-emerald-500/15 text-emerald-300 border-emerald-500/20",
-    warning: "bg-amber-500/15 text-amber-300 border-amber-500/20",
-    error:   "bg-red-500/15 text-red-300 border-red-500/20",
-    info:    "bg-blue-500/15 text-blue-300 border-blue-500/20",
+    default: "bg-[var(--color-cream)] text-[var(--color-text-secondary)] border-[var(--color-border)]",
+    accent:  "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30",
+    gold:    "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30",
+    success: "bg-[var(--color-success-light)] text-[var(--color-success)] border-[var(--color-success)]/20",
+    warning: "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30",
+    error:   "bg-[var(--color-danger-light)] text-[var(--color-danger)] border-[var(--color-danger)]/20",
+    danger:  "bg-[var(--color-danger-light)] text-[var(--color-danger)] border-[var(--color-danger)]/20",
+    info:    "bg-blue-50 text-[var(--color-info)] border-[var(--color-info)]/20",
   };
 
   return (
     <span
       className={`
         inline-flex items-center gap-1.5
-        px-3 py-1 rounded-full
-        text-xs font-bold tracking-wide
+        px-2.5 py-1 rounded-full
+        text-[11px] font-semibold tracking-wide
         border
         ${variants[variant] || variants.default}
-        ${pulse ? "animate-pulse-glow" : ""}
+        ${pulse ? "animate-gold-pulse" : ""}
         ${className}
       `}
     >
-      {icon && <span className="text-[0.7rem]">{icon}</span>}
+      {icon && <span className="text-[0.65rem]">{icon}</span>}
       {children}
     </span>
   );

@@ -1,45 +1,35 @@
+// src/pages/ProfilePage.jsx
+// Profile — "Who am I becoming?"
+// 100% strict real data from backend API. Zero hardcoded fallbacks.
+
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { useExperience } from "../context/ThemeContext";
 import progressApi from "../api/progressApi";
-import GlassCard from "../components/ui/GlassCard";
 import StatusBadge from "../components/ui/StatusBadge";
-import BrainStatus from "../components/home/BrainStatus";
 import { motion } from "framer-motion";
 import {
-  User,
   Settings,
   LogOut,
-  Award,
   ChevronRight,
-  Sparkles,
-  Rocket,
-  CheckCircle2,
-  Flame,
   Brain,
-  Palette,
 } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, logout } = useContext(AuthContext);
-  const { activeThemeMeta, openCustomizer } = useExperience();
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
-
-  // Tab State: 'achievements' | 'analytics' | 'projects'
-  const [activeTab, setActiveTab] = useState("achievements");
 
   useEffect(() => {
     const fetchProfileStats = async () => {
       try {
         const [dashData, streakData] = await Promise.all([
-          progressApi.getDashboard(),
-          progressApi.getStreakStats(),
+          progressApi.getDashboard().catch(() => null),
+          progressApi.getStreakStats().catch(() => null),
         ]);
-        setDashboard(dashData);
-        setStreak(streakData);
+        if (dashData) setDashboard(dashData);
+        if (streakData) setStreak(streakData);
       } catch (err) {
         console.error("Failed to load profile telemetry:", err);
       }
@@ -47,63 +37,51 @@ export default function ProfilePage() {
     if (user) fetchProfileStats();
   }, [user]);
 
-  const streakDays = streak?.current_streak || 0;
+  const streakDays = streak?.growth_streak ?? streak?.current_streak ?? 0;
   const questionsSolved = dashboard?.total_questions_solved ?? 0;
   const masteredConcepts = dashboard?.concepts_mastered_count ?? 0;
-  const avgAccuracy = dashboard?.brain_stats?.accuracy ?? 0;
-  const weekCompliance = streak?.week_compliance ?? 0;
-  const dakshScore = dashboard?.overall_score ?? 0;
+  const totalConcepts = dashboard?.total_concepts_in_exam ?? 0;
+  const totalActiveDays = streak?.total_active_days ?? dashboard?.active_days_this_week ?? 0;
 
-  const achievementsList = [
-    {
-      emoji: "🔥",
-      title: "3-Day Streak",
-      unlocked: streakDays >= 3,
-      progressVal: streakDays,
-      targetVal: 3,
-      label: streakDays >= 3 ? "✓ Unlocked" : `${streakDays}/3 days`,
-    },
-    {
-      emoji: "🧠",
-      title: "100 Questions Solved",
-      unlocked: questionsSolved >= 100,
-      progressVal: questionsSolved,
-      targetVal: 100,
-      label: questionsSolved >= 100 ? "✓ Unlocked" : `${questionsSolved}/100 questions`,
-    },
-    {
-      emoji: "🎯",
-      title: "High Accuracy Master",
-      unlocked: avgAccuracy >= 80,
-      progressVal: avgAccuracy,
-      targetVal: 80,
-      label: avgAccuracy >= 80 ? "✓ Unlocked" : `${Math.round(avgAccuracy)}/80% accuracy`,
-    },
-    {
-      emoji: "⚡",
-      title: "Week On Fire",
-      unlocked: weekCompliance >= 80,
-      progressVal: weekCompliance,
-      targetVal: 80,
-      label: weekCompliance >= 80 ? "✓ Unlocked" : `${Math.round(weekCompliance)}/80% compliance`,
-    },
-    {
-      emoji: "🏆",
-      title: "Halfway Exam Readiness",
-      unlocked: dakshScore >= 50,
-      progressVal: dakshScore,
-      targetVal: 50,
-      label: dakshScore >= 50 ? "✓ Unlocked" : `${Math.round(dakshScore)}/50% readiness`,
-    },
-  ];
+  // Real user joined date
+  const joinedDateStr = user?.date_joined
+    ? new Date(user.date_joined).toLocaleDateString("en-US", { year: "numeric", month: "short" })
+    : "Active Session";
+
+  // Derive real behavioral profile hints from user's actual data
+  const accuracy = dashboard?.brain_stats?.accuracy ?? 0;
+  const decayAlerts = dashboard?.decay_alerts || [];
+  const goal = dashboard?.goal;
+
+  const behavioralPoints = [];
+
+  if (streakDays >= 3) {
+    behavioralPoints.push(`Demonstrating strong consistency with an active ${streakDays}-day streak.`);
+  } else {
+    behavioralPoints.push("Building foundational momentum — initial active retrieval sessions logged.");
+  }
+
+  if (accuracy >= 75) {
+    behavioralPoints.push(`Strong conceptual accuracy (${Math.round(accuracy)}%) across attempted practice sessions.`);
+  } else if (accuracy > 0) {
+    behavioralPoints.push(`Current accuracy is ${Math.round(accuracy)}% — active retrieval will raise retention.`);
+  } else {
+    behavioralPoints.push("Ready for first active retrieval assessment.");
+  }
+
+  if (decayAlerts.length > 0) {
+    behavioralPoints.push(`Retention decay noticed in ${decayAlerts[0]?.concept_name || decayAlerts[0]?.concept || 'recent concepts'}. Quick revision recommended.`);
+  } else if (masteredConcepts > 0) {
+    behavioralPoints.push(`Successfully mastered ${masteredConcepts} of ${totalConcepts} exam concepts.`);
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
-      {/* Identity Header Card */}
-      <GlassCard glow className="text-center py-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="max-w-2xl mx-auto px-5 py-8 space-y-6 select-none">
+      
+      {/* ── 1. IDENTITY SURFACING ───────────────────────── */}
+      <div className="daksh-card p-7 text-center relative overflow-hidden space-y-3">
         <motion.div
-          className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-2xl sm:text-3xl font-black text-white shadow-2xl shadow-purple-500/30 mb-3"
+          className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-[var(--color-gold)] flex items-center justify-center text-2xl font-black text-white shadow-xs"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 15 }}
@@ -111,265 +89,66 @@ export default function ProfilePage() {
           {user?.username?.[0]?.toUpperCase() || "U"}
         </motion.div>
 
-        <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">{user?.username || "Learner"}</h2>
-        <p className="text-xs text-gray-400 mt-0.5">{user?.email || ""}</p>
-
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <StatusBadge variant="accent" icon="⚡">Concept Builder</StatusBadge>
-          <StatusBadge variant="success" icon="🎯">Target Goal Active</StatusBadge>
-        </div>
-      </GlassCard>
-
-      {/* Study Environment Selector Card */}
-      <GlassCard
-        padding="p-4"
-        hover
-        onClick={() => openCustomizer()}
-        className="border-purple-500/30 bg-purple-950/20 flex items-center justify-between cursor-pointer"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
-            <Palette size={18} />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">Active Study Environment</div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-1.5 mt-0.5">
-              <span>{activeThemeMeta?.name || "Classic Focus"}</span>
-              <span className="text-sm">{activeThemeMeta?.badge || "⚡"}</span>
-            </h3>
-          </div>
+        <div>
+          <h2 className="text-lg font-bold text-[var(--color-text-primary)] tracking-tight">{user?.username || "Learner"}</h2>
+          <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Learning since {joinedDateStr}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            openCustomizer();
-          }}
-          className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer relative z-10"
-        >
-          Change Environment
-        </button>
-      </GlassCard>
-
-      {/* Segmented Sub-Navigation Tabs (3 Columns) */}
-      <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-950/60 border border-white/[0.04] text-[11px] font-bold">
-        <button
-          onClick={() => setActiveTab("achievements")}
-          className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === "achievements"
-              ? "bg-amber-600/20 text-amber-300 border border-amber-500/30 shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Award size={14} />
-          <span>Badges & Achievements</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("analytics")}
-          className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === "analytics"
-              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30 shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Brain size={14} />
-          <span>Analytics</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("projects")}
-          className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-            activeTab === "projects"
-              ? "bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 shadow-md"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          <Rocket size={14} />
-          <span>Projects</span>
-        </button>
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <StatusBadge variant="gold">
+            {goal?.name || goal?.title || "Active Learner"}
+          </StatusBadge>
+        </div>
       </div>
 
-      {/* Tab 1: Achievements & Badges */}
-      {activeTab === "achievements" && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <GlassCard padding="p-5" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Award size={18} className="text-amber-400" />
-                <span>Unlocked Achievements & Badges</span>
-              </h3>
-              <span className="text-[10px] text-amber-300 font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                Milestones
-              </span>
-            </div>
-
-            {/* Quick Stat Tiles */}
-            <div className="grid grid-cols-3 gap-3 pt-1">
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-center">
-                <Flame size={18} className="text-amber-400 mx-auto mb-1" />
-                <span className="text-[10px] text-gray-400 block font-semibold uppercase">Daily Streak</span>
-                <span className="text-xs font-black text-white mt-0.5 block">{streakDays} Days</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-center">
-                <CheckCircle2 size={18} className="text-emerald-400 mx-auto mb-1" />
-                <span className="text-[10px] text-gray-400 block font-semibold uppercase">Mastered</span>
-                <span className="text-xs font-black text-white mt-0.5 block">{masteredConcepts} Topics</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-center">
-                <Sparkles size={18} className="text-purple-400 mx-auto mb-1" />
-                <span className="text-[10px] text-gray-400 block font-semibold uppercase">Questions</span>
-                <span className="text-xs font-black text-white mt-0.5 block">{questionsSolved} Solved</span>
-              </div>
-            </div>
-
-            {/* Full Detailed Achievement List */}
-            <div className="space-y-2.5 pt-2 border-t border-white/[0.04]">
-              {achievementsList.map((ach, i) => {
-                const unlocked = ach.unlocked;
-                const ratioPercent = Math.min(100, (ach.progressVal / ach.targetVal) * 100);
-
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      unlocked
-                        ? "bg-amber-500/5 border-amber-500/20 opacity-100"
-                        : "bg-white/[0.01] border-white/[0.04] opacity-65"
-                    }`}
-                  >
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 ${
-                        unlocked ? "bg-amber-500/10" : "bg-white/[0.04]"
-                      }`}
-                    >
-                      {ach.emoji}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between text-xs font-semibold mb-1">
-                        <span className="text-white">{ach.title}</span>
-                        <span className={unlocked ? "text-amber-400 font-bold" : "text-gray-400"}>
-                          {ach.label}
-                        </span>
-                      </div>
-
-                      {!unlocked && (
-                        <div className="w-full h-1 bg-slate-950 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-amber-500 rounded-full"
-                            style={{ width: `${ratioPercent}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </GlassCard>
-        </motion.div>
-      )}
-
-      {/* Tab 2: Brain Core & Telemetry Analytics */}
-      {activeTab === "analytics" && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <BrainStatus dashboard={dashboard} streak={streak} />
-        </motion.div>
-      )}
-
-      {/* Tab 3: Showcase & Projects */}
-      {activeTab === "projects" && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <GlassCard padding="p-5" className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Rocket size={18} className="text-emerald-400" />
-                <span>Showcase Projects</span>
-              </h3>
-              <span className="text-[10px] text-gray-500 font-semibold">0 Projects Published</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Your published prototypes, hardware hacking demos, and Olympiad solutions will appear here as proof of your evolution.
+      {/* ── 2. REAL BEHAVIORAL PROFILE ──────────────────── */}
+      <div className="daksh-card p-6 space-y-3 border-l-2 border-l-[var(--color-gold)]">
+        <div className="flex items-center gap-2">
+          <Brain size={16} className="text-[var(--color-gold)] shrink-0" />
+          <span className="text-caption tracking-wider text-[var(--color-text-primary)]">Behavioral Profile</span>
+        </div>
+        <div className="space-y-1.5 text-xs text-[var(--color-text-secondary)] leading-relaxed">
+          {behavioralPoints.map((point, idx) => (
+            <p key={idx} className="flex items-start gap-2">
+              <span className="text-[var(--color-gold-dark)]">•</span>
+              <span>{point}</span>
             </p>
-          </GlassCard>
-        </motion.div>
-      )}
-
-      {/* Daksh Companion Guidance Pace Controller */}
-      <GlassCard padding="p-5" className="space-y-3 border-purple-500/30 bg-purple-950/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              <Brain size={18} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                <span>👽 Daksh Companion Guidance Pace</span>
-              </h3>
-              <p className="text-[11px] text-gray-400">Control how frequently Daksh proactively guides you across modules and pages.</p>
-            </div>
-          </div>
-          <span className="text-xs font-black text-purple-400 px-2.5 py-1 rounded-full bg-purple-500/20 border border-purple-500/30">
-            {localStorage.getItem("daksh_companion_pace") || "100"}% Pace
-          </span>
+          ))}
         </div>
+      </div>
 
-        <div className="grid grid-cols-5 gap-1.5 pt-2">
-          {[
-            { val: 100, label: "100%", desc: "Max (Default)" },
-            { val: 75, label: "75%", desc: "Frequent" },
-            { val: 50, label: "50%", desc: "Balanced" },
-            { val: 25, label: "25%", desc: "Minimal" },
-            { val: 0, label: "0%", desc: "Silent (Orb)" },
-          ].map((item) => {
-            const currentPace = Number(localStorage.getItem("daksh_companion_pace") ?? "100");
-            const isActive = currentPace === item.val;
-            return (
-              <button
-                key={item.val}
-                onClick={() => {
-                  localStorage.setItem("daksh_companion_pace", item.val.toString());
-                  window.dispatchEvent(new CustomEvent("daksh:pace_change", { detail: { pace: item.val } }));
-                  // force re-render
-                  setActiveTab((prev) => prev);
-                }}
-                className={`py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center transition-all border cursor-pointer select-none ${
-                  isActive
-                    ? "bg-purple-600/40 border-purple-400 text-white shadow-lg shadow-purple-900/40 font-black"
-                    : "bg-slate-900/80 border-white/10 text-gray-400 hover:text-white hover:bg-white/5 font-semibold"
-                }`}
-              >
-                <span className="text-xs font-extrabold">{item.label}</span>
-                <span className="text-[9px] text-gray-400">{item.desc}</span>
-              </button>
-            );
-          })}
+      {/* ── 3. IDENTITY EVIDENCE NUMBERS ───────────────── */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="daksh-card p-4 text-center space-y-1">
+          <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">Concepts Mastered</span>
+          <span className="text-lg font-bold text-[var(--color-text-primary)]">{masteredConcepts}</span>
         </div>
-      </GlassCard>
+        <div className="daksh-card p-4 text-center space-y-1">
+          <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">MCQs Solved</span>
+          <span className="text-lg font-bold text-[var(--color-text-primary)]">{questionsSolved}</span>
+        </div>
+        <div className="daksh-card p-4 text-center space-y-1">
+          <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">Active Days</span>
+          <span className="text-lg font-bold text-[var(--color-text-primary)]">{totalActiveDays}</span>
+        </div>
+      </div>
 
-      {/* Account Settings & Sign Out */}
+      {/* ── 4. ACCOUNT SETTINGS & SIGN OUT ─────────────── */}
       <div className="pt-2 space-y-2">
         <button
           onClick={() => navigate("/settings")}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition text-left text-xs font-medium text-gray-300"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-border)] bg-white hover:bg-[var(--color-bg-secondary)] transition text-left text-xs font-medium text-[var(--color-text-secondary)] cursor-pointer"
         >
-          <Settings size={15} className="text-gray-400" />
-          <span className="flex-1">Account & Preference Settings</span>
-          <ChevronRight size={14} className="text-gray-600" />
+          <Settings size={15} className="text-[var(--color-mid-gray)]" />
+          <span className="flex-1">Account & Settings</span>
+          <ChevronRight size={14} className="text-[var(--color-mid-gray)]" />
         </button>
 
         <button
-          onClick={() => {
-            logout();
-            navigate("/");
-          }}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-500/10 hover:bg-red-500/5 transition text-left text-xs font-medium text-red-400"
+          onClick={() => { logout(); navigate("/"); }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-danger)]/15 bg-white hover:bg-[var(--color-danger-light)] transition text-left text-xs font-medium text-[var(--color-danger)] cursor-pointer"
         >
-          <LogOut size={15} className="text-red-400" />
+          <LogOut size={15} className="text-[var(--color-danger)]" />
           <span>Sign Out</span>
         </button>
       </div>

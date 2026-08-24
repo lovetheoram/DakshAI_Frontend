@@ -2,13 +2,14 @@ import { motion } from "framer-motion";
 
 export default function ProgressBar({
   value = 0,
-  height = "h-2",
-  color = "from-purple-500 to-indigo-500",
-  bgColor = "bg-white/[0.04]",
-  rounded = "rounded-full",
+  height = "h-1.5",
   className = "",
   showValue = false,
   animate = true,
+  // Keep color prop for backwards compat but ignore it
+  color,
+  bgColor,
+  rounded,
 }) {
   const clamped = Math.max(0, Math.min(100, value));
 
@@ -17,19 +18,19 @@ export default function ProgressBar({
       {showValue && (
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-caption">Progress</span>
-          <span className="text-xs font-bold text-white">{Math.round(clamped)}%</span>
+          <span className="text-xs font-bold text-[var(--color-text-primary)]">{Math.round(clamped)}%</span>
         </div>
       )}
-      <div className={`w-full ${bgColor} ${height} ${rounded} overflow-hidden border border-white/[0.03]`}>
+      <div className="w-full bg-[var(--color-cream)] h-1.5 rounded-full overflow-hidden">
         <motion.div
-          className={`${height} ${rounded} bg-gradient-to-r ${color} relative`}
+          className="h-full rounded-full relative"
+          style={{
+            background: `linear-gradient(90deg, var(--color-gold-light), var(--color-gold))`,
+          }}
           initial={animate ? { width: 0 } : false}
           animate={{ width: `${clamped}%` }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {/* Subtle shimmer overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-60" />
-        </motion.div>
+        />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ export default function SkeletonLoader({
   className = "",
 }) {
   return (
-    <div className={`glass p-6 space-y-4 ${className}`}>
+    <div className={`daksh-card p-6 space-y-4 ${className}`}>
       {avatar && (
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full animate-shimmer" />

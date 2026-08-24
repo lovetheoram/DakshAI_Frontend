@@ -1,18 +1,18 @@
 // src/components/learn/ConceptTabNav.jsx
+// Clean tactile Tab Navigation for Concept Session.
+
 import React from "react";
-import { motion } from "framer-motion";
-import { Swords, BookOpen, BarChart2, History } from "lucide-react";
+import { BookOpen, Target, BarChart2 } from "lucide-react";
 
 export default function ConceptTabNav({ activeTab, onChangeTab }) {
   const tabs = [
-    { id: "practice", label: "1. Practice", icon: Swords, color: "text-purple-400" },
-    { id: "learn", label: "2. Revision Notes", icon: BookOpen, color: "text-amber-400" },
-    { id: "progress", label: "3. Progress", icon: BarChart2, color: "text-blue-400" },
-    { id: "history", label: "4. History", icon: History, color: "text-emerald-400" },
+    { id: "learn", label: "Formula & Concept Notes", icon: BookOpen },
+    { id: "practice", label: "PYQs Practice & Quiz", icon: Target },
+    { id: "progress", label: "Telemetry & History", icon: BarChart2 },
   ];
 
   return (
-    <div className="flex items-center justify-between p-1.5 rounded-2xl bg-slate-900/90 border border-white/10 backdrop-blur-md shadow-lg">
+    <div className="flex gap-2 border-b border-[var(--color-border)] pb-3 overflow-x-auto scrollbar-hide select-none">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -21,19 +21,14 @@ export default function ConceptTabNav({ activeTab, onChangeTab }) {
           <button
             key={tab.id}
             onClick={() => onChangeTab(tab.id)}
-            className={`relative flex-1 py-3 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all select-none ${
-              isActive ? "text-white shadow-md" : "text-gray-400 hover:text-gray-200"
+            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              isActive
+                ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 font-bold shadow-xs"
+                : "bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            {isActive && (
-              <motion.div
-                layoutId="activeConceptTab"
-                className="absolute inset-0 bg-gradient-to-r from-purple-600/40 via-indigo-600/40 to-blue-600/40 border border-purple-500/50 rounded-xl"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-            <Icon size={16} className={`relative z-10 ${isActive ? tab.color : "text-gray-400"}`} />
-            <span className="relative z-10">{tab.label}</span>
+            <Icon size={14} className={isActive ? "text-[var(--color-gold-dark)]" : "text-[var(--color-mid-gray)]"} />
+            <span>{tab.label}</span>
           </button>
         );
       })}

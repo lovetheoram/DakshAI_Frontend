@@ -1,4 +1,6 @@
 // src/components/learn/ConceptSession.jsx
+// Concept & Formula Study Instrument — 100% Ivory + Ink + Antique Gold identity.
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,43 +16,18 @@ import ConceptTabNav from "./ConceptTabNav";
 import ConceptLearnSection from "./ConceptLearnSection";
 import ConceptPracticeSection from "./ConceptPracticeSection";
 import ConceptProgressSection from "./ConceptProgressSection";
-import ConceptHistorySection from "./ConceptHistorySection";
 import BeyondConceptSection from "./BeyondConceptSection";
 
 export default function ConceptSession({ conceptId }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("practice");
+  const [activeTab, setActiveTab] = useState("learn");
   const [concept, setConcept] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Lazy loaded formulas & history data
   const [formulas, setFormulas] = useState([]);
   const [rules, setRules] = useState([]);
   const [aiMeta, setAiMeta] = useState({});
   const [subtopicId, setSubtopicId] = useState(null);
-
-  const [historyRecords, setHistoryRecords] = useState([]);
-  const [historySummary, setHistorySummary] = useState(null);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
-
-  // Listen for Daksh CTA custom events (e.g. Test My Memory -> switch to Revision Notes & Active Recall)
-  useEffect(() => {
-    const handleDakshCta = (e) => {
-      const action = e.detail?.action || "";
-      if (action.includes("notes") || action.includes("learn") || action.includes("curiosity")) {
-        setActiveTab("learn");
-        setTimeout(() => {
-          const el = document.getElementById("active-recall-notes-dashboard");
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-        }, 150);
-      }
-    };
-    window.addEventListener("daksh:cta", handleDakshCta);
-    return () => window.removeEventListener("daksh:cta", handleDakshCta);
-  }, []);
 
   const fetchConceptData = async () => {
     try {
@@ -72,7 +49,6 @@ export default function ConceptSession({ conceptId }) {
         let desc = targetConcept.description || "";
         let sId = targetConcept.subtopic_id;
 
-        // If formulas or rules are not in meta, try subtopic concepts endpoint
         if (!meta.layer_1_hard_formulas && sId) {
           try {
             const subConcepts = await syllabusApi.getSubtopicConcepts(sId);
@@ -146,23 +122,6 @@ export default function ConceptSession({ conceptId }) {
     };
   }, [conceptId]);
 
-  // Load history records lazily
-  const handleLoadHistory = async () => {
-    if (historyLoaded) return;
-    try {
-      setLoadingHistory(true);
-      const res = await progressApi.getHistory(conceptId);
-      setHistorySummary(res.summary || null);
-      setHistoryRecords(res.records || res.history || []);
-      setHistoryLoaded(true);
-    } catch (err) {
-      console.error("Failed to load history:", err);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  // Launch quiz mode
   const handleStartQuiz = (numQuestions = 5, quizType = "PYQS") => {
     navigate(`/quiz/${conceptId}?q=${numQuestions}&type=${quizType}`);
   };
@@ -174,8 +133,8 @@ export default function ConceptSession({ conceptId }) {
   const masteryPercent = concept ? getMasteryPercent(concept.mastery) : 0;
 
   return (
-    <div className="space-y-6 animate-fade-in pb-12">
-      {/* 1. Header Hero with dynamic visual identity */}
+    <div className="space-y-6 select-none pb-12">
+      {/* 1. Header Hero */}
       <ConceptHeaderHero
         conceptName={concept?.name}
         chapterName={concept?.chapter_name}
@@ -183,19 +142,19 @@ export default function ConceptSession({ conceptId }) {
         onContinue={() => setActiveTab("practice")}
       />
 
-      {/* 2. Sleek 4-Tab Navigation */}
+      {/* 2. Sleek Tab Navigation */}
       <ConceptTabNav activeTab={activeTab} onChangeTab={setActiveTab} />
 
-      {/* 3. Main Section Views */}
-      <div className="min-h-[400px]">
+      {/* 3. Main Views */}
+      <div className="min-h-[300px]">
         <AnimatePresence mode="wait">
           {activeTab === "learn" && (
             <motion.div
               key="learn"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
             >
               <ConceptLearnSection
                 conceptName={concept?.name}
@@ -212,10 +171,10 @@ export default function ConceptSession({ conceptId }) {
           {activeTab === "practice" && (
             <motion.div
               key="practice"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
             >
               <ConceptPracticeSection onStartQuiz={handleStartQuiz} />
             </motion.div>
@@ -224,41 +183,23 @@ export default function ConceptSession({ conceptId }) {
           {activeTab === "progress" && (
             <motion.div
               key="progress"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
             >
               <ConceptProgressSection
                 examMastery={concept?.exam_readiness ?? 0}
                 chapterMastery={concept?.chapter_understanding ?? 0}
                 lastPracticed={concept?.last_practiced}
                 questionsSolved={concept?.total_questions_solved}
-                historySummary={historySummary}
-              />
-            </motion.div>
-          )}
-
-          {activeTab === "history" && (
-            <motion.div
-              key="history"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ConceptHistorySection
-                historyRecords={historyRecords}
-                summary={historySummary}
-                loading={loadingHistory}
-                onLoadHistory={handleLoadHistory}
               />
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* 4. Curiosity Layer / Beyond This Concept */}
+      {/* 4. Beyond This Concept */}
       <BeyondConceptSection conceptName={concept?.name} chapterName={concept?.chapter_name} />
     </div>
   );

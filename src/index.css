@@ -5,38 +5,41 @@
 @tailwind utilities;
 
 /* ============================================
-   DakshAI v2 — Design System Tokens
+   DakshAI — Ivory + Ink + Antique Gold
+   "Calm Instrument for Understanding Reality"
    ============================================ */
 
 :root {
-  /* ---- Signature Brand Semantic Tokens ---- */
-  --color-primary:        #5CC8FF; /* Sky Blue */
-  --color-primary-hover:  #38bdf8;
-  --color-success:        #FF8FB1; /* Soft Pink Accent */
-  --color-background:     #070A12; /* Night Obsidian */
-  --color-bg-primary:     #070A12;
-  --color-bg-secondary:   #0D111A;
-  --color-surface:        rgba(13, 17, 26, 0.85); /* Glass Surface */
-  --color-bg-card:        rgba(13, 17, 26, 0.85);
-  --color-bg-card-hover:  rgba(20, 26, 38, 0.9);
+  /* ---- Page Atmosphere ---- */
+  --color-bg-primary:     #F7F5F0;  /* Warm Ivory / Brushed Linen */
+  --color-bg-secondary:   #EFECE6;  /* Soft Warm Gray */
+  --color-bg-card:        #FFFFFF;  /* Tactile White Surface */
+  --color-bg-card-hover:  #FCFCFA;  /* Subtle Hover Surface */
+  --color-surface:        #FFFFFF;
 
-  --color-border:         rgba(92, 200, 255, 0.15);
-  --color-border-hover:   rgba(92, 200, 255, 0.3);
-  --color-border-active:  rgba(92, 200, 255, 0.5);
+  /* ---- Ink & Charcoal ---- */
+  --color-text-primary:   #1A1A1A;  /* Deep Ink */
+  --color-text-secondary: #5A5852;  /* Soft Charcoal */
+  --color-mid-gray:       #9E9B93;  /* Quiet Gray */
 
-  --color-text-main:      #f8fafc; /* Platinum Text */
-  --color-text-primary:   #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted:     #64748b;
+  /* ---- Antique Gold (Punctuation, not the alphabet) ---- */
+  --color-gold:           #C5A55A;  /* Antique Gold */
+  --color-gold-hover:     #B8963E;
+  --color-gold-light:     #D8C38C;
+  --color-gold-pale:      #F5EFE0;  /* Warm Gold Tint */
+  --color-gold-dark:      #8E7430;
 
-  --color-accent:         #5CC8FF;
-  --color-accent-light:   #FF8FB1;
-  --color-accent-dark:    #0284c7;
+  /* ---- Borders ---- */
+  --color-border:         #E5E2DA;  /* Tactile Warm Border */
+  --color-border-hover:   #D5D2C8;
+  --color-border-active:  #C5A55A;
 
-  --color-warning:        #f59e0b;
-  --color-danger:         #f43f5e;
-  --color-error:          #f43f5e;
-  --color-info:           #5CC8FF;
+  /* ---- Semantic Colors ---- */
+  --color-success:        #2E7D4E;
+  --color-success-light:  #EAF4ED;
+  --color-danger:         #B93838;
+  --color-danger-light:   #F9EBEB;
+  --color-info:           #3B6E9C;
 
   /* ---- Typography ---- */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -45,171 +48,25 @@
   --radius-sm:   0.5rem;
   --radius-md:   0.75rem;
   --radius-lg:   1rem;
-  --radius-xl:   1.5rem;
-  --radius-2xl:  2rem;
+  --radius-xl:   1.25rem;
+  --radius-2xl:  1.5rem;
   --radius-pill: 9999px;
 
   /* ---- Shadows ---- */
-  --shadow-glow-sm:  0 0 20px rgba(92, 200, 255, 0.15);
-  --shadow-glow-md:  0 0 40px rgba(92, 200, 255, 0.25);
-  --shadow-glow-lg:  0 0 60px rgba(92, 200, 255, 0.35);
-  --shadow-card:     0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md:   0 4px 14px rgba(0, 0, 0, 0.05);
+  --shadow-lg:   0 10px 30px rgba(0, 0, 0, 0.07);
+  --shadow-card: 0 1px 3px rgba(26, 26, 26, 0.03), 0 0 0 1px rgba(229, 226, 218, 0.8);
+  --shadow-gold: 0 4px 16px rgba(197, 165, 90, 0.18);
 
-  /* ---- Animation ---- */
+  /* ---- Motion ---- */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-fast:   150ms;
   --duration-normal: 250ms;
-  --duration-slow:   400ms;
 }
 
-/* ── Night Mode (Bluish Dark Obsidian Sanctuary) ── */
-[data-theme="night"] {
-  --color-background:     #090D16;
-  --color-bg-primary:     #090D16;
-  --color-bg-secondary:   #0F172A;
-  --color-surface:        rgba(15, 23, 42, 0.85);
-  --color-bg-card:        rgba(15, 23, 42, 0.85);
-  --color-text-main:      #F8FAFC;
-  --color-text-primary:   #F8FAFC;
-  --color-text-secondary: #94A3B8;
-  --color-border:         rgba(92, 200, 255, 0.18);
-}
-
-/* ── Day Mode (Soft Clean Whitish Sanctuary & Adaptive Component Colors) ── */
-[data-theme="day"] {
-  --color-background:     #F8FAFC;
-  --color-bg-primary:     #F8FAFC;
-  --color-bg-secondary:   #F1F5F9;
-  --color-surface:        #FFFFFF;
-  --color-bg-card:        #FFFFFF;
-  --color-text-main:      #0F172A;
-  --color-text-primary:   #0F172A;
-  --color-text-secondary: #475569;
-  --color-border:         #E2E8F0;
-}
-
-[data-theme="day"] body {
-  background-color: #F8FAFC !important;
-  color: #0F172A !important;
-}
-
-[data-theme="day"] header {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: #E2E8F0 !important;
-}
-
-[data-theme="day"] .bg-slate-950,
-[data-theme="day"] .bg-slate-900,
-[data-theme="day"] .bg-\[\#090D16\],
-[data-theme="day"] .bg-\[\#111827\] {
-  background-color: #FFFFFF !important;
-  border-color: #E2E8F0 !important;
-}
-
-[data-theme="day"] .text-white {
-  color: #0F172A !important;
-}
-
-[data-theme="day"] .text-gray-300,
-[data-theme="day"] .text-gray-400,
-[data-theme="day"] .text-slate-300 {
-  color: #475569 !important;
-}
-
-[data-theme="day"] .text-gray-500 {
-  color: #64748B !important;
-}
-
-[data-theme="day"] .border-white\/10,
-[data-theme="day"] .border-white\/\[0\.04\],
-[data-theme="day"] .border-white\/\[0\.06\],
-[data-theme="day"] .border-white\/\[0\.08\] {
-  border-color: #E2E8F0 !important;
-}
-
-[data-theme="day"] .glass,
-[data-theme="day"] .glass-card {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Theme 1: Classic Focus */
-[data-theme="classic"] {
-  --color-bg-primary: #030712;
-  --color-bg-secondary: #0f172a;
-  --color-bg-card: rgba(15, 23, 42, 0.7);
-  --color-accent: #3b82f6;
-  --color-accent-light: #60a5fa;
-  --color-accent-dark: #1d4ed8;
-  --color-border-active: rgba(59, 130, 246, 0.5);
-  --shadow-glow-md: 0 0 40px rgba(59, 130, 246, 0.3);
-}
-
-/* Theme 2: Galaxy Explorer */
-[data-theme="galaxy"] {
-  --color-bg-primary: #0a081d;
-  --color-bg-secondary: #130f30;
-  --color-bg-card: rgba(19, 15, 48, 0.7);
-  --color-accent: #8b5cf6;
-  --color-accent-light: #a78bfa;
-  --color-accent-dark: #6d28d9;
-  --color-border-active: rgba(139, 92, 246, 0.5);
-  --shadow-glow-md: 0 0 40px rgba(139, 92, 246, 0.35);
-}
-
-/* Theme 3: Focused Forest */
-[data-theme="forest"] {
-  --color-bg-primary: #051911;
-  --color-bg-secondary: #0d2e22;
-  --color-bg-card: rgba(13, 46, 34, 0.7);
-  --color-accent: #10b981;
-  --color-accent-light: #34d399;
-  --color-accent-dark: #047857;
-  --color-border-active: rgba(16, 185, 129, 0.5);
-  --shadow-glow-md: 0 0 40px rgba(16, 185, 129, 0.3);
-}
-
-/* Theme 4: Morning Sunrise */
-[data-theme="sunrise"] {
-  --color-bg-primary: #170d08;
-  --color-bg-secondary: #27160d;
-  --color-bg-card: rgba(39, 22, 13, 0.7);
-  --color-accent: #f97316;
-  --color-accent-light: #fb923c;
-  --color-accent-dark: #c2410c;
-  --color-border-active: rgba(249, 115, 22, 0.5);
-  --shadow-glow-md: 0 0 40px rgba(249, 115, 22, 0.3);
-}
-
-/* Theme 5: Candy Studio */
-[data-theme="candy"] {
-  --color-bg-primary: #15091b;
-  --color-bg-secondary: #240e2e;
-  --color-bg-card: rgba(36, 14, 46, 0.7);
-  --color-accent: #ec4899;
-  --color-accent-light: #f472b6;
-  --color-accent-dark: #be185d;
-  --color-border-active: rgba(236, 72, 153, 0.5);
-  --shadow-glow-md: 0 0 40px rgba(236, 72, 153, 0.35);
-}
-
-/* Theme 6: Midnight Focus */
-[data-theme="midnight"] {
-  --color-bg-primary: #000000;
-  --color-bg-secondary: #09090b;
-  --color-bg-card: rgba(9, 9, 11, 0.9);
-  --color-accent: #94a3b8;
-  --color-accent-light: #cbd5e1;
-  --color-accent-dark: #475569;
-  --color-border-active: rgba(148, 163, 184, 0.4);
-  --shadow-glow-md: 0 0 20px rgba(148, 163, 184, 0.2);
-}
-
-/* ============================================
-   Base Resets
-   ============================================ */
-
+/* Base Resets */
 * {
   margin: 0;
   padding: 0;
@@ -230,7 +87,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Scrollbar styling */
+/* Scrollbar (Light) */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -238,57 +95,13 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: #D8D4CA;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #B5B1A6;
 }
 
-/* ============================================
-   Glass Utilities
-   ============================================ */
-
-.glass {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-.glass-hover:hover {
-  background: rgba(15, 23, 42, 0.85);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.08);
-}
-
-.glass-active {
-  border-color: var(--color-border-active);
-  box-shadow: var(--shadow-glow-md), inset 0 1px 0 rgba(255,255,255,0.08);
-}
-
-/* Premium stat number style */
-.stat-number {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Colored bar progress */
-.bar-track {
-  width: 100%;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 9999px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.04);
-}
-
-/* Scrollbar hide utility */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -297,105 +110,117 @@ body {
   scrollbar-width: none;
 }
 
-/* ============================================
-   Glow Effects
-   ============================================ */
-
-.glow-purple {
-  box-shadow: var(--shadow-glow-md);
+/* Tactile Card System */
+.daksh-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  transition: all var(--duration-normal) ease;
 }
 
-.glow-text {
-  text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+.daksh-card-hover:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-md);
 }
 
-/* ============================================
-   Animation Utilities
-   ============================================ */
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+.daksh-card-gold {
+  border-left: 3px solid var(--color-gold);
 }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.1); }
-  50%      { box-shadow: 0 0 40px rgba(168, 85, 247, 0.25); }
-}
+/* Gold Accent Utilities (Restrained) */
+.text-gold { color: var(--color-gold); }
+.text-gold-dark { color: var(--color-gold-dark); }
+.bg-gold { background-color: var(--color-gold); }
+.bg-gold-pale { background-color: var(--color-gold-pale); }
+.border-gold { border-color: var(--color-gold); }
 
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.4s var(--ease-out-expo) both;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255,255,255,0.03) 25%,
-    rgba(255,255,255,0.08) 50%,
-    rgba(255,255,255,0.03) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
-
-/* ============================================
-   Typography Scale
-   ============================================ */
-
-.text-display {
-  font-size: 2.5rem;
-  font-weight: 900;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-}
-
-.text-heading {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.text-subheading {
-  font-size: 1.125rem;
+/* Primary CTA Button */
+.btn-gold {
+  background: var(--color-gold);
+  color: #FFFFFF;
   font-weight: 700;
-  line-height: 1.3;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.btn-gold:hover {
+  background: var(--color-gold-hover);
+  box-shadow: var(--shadow-gold);
+}
+.btn-gold:active {
+  transform: scale(0.98);
 }
 
-.text-body {
-  font-size: 0.9375rem;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--color-text-secondary);
-}
-
-.text-caption {
-  font-size: 0.75rem;
+/* Secondary / Ghost Button */
+.btn-ghost {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+.btn-ghost:hover {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-hover);
 }
 
-/* ============================================
-   Safe areas for mobile
-   ============================================ */
+/* Restrained Progress Bar */
+.bar-track {
+  width: 100%;
+  height: 5px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.bar-fill-gold {
+  height: 100%;
+  background: var(--color-gold);
+  border-radius: var(--radius-pill);
+  transition: width 0.6s var(--ease-out-expo);
+}
+
+/* Typography Helpers */
+.text-caption {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-mid-gray);
+}
+
+/* Form Controls */
+.input-field {
+  width: 100%;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.input-field:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px var(--color-gold-pale);
+}
+
+.input-field::placeholder {
+  color: var(--color-mid-gray);
+}
 
 .pb-safe {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
 .mb-nav {
-  margin-bottom: 5rem;
+  margin-bottom: 4.5rem;
 }
 
 @media (min-width: 768px) {
@@ -403,156 +228,3 @@ body {
     margin-bottom: 0;
   }
 }
-
-/* ============================================
-   DakshPersona — Behavioral Intelligence UI
-   ============================================ */
-
-.daksh-persona-card {
-  position: fixed;
-  bottom: 6rem;        /* above mobile nav */
-  left: 1.25rem;
-  z-index: 200;
-  width: min(340px, calc(100vw - 2.5rem));
-
-  background: rgba(10, 14, 26, 0.92);
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  border-radius: 16px;
-  padding: 1.1rem 1.25rem 1rem;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.08) inset,
-    0 8px 32px rgba(0, 0, 0, 0.55),
-    0 0 48px rgba(139, 92, 246, 0.06);
-
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-
-@media (min-width: 768px) {
-  .daksh-persona-card {
-    bottom: 2rem;     /* desktop — no nav bar */
-  }
-}
-
-/* Header row */
-.daksh-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* The animated identity orb */
-.daksh-orb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  font-size: 10px;
-  color: #a78bfa;
-  animation: daksh-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes daksh-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.65; transform: scale(0.9); }
-}
-
-.daksh-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  color: #7c3aed;
-  text-transform: uppercase;
-  flex: 1;
-}
-
-.daksh-dismiss {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 18px;
-  line-height: 1;
-  padding: 0;
-  transition: color 0.15s;
-}
-.daksh-dismiss:hover { color: rgba(255, 255, 255, 0.7); }
-
-/* Title */
-.daksh-title {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(167, 139, 250, 0.9);
-  letter-spacing: 0.02em;
-  margin: 0;
-}
-
-/* Body */
-.daksh-body {
-  font-size: 0.82rem;
-  line-height: 1.55;
-  color: rgba(248, 250, 252, 0.88);
-  margin: 0;
-  min-height: 2.5em;
-}
-
-/* Blinking typing cursor */
-.daksh-cursor {
-  display: inline-block;
-  color: #a78bfa;
-  animation: daksh-blink 0.7s step-end infinite;
-}
-@keyframes daksh-blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
-}
-
-/* CTA row */
-.daksh-cta-row {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 0.25rem;
-}
-
-.daksh-cta-primary {
-  flex: 1;
-  min-width: 0;
-  padding: 0.45rem 0.85rem;
-  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.daksh-cta-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.daksh-cta-secondary {
-  padding: 0.45rem 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  font-size: 0.72rem;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-.daksh-cta-secondary:hover {
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.08);
-}
-

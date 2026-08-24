@@ -1,153 +1,221 @@
+// src/pages/PracticePage.jsx
+// Practice — Practice Modes & Topic Selector
+// 100% Strict real data from backend API with Info Tooltips.
+// Home handles active ongoing concepts; Practice is the dedicated mode & topic hub.
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import progressApi from "../api/progressApi";
 import syllabusApi from "../api/syllabusApi";
-import GlassCard from "../components/ui/GlassCard";
-import ProgressRing from "../components/ui/ProgressRing";
+import socialApi from "../api/socialApi";
 import SkeletonLoader from "../components/ui/SkeletonLoader";
-import StatusBadge from "../components/ui/StatusBadge";
+import InfoTooltip from "../components/ui/InfoTooltip";
 import { motion } from "framer-motion";
-import { Swords, RotateCcw, BookOpen, Brain, Target, Timer } from "lucide-react";
-
-import MemoryRing from "../components/ui/MemoryRing";
-import EmptyState from "../components/ui/EmptyState";
-
-const MODES = [
-  {
-    id: "revision",
-    icon: RotateCcw,
-    label: "Revision",
-    desc: "Concepts losing mastery",
-    color: "from-amber-500 to-orange-500",
-    bgGlow: "bg-amber-500/10",
-    quizType: "PYQS",
-  },
-  {
-    id: "practice",
-    icon: BookOpen,
-    label: "Practice",
-    desc: "Strengthen what you know",
-    color: "from-purple-500 to-indigo-500",
-    bgGlow: "bg-purple-500/10",
-    quizType: "PYQS",
-  },
-  {
-    id: "adaptive",
-    icon: Brain,
-    label: "AI Challenge",
-    desc: "Questions matched to your level",
-    color: "from-blue-500 to-cyan-500",
-    bgGlow: "bg-blue-500/10",
-    quizType: "NEW",
-  },
-  {
-    id: "pyqs",
-    icon: Target,
-    label: "PYQs",
-    desc: "Previous year questions",
-    color: "from-emerald-500 to-teal-500",
-    bgGlow: "bg-emerald-500/10",
-    quizType: "PYQS",
-  },
-];
+import { ArrowRight, Globe, BookOpen, Target, Award, Layers, Search, ChevronRight } from "lucide-react";
 
 export default function PracticePage() {
   const navigate = useNavigate();
   const [concepts, setConcepts] = useState([]);
+  const [syllabusTree, setSyllabusTree] = useState(null);
+  const [lobbyData, setLobbyData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedMode, setSelectedMode] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const fetchConcepts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await syllabusApi.getConceptList();
-        setConcepts(Array.isArray(data) ? data : data?.concepts || []);
+        const [conceptData, treeData, lobbyRes] = await Promise.all([
+          syllabusApi.getConceptList().catch(() => []),
+          syllabusApi.getTree().catch(() => null),
+          socialApi.getLobby().catch(() => null),
+        ]);
+        setConcepts(Array.isArray(conceptData) ? conceptData : conceptData?.concepts || []);
+        setSyllabusTree(treeData);
+        if (lobbyRes?.lobby) {
+          setLobbyData(lobbyRes.lobby);
+        }
       } catch (err) {
-        console.error("Failed to load concepts:", err);
+        console.error("Failed to load practice data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchConcepts();
+    fetchData();
   }, []);
 
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
         <SkeletonLoader lines={2} />
-        <SkeletonLoader lines={3} />
+        <SkeletonLoader lines={4} />
       </div>
     );
   }
 
-  // Find concepts that need revision (mastery < 60%)
-  const revisionConcepts = concepts.filter((c) => c.mastery < 60 && c.mastery > 0);
+  const totalOnline = lobbyData?.total_online || 0;
+  const focusConceptId = concepts[0]?.id || null;
+
+  const PRACTICE_MODES = [
+    {
+      id: "formula",
+      icon: BookOpen,
+      title: "Formula & Concept Space",
+      desc: "Deep conceptual reading & active recall in Learning Space.",
+      actionLabel: "Open Learning Space",
+      onSelect: () => navigate("/learn"),
+      badge: "Concept Space",
+    },
+    {
+      id: "pyqs",
+      icon: Target,
+      title: "PYQs & Active Retrieval",
+      desc: "Timed previous year questions & MCQ recall checks.",
+      actionLabel: "Start PYQ Quiz",
+      onSelect: () => navigate(focusConceptId ? `/quiz/${focusConceptId}` : "/learn"),
+      badge: "Exam PYQs",
+    },
+    {
+      id: "world",
+      icon: Globe,
+      title: "World Peer Challenge",
+      desc: "Compare speed & accuracy against real online learners.",
+      actionLabel: "Enter World Room",
+      onSelect: () => navigate("/world"),
+      badge: `${totalOnline} Learners`,
+    },
+    {
+      id: "mock",
+      icon: Award,
+      title: "Full Mock Exam",
+      desc: "Full-length exam simulation for timed test endurance.",
+      actionLabel: "Full Exam Simulation",
+      onSelect: () => navigate("/map"),
+      badge: "Simulated Test",
+    },
+  ];
+
+  // Filter concepts based on search query
+  const filteredConcepts = concepts.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-2xl mx-auto px-5 py-8 space-y-8 select-none">
       <div>
-        <h1 className="text-xl font-black text-white">Practice Arena</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Select a mode and challenge your understanding.</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">PRACTICE ROOM</h1>
+        <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Select your preferred practice mode or choose a specific syllabus topic.</p>
       </div>
 
-      {/* Cognition MemoryRing */}
-      <MemoryRing decayAlerts={revisionConcepts} onReview={() => navigate("/learn")} />
+      {/* ── 1. PRACTICE MODES GRID ────────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold flex items-center gap-1.5">
+            <Layers size={13} className="text-[var(--color-gold)]" />
+            Practice Modes & Test Formats
+          </span>
+          <InfoTooltip
+            title="Practice Modes"
+            meaning="Switch between Formula Reading in Learning Space, PYQ Quiz checks, World Calibration, and Mock Exam simulations."
+            formula="Mastery = Formula Comprehension (Space) + MCQ Recall (PYQs) + Calibration (World)"
+            howToIncrease="Combine Formula checks with PYQ Quizzes to achieve 100% stable concept readiness."
+          />
+        </div>
 
-      {/* Mode selector grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {MODES.map((mode, i) => {
-          const Icon = mode.icon;
-          return (
-            <motion.div
-              key={mode.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-            >
-              <GlassCard
-                hover
-                onClick={() => setSelectedMode(mode.id === selectedMode ? null : mode.id)}
-                glow={selectedMode === mode.id}
-                padding="p-4"
-                className={selectedMode === mode.id ? "border-purple-500/30" : ""}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {PRACTICE_MODES.map((mode) => {
+            const IconComp = mode.icon;
+            return (
+              <div
+                key={mode.id}
+                onClick={mode.onSelect}
+                className="daksh-card p-5 space-y-3 border hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)]/30 transition-all cursor-pointer group flex flex-col justify-between"
               >
-                <div className={`w-10 h-10 rounded-xl ${mode.bgGlow} flex items-center justify-center mb-3`}>
-                  <Icon size={20} className="text-white" />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="w-8 h-8 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center">
+                      <IconComp size={16} />
+                    </div>
+                    <span className="text-[10px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2 py-0.5 rounded-md">
+                      {mode.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-xs font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold-dark)] transition-colors">
+                    {mode.title}
+                  </h3>
+                  <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
+                    {mode.desc}
+                  </p>
                 </div>
-                <h3 className="text-sm font-bold text-white mb-0.5">{mode.label}</h3>
-                <p className="text-xs text-gray-500">{mode.desc}</p>
-              </GlassCard>
-            </motion.div>
-          );
-        })}
+
+                <div className="pt-2 border-t border-[var(--color-border)] flex items-center justify-between text-xs font-bold text-[var(--color-gold-dark)]">
+                  <span>{mode.actionLabel}</span>
+                  <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Start button or Actionable Empty State */}
-      {selectedMode ? (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center pt-2"
-        >
-          <p className="text-xs text-gray-300 mb-3 font-medium">
-            Select a concept from the Learning Space to start a {MODES.find(m => m.id === selectedMode)?.label} session.
-          </p>
-          <button
-            onClick={() => navigate("/learn")}
-            className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-xl cursor-pointer"
-          >
-            Pick a Concept →
-          </button>
-        </motion.div>
-      ) : (
-        <EmptyState
-          title="Practice Session Ready"
-          description="Select any mode above to start an active retrieval challenge."
-          actionText="Pick a Concept"
-          onAction={() => navigate("/learn")}
-        />
-      )}
+      {/* ── 2. TOPIC & CHAPTER SELECTOR ──────────────────────── */}
+      <div className="daksh-card p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold flex items-center gap-1.5">
+            <BookOpen size={14} className="text-[var(--color-gold)]" />
+            Pick Syllabus Topic to Practice
+          </span>
+          <span className="text-[10px] text-[var(--color-mid-gray)]">{concepts.length} Available Topics</span>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-mid-gray)]" />
+          <input
+            type="text"
+            placeholder="Search topic or concept name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-field pl-9 py-2 text-xs"
+          />
+        </div>
+
+        {/* Concept / Topic List */}
+        <div className="space-y-2 pt-1 max-h-80 overflow-y-auto pr-1">
+          {filteredConcepts.length > 0 ? (
+            filteredConcepts.map((concept) => (
+              <div
+                key={concept.id}
+                className="p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] hover:border-[var(--color-gold)] transition-all flex items-center justify-between group"
+              >
+                <div className="space-y-0.5 min-w-0 pr-3">
+                  <h4 className="text-xs font-bold text-[var(--color-text-primary)] truncate">{concept.name}</h4>
+                  <p className="text-[10px] text-[var(--color-text-secondary)]">PYQs & Formula checks available</p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => navigate(`/learn/${concept.id}`)}
+                    className="px-2.5 py-1 rounded-lg border border-[var(--color-border)] bg-white hover:border-[var(--color-gold)] text-[11px] font-semibold text-[var(--color-text-secondary)] transition-all cursor-pointer"
+                  >
+                    Formula Space
+                  </button>
+                  <button
+                    onClick={() => navigate(`/quiz/${concept.id}`)}
+                    className="px-2.5 py-1 rounded-lg btn-gold text-[11px] font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <span>PYQs Quiz</span>
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-[var(--color-text-secondary)] text-center py-6">
+              No topics found matching "{searchQuery}".
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

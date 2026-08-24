@@ -1,3 +1,6 @@
+// src/pages/LearnPage.jsx
+// Learning Space — Mind Map + List View with White+Gold visual identity
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import syllabusApi from "../api/syllabusApi";
@@ -15,28 +18,17 @@ export const getMasteryPercent = (mastery) => {
     return Math.round(((mastery[0] + (mastery[1] ?? mastery[0])) / 2) * 100);
   }
   if (typeof mastery === "number") {
-    if (mastery <= 1.0) {
-      return Math.round(mastery * 100);
-    }
+    if (mastery <= 1.0) return Math.round(mastery * 100);
     return Math.round(mastery);
   }
   return 0;
 };
 
 // ==========================================
-// SubtopicNode: large animated water bubble
+// SubtopicNode: Clean circle with gold fill
 // ==========================================
 function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, conceptsCache, conceptsLoading, loadConcepts }) {
   const [efficiency, setEfficiency] = useState(0);
-
-  // Theme colors
-  const themes = [
-    { primary: "#a855f7", secondary: "#c084fc", glow: "#7c3aed" }, // Purple
-    { primary: "#3b82f6", secondary: "#60a5fa", glow: "#2563eb" }, // Blue
-    { primary: "#10b981", secondary: "#34d399", glow: "#059669" }, // Green
-    { primary: "#f59e0b", secondary: "#fbbf24", glow: "#d97706" }  // Amber
-  ];
-  const activeTheme = themes[themeIdx % themes.length];
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -52,53 +44,51 @@ function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, c
 
   const handleToggle = () => {
     onToggle();
-    if (!isOpen) {
-      loadConcepts(subtopic.id);
-    }
+    if (!isOpen) loadConcepts(subtopic.id);
   };
+
+  const fillPct = Math.round(efficiency * 100);
 
   return (
     <div className="flex flex-col items-center">
-      {/* Node Bubble */}
+      {/* Node Circle */}
       <motion.div
         onClick={handleToggle}
-        className="relative cursor-pointer w-28 h-28 sm:w-32 sm:h-32 select-none"
+        className="relative cursor-pointer w-24 h-24 sm:w-28 sm:h-28 select-none"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         <div
           className="w-full h-full rounded-full border-2 relative overflow-hidden"
           style={{
-            borderColor: activeTheme.secondary,
-            boxShadow: `0 0 20px ${activeTheme.glow}40`,
-            background: `radial-gradient(circle at 50% 50%, ${activeTheme.primary}15, #00000020)`,
+            borderColor: isOpen ? 'var(--color-gold)' : 'var(--color-border)',
+            boxShadow: isOpen ? '0 4px 12px rgba(197, 165, 90, 0.2)' : 'none',
+            background: '#FFFFFF',
           }}
         >
-          {/* Efficiency Liquid Fill */}
-          <motion.div
-            className="absolute bottom-0 left-0 w-full rounded-b-full pointer-events-none"
+          {/* Gold fill from bottom */}
+          <div
+            className="absolute bottom-0 left-0 w-full rounded-b-full pointer-events-none transition-all duration-700"
             style={{
-              height: `${efficiency * 100}%`,
-              background: `linear-gradient(to top, ${activeTheme.glow}80, ${activeTheme.primary}40)`,
+              height: `${fillPct}%`,
+              background: 'var(--color-gold)',
+              opacity: 0.25,
             }}
-            animate={{ y: [0, -2, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
 
-          {/* Label HUD */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-1">
-            <span className="text-lg">🔮</span>
-            <h4 className="font-bold text-white text-[10px] sm:text-xs leading-tight mt-1 px-1">
+          {/* Label */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 p-2">
+            <h4 className="font-bold text-[var(--color-text-primary)] text-[10px] sm:text-xs leading-tight">
               {subtopic.name}
             </h4>
-            <span className="text-[8px] text-gray-400 mt-0.5">
-              {Math.round(efficiency * 100)}% COMPLETE
+            <span className="text-[8px] text-[var(--color-gold-dark)] mt-0.5 font-bold">
+              {fillPct}%
             </span>
           </div>
         </div>
       </motion.div>
 
-      {/* Concept branching branches */}
+      {/* Concepts list */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -107,20 +97,19 @@ function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, c
             exit={{ opacity: 0, height: 0 }}
             className="w-full overflow-hidden mt-4"
           >
-            <div className="flex flex-wrap gap-3 justify-center py-2 border-t border-white/[0.04] mt-2">
+            <div className="flex flex-wrap gap-3 justify-center py-2 border-t border-[var(--color-border)] mt-2">
               {conceptsLoading[subtopic.id] ? (
-                <div className="text-[10px] text-gray-500 flex items-center gap-1.5 py-2 animate-pulse">
+                <div className="text-[10px] text-[var(--color-mid-gray)] flex items-center gap-1.5 py-2 animate-pulse">
                   <RefreshCw size={10} className="animate-spin" />
-                  Syncing concepts...
+                  Loading concepts...
                 </div>
               ) : (conceptsCache[subtopic.id] || []).length === 0 ? (
-                <span className="text-[10px] text-gray-600 py-1">No concepts found</span>
+                <span className="text-[10px] text-[var(--color-mid-gray)] py-1">No concepts found</span>
               ) : (
                 (conceptsCache[subtopic.id] || []).map((concept, cIdx) => (
                   <ConceptOrb
                     key={concept.id}
                     concept={concept}
-                    theme={activeTheme}
                     index={cIdx}
                     onClick={() => onSelectConcept(concept.id)}
                   />
@@ -135,17 +124,14 @@ function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, c
 }
 
 // ==========================================
-// ConceptOrb: smaller branching sub-bubble
+// ConceptOrb: Smaller concept bubble
 // ==========================================
-function ConceptOrb({ concept, theme, index, onClick }) {
+function ConceptOrb({ concept, index, onClick }) {
   const [current, setCurrent] = useState(0);
-  const [peak, setPeak] = useState(0);
 
   useEffect(() => {
     const mastery = concept.mastery?.length ? concept.mastery.reduce((a, b) => a + b, 0) / concept.mastery.length : 0;
-    const raw = concept.raw_mastry?.length ? concept.raw_mastry.reduce((a, b) => a + b, 0) / concept.raw_mastry.length : 0;
     setCurrent(Math.max(0, Math.min(1, mastery)));
-    setPeak(Math.max(0, Math.min(1, raw)));
   }, [concept]);
 
   return (
@@ -159,35 +145,25 @@ function ConceptOrb({ concept, theme, index, onClick }) {
       whileTap={{ scale: 0.95 }}
     >
       <div
-        className="w-full h-full rounded-full border relative overflow-hidden"
+        className="w-full h-full rounded-full border relative overflow-hidden bg-white"
         style={{
-          borderColor: "rgba(136,136,136,0.3)",
-          boxShadow: `0 0 10px rgba(136,136,136,0.15)`,
-          background: `radial-gradient(circle at 50% 50%, ${theme.primary}30 0%, ${theme.primary}10 80%, transparent 100%)`
+          borderColor: current > 0.5 ? 'var(--color-gold)' : 'var(--color-border)',
         }}
       >
-        {/* Peak Gray Fills */}
-        <div
-          className="absolute bottom-0 left-0 w-full rounded-b-full pointer-events-none"
-          style={{
-            height: `${peak * 100}%`,
-            background: "linear-gradient(to top, rgba(136,136,136,0.4), rgba(204,204,204,0.15))"
-          }}
-        />
-
-        {/* Current Colored Fills */}
+        {/* Gold fill */}
         <div
           className="absolute bottom-0 left-0 w-full rounded-b-full pointer-events-none"
           style={{
             height: `${current * 100}%`,
-            background: `linear-gradient(to top, ${theme.glow}aa, ${theme.primary}50)`
+            background: 'var(--color-gold)',
+            opacity: 0.3,
           }}
         />
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-0.5 z-10">
           <span className="text-[10px] sm:text-xs">{getConceptIcon(concept.name, concept.id)}</span>
-          <span className="text-[7px] sm:text-[9px] font-bold text-white leading-tight mt-0.5 px-0.5 text-center line-clamp-2">
+          <span className="text-[7px] sm:text-[9px] font-bold text-[var(--color-text-primary)] leading-tight mt-0.5 px-0.5 text-center line-clamp-2">
             {concept.name}
           </span>
         </div>
@@ -204,17 +180,13 @@ export default function LearnPage() {
   const navigate = useNavigate();
   const [tree, setTree] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState("mindmap"); // default to tech-tree mindmap
+  const [viewMode, setViewMode] = useState("mindmap");
 
-  // List View states
   const [expandedSubject, setExpandedSubject] = useState(null);
   const [expandedChapter, setExpandedChapter] = useState(null);
-
-  // Tech Tree Mind Map states
   const [activeSubjectIndex, setActiveSubjectIndex] = useState(0);
   const [activeChapterId, setActiveChapterId] = useState(null);
 
-  // Dynamic concept cache
   const [conceptsCache, setConceptsCache] = useState({});
   const [conceptsLoading, setConceptsLoading] = useState({});
 
@@ -233,10 +205,8 @@ export default function LearnPage() {
     fetchTree();
   }, []);
 
-  // Fetch concepts for a subtopic/chapter if not cached
   const loadConcepts = async (subtopicId) => {
     if (conceptsCache[subtopicId] || conceptsLoading[subtopicId]) return;
-
     try {
       setConceptsLoading(prev => ({ ...prev, [subtopicId]: true }));
       const data = await syllabusApi.getSubtopicConcepts(subtopicId);
@@ -248,13 +218,13 @@ export default function LearnPage() {
     }
   };
 
-  // If a concept is selected, show the concept session
+  // Concept detail view
   if (conceptId) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-2xl mx-auto px-5 py-6">
         <button
           onClick={() => navigate("/learn")}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-6"
+          className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors mb-6 cursor-pointer"
         >
           <ArrowLeft size={16} />
           Back to subjects
@@ -274,14 +244,12 @@ export default function LearnPage() {
     );
   }
 
-  // Robust Subject Extraction
+  // Subject extraction
   const subjects = [];
   if (tree?.exams) {
     tree.exams.forEach(exam => {
       exam.subjects?.forEach(s => {
-        if (!subjects.find(sub => sub.id === s.id)) {
-          subjects.push(s);
-        }
+        if (!subjects.find(sub => sub.id === s.id)) subjects.push(s);
       });
     });
   } else if (tree?.subjects) {
@@ -295,32 +263,32 @@ export default function LearnPage() {
   const currentSubject = subjects[activeSubjectIndex];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      {/* Header with View Toggle */}
+    <div className="max-w-2xl mx-auto px-5 py-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-heading text-white">Learning Space</h1>
-          <p className="text-body text-sm mt-1">Explore your pathways.</p>
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Learning Space</h1>
+          <p className="text-xs text-[var(--color-text-secondary)] mt-1">Explore your pathways.</p>
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center bg-white/[0.03] border border-white/[0.06] rounded-xl p-1">
+        <div className="flex items-center bg-white border border-[var(--color-border)] rounded-xl p-1">
           <button
             onClick={() => setViewMode("mindmap")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${viewMode === "mindmap"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/15"
-                : "text-gray-400 hover:text-white"
-              }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "mindmap"
+              ? "bg-[var(--color-gold)] text-white shadow-sm font-bold"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            }`}
           >
             <Network size={14} />
             Mind Map
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${viewMode === "list"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-500/15"
-                : "text-gray-400 hover:text-white"
-              }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "list"
+              ? "bg-[var(--color-gold)] text-white shadow-sm font-bold"
+              : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            }`}
           >
             <List size={14} />
             List
@@ -329,69 +297,53 @@ export default function LearnPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        {/* ================= FUTURISTIC BRANCHED TECH TREE MIND MAP ================= */}
+        {/* ═══ MIND MAP ═══ */}
         {viewMode === "mindmap" && (
-          <motion.div
-            key="mindmap"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 animate-fade-in"
-          >
-            {/* Subject Selector Buttons */}
+          <motion.div key="mindmap" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+            {/* Subject Tabs */}
             <div className="flex flex-wrap gap-2 justify-center">
               {subjects.map((subject, idx) => (
                 <button
                   key={subject.id || idx}
-                  onClick={() => {
-                    setActiveSubjectIndex(idx);
-                    setActiveChapterId(null);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${activeSubjectIndex === idx
-                      ? "bg-purple-500/20 border-purple-500/40 text-purple-300 shadow-md shadow-purple-500/10"
-                      : "bg-white/[0.02] border-white/[0.04] text-gray-400 hover:text-white hover:bg-white/[0.04]"
-                    }`}
+                  onClick={() => { setActiveSubjectIndex(idx); setActiveChapterId(null); }}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${activeSubjectIndex === idx
+                    ? "bg-[var(--color-gold-pale)] border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] font-bold"
+                    : "bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                  }`}
                 >
                   {subject.name}
                 </button>
               ))}
             </div>
 
-            {/* Topics Tech Tree pipeline */}
+            {/* Topics */}
             {currentSubject && (
               <div className="space-y-8">
                 {(currentSubject.topics || []).map((topic, topicIdx) => (
-                  <GlassCard key={topic.id || topicIdx} className="relative overflow-hidden" padding="p-6">
-                    {/* Header */}
+                  <GlassCard key={topic.id || topicIdx} padding="p-6">
                     <div className="flex items-center justify-between mb-6">
-                      <span className="text-caption tracking-wider text-purple-300 font-black">{topic.name}</span>
-                      <span className="text-[10px] text-gray-600">{topic.subtopics?.length || 0} chapters</span>
+                      <span className="text-caption tracking-wider text-[var(--color-gold)] font-bold">{topic.name}</span>
+                      <span className="text-[10px] text-[var(--color-mid-gray)]">{topic.subtopics?.length || 0} chapters</span>
                     </div>
 
-                    {/* Pathways container */}
                     <div className="relative py-4 flex items-center justify-center min-h-[140px]">
-                      {/* Connection track running behind bubbles */}
-                      <div className="absolute left-12 right-12 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent pointer-events-none" />
+                      {/* Connection track */}
+                      <div className="absolute left-12 right-12 top-1/2 -translate-y-1/2 h-[1px] bg-[var(--color-border)] pointer-events-none" />
 
-                      {/* Radiating subtopic nodes */}
-                      <div className="relative z-10 flex flex-wrap justify-center gap-12 sm:gap-16 w-full">
-                        {(topic.subtopics || []).map((subtopic, subIdx) => {
-                          const isActive = activeChapterId === subtopic.id;
-                          return (
-                            <SubtopicNode
-                              key={subtopic.id || subIdx}
-                              subtopic={subtopic}
-                              themeIdx={subIdx}
-                              isOpen={isActive}
-                              onToggle={() => setActiveChapterId(isActive ? null : subtopic.id)}
-                              onSelectConcept={(id) => navigate(`/learn/${id}`)}
-                              conceptsCache={conceptsCache}
-                              conceptsLoading={conceptsLoading}
-                              loadConcepts={loadConcepts}
-                            />
-                          );
-                        })}
+                      <div className="relative z-10 flex flex-wrap justify-center gap-10 sm:gap-14 w-full">
+                        {(topic.subtopics || []).map((subtopic, subIdx) => (
+                          <SubtopicNode
+                            key={subtopic.id || subIdx}
+                            subtopic={subtopic}
+                            themeIdx={subIdx}
+                            isOpen={activeChapterId === subtopic.id}
+                            onToggle={() => setActiveChapterId(activeChapterId === subtopic.id ? null : subtopic.id)}
+                            onSelectConcept={(id) => navigate(`/learn/${id}`)}
+                            conceptsCache={conceptsCache}
+                            conceptsLoading={conceptsLoading}
+                            loadConcepts={loadConcepts}
+                          />
+                        ))}
                       </div>
                     </div>
                   </GlassCard>
@@ -401,16 +353,9 @@ export default function LearnPage() {
           </motion.div>
         )}
 
-        {/* ================= LIST VIEW ================= */}
+        {/* ═══ LIST VIEW ═══ */}
         {viewMode === "list" && (
-          <motion.div
-            key="list"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-3"
-          >
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
             {subjects.map((subject, si) => (
               <motion.div
                 key={subject.id || si}
@@ -418,43 +363,34 @@ export default function LearnPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: si * 0.06 }}
               >
-                <GlassCard
-                  hover
-                  onClick={() => setExpandedSubject(expandedSubject === si ? null : si)}
-                  padding="p-5"
-                >
+                <GlassCard hover onClick={() => setExpandedSubject(expandedSubject === si ? null : si)} padding="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
-                        <BookOpen size={18} className="text-purple-400" />
+                      <div className="w-10 h-10 rounded-xl bg-[var(--color-gold-pale)] flex items-center justify-center">
+                        <BookOpen size={18} className="text-[var(--color-gold)]" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-white">{subject.name}</h3>
-                        <p className="text-xs text-gray-500">
+                        <h3 className="text-sm font-bold text-[var(--color-text-primary)]">{subject.name}</h3>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
                           {subjects[si]?.topics?.reduce((acc, t) => acc + (t.subtopics?.length || 0), 0) || 0} chapters
                         </p>
                       </div>
                     </div>
                     <ChevronRight
                       size={16}
-                      className={`text-gray-500 transition-transform duration-200 ${expandedSubject === si ? "rotate-90" : ""
-                        }`}
+                      className={`text-[var(--color-mid-gray)] transition-transform duration-200 ${expandedSubject === si ? "rotate-90" : ""}`}
                     />
                   </div>
 
                   {subject.mastery !== undefined && (
-                    <ProgressBar
-                      value={subject.mastery ?? 0}
-                      className="mt-3"
-                      color="from-purple-500 to-indigo-500"
-                    />
+                    <ProgressBar value={subject.mastery ?? 0} className="mt-3" />
                   )}
                 </GlassCard>
 
-                {/* Chapters list */}
+                {/* Chapters */}
                 {expandedSubject === si && (
                   <motion.div
-                    className="ml-4 mt-2 space-y-2 border-l-2 border-purple-500/10 pl-4"
+                    className="ml-4 mt-2 space-y-2 border-l-2 border-[var(--color-gold)]/20 pl-4"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     transition={{ duration: 0.3 }}
@@ -468,42 +404,35 @@ export default function LearnPage() {
                             setExpandedChapter(isOpen ? null : `${si}-${ci}`);
                             if (!isOpen) loadConcepts(chapter.id);
                           }}
-                          className="w-full text-left px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-purple-500/15 transition-all group"
+                          className="w-full text-left px-4 py-3 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-gold)]/30 hover:bg-[var(--color-gold-pale)]/30 transition-all group cursor-pointer"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-300 group-hover:text-white">
+                            <span className="text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]">
                               {chapter.name}
                             </span>
-                            <span className="text-xs text-gray-600">
-                              Concepts
-                            </span>
+                            <span className="text-xs text-[var(--color-mid-gray)]">Concepts</span>
                           </div>
                         </button>
 
-                        {/* Concepts */}
                         {expandedChapter === `${si}-${ci}` && (
-                          <motion.div
-                            className="ml-4 mt-1.5 space-y-1.5"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                          >
+                          <motion.div className="ml-4 mt-1.5 space-y-1.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                             {conceptsLoading[chapter.id] ? (
-                              <div className="flex items-center gap-2 text-xs text-gray-500 py-2 pl-4">
+                              <div className="flex items-center gap-2 text-xs text-[var(--color-mid-gray)] py-2 pl-4">
                                 <RefreshCw size={12} className="animate-spin" />
                                 Loading concepts...
                               </div>
                             ) : (conceptsCache[chapter.id] || []).length === 0 ? (
-                              <div className="text-xs text-gray-600 py-2 pl-4">No concepts found in this chapter.</div>
+                              <div className="text-xs text-[var(--color-mid-gray)] py-2 pl-4">No concepts found.</div>
                             ) : (
                               (conceptsCache[chapter.id] || []).map((concept) => (
                                 <button
                                   key={concept.id}
                                   onClick={() => navigate(`/learn/${concept.id}`)}
-                                  className="w-full text-left px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-purple-300 hover:bg-purple-500/5 transition-all flex items-center justify-between group"
+                                  className="w-full text-left px-4 py-2.5 rounded-lg text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-gold-dark)] hover:bg-[var(--color-gold-pale)] transition-all flex items-center justify-between group cursor-pointer"
                                 >
                                   <span>{concept.name}</span>
                                   {concept.mastery !== undefined && (
-                                    <span className="text-xs text-gray-600 group-hover:text-purple-400">
+                                    <span className="text-xs text-[var(--color-mid-gray)] group-hover:text-[var(--color-gold)]">
                                       {getMasteryPercent(concept.mastery)}%
                                     </span>
                                   )}

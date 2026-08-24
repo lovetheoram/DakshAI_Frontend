@@ -6,7 +6,7 @@ import AppShell from "./components/layout/AppShell";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { AuthContext } from "./context/AuthContext";
 
-// New Pages
+// Pages
 import Home from "./pages/Home";
 import LearnPage from "./pages/LearnPage";
 import PracticePage from "./pages/PracticePage";
@@ -15,7 +15,7 @@ import GrowthPage from "./pages/GrowthPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 
-// Kept & Restyled Pages/Components
+// Auth & Social
 import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
 import About from "./components/about/About";
@@ -27,12 +27,15 @@ import UserProfilePage from "./components/social/ProfilePage";
 import FullScreenQuiz from "./components/quiz/FullScreenQuiz";
 
 export default function App() {
-  const { loading, user } = useContext(AuthContext);
+  const { loading } = useContext(AuthContext);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center text-sm font-semibold text-gray-400">
-        Initializing session...
+      <div className="min-h-screen bg-white flex items-center justify-center text-xs font-semibold text-[var(--color-text-secondary)]">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[var(--color-gold)] animate-ping" />
+          <span>Initializing session...</span>
+        </div>
       </div>
     );
   }
@@ -97,6 +100,14 @@ export default function App() {
         />
         <Route
           path="/growth"
+          element={
+            <ProtectedRoute>
+              <GrowthPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/map"
           element={
             <ProtectedRoute>
               <GrowthPage />

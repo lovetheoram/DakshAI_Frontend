@@ -4,20 +4,12 @@ import { motion } from "framer-motion";
 import socialApi from "../../api/socialApi";
 import syllabusApi from "../../api/syllabusApi";
 import { AuthContext } from "../../context/AuthContext";
-import { Image, FileText, Video, X, Sparkles, Plus } from "lucide-react";
+import { Image, FileText, Video, X, Sparkles } from "lucide-react";
 import Modal from "../ui/Modal";
 
-// Universal YouTube Embed Parser (Mobile & Desktop Compatible)
 export const parseYouTubeEmbedUrl = (url) => {
   if (!url || typeof url !== "string") return null;
   const cleanUrl = url.trim();
-
-  // Handles:
-  // - youtube.com/watch?v=VIDEO_ID
-  // - m.youtube.com/watch?v=VIDEO_ID
-  // - youtu.be/VIDEO_ID
-  // - youtube.com/shorts/VIDEO_ID
-  // - youtube.com/embed/VIDEO_ID
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = cleanUrl.match(regExp);
 
@@ -41,13 +33,12 @@ export default function CreatePost({ onPostCreated }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showVideoInput, setShowVideoInput] = useState(false);
 
-  // Custom concept picker state
   const [showConceptPicker, setShowConceptPicker] = useState(false);
   const [conceptSearch, setConceptSearch] = useState("");
 
   useEffect(() => {
     syllabusApi.getConceptList()
-      .then((res) => setConcepts(res))
+      .then((res) => setConcepts(Array.isArray(res) ? res : res?.concepts || []))
       .catch(() => setConcepts([]));
   }, []);
 
@@ -85,10 +76,6 @@ export default function CreatePost({ onPostCreated }) {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeDocument = (index) => {
-    setDocuments((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const removeVideo = (index) => {
     setVideos((prev) => prev.filter((_, i) => i !== index));
   };
@@ -108,7 +95,6 @@ export default function CreatePost({ onPostCreated }) {
       const res = await socialApi.createPost(formData);
       onPostCreated(res.data.data);
 
-      // Reset
       setContent("");
       setSelectedConcept("");
       setImages([]);
@@ -122,32 +108,26 @@ export default function CreatePost({ onPostCreated }) {
   };
 
   return (
-    <motion.div layout className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-4 sm:p-6 mb-4 text-white">
+    <div className="daksh-card p-5 sm:p-6 space-y-4 text-[var(--color-text-primary)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-400 border border-purple-500/30 rounded-full flex items-center justify-center font-bold text-sm">
-            ✨
-          </div>
-          <div>
-            <h3 className="font-bold text-white text-sm sm:text-base">
-              Share Contribution
-            </h3>
-          </div>
-        </div>
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-xs uppercase tracking-wider text-[var(--color-text-primary)]">
+          Share Peer Update
+        </h3>
+        <span className="text-[10px] text-[var(--color-mid-gray)]">Community Space</span>
       </div>
 
       {/* Concept Select */}
-      <div className="mb-3">
+      <div>
         {selectedConcept ? (
-          <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/30 rounded-xl px-4 py-2.5 text-xs text-purple-300">
+          <div className="flex items-center justify-between bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 rounded-xl px-4 py-2 text-xs text-[var(--color-gold-dark)]">
             <span className="truncate pr-2 font-medium">
-              🎓 Linked Concept: {concepts.find((c) => String(c.id) === String(selectedConcept))?.name}
+              Linked Concept: {concepts.find((c) => String(c.id) === String(selectedConcept))?.name}
             </span>
             <button
               type="button"
               onClick={() => setSelectedConcept("")}
-              className="text-purple-400 hover:text-white transition-colors p-1"
+              className="text-[var(--color-gold-dark)] hover:text-[var(--color-text-primary)] p-1 cursor-pointer"
             >
               <X size={14} />
             </button>
@@ -156,10 +136,10 @@ export default function CreatePost({ onPostCreated }) {
           <button
             type="button"
             onClick={() => setShowConceptPicker(true)}
-            className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-left text-xs text-gray-400 hover:border-purple-500/50 hover:text-white transition-all flex items-center justify-between"
+            className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl px-4 py-2 text-left text-xs text-[var(--color-text-secondary)] hover:border-[var(--color-gold)] transition-all flex items-center justify-between cursor-pointer"
           >
-            <span>🎓 Link to a Concept (optional)</span>
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span>Link to a Concept (optional)</span>
+            <Sparkles className="w-4 h-4 text-[var(--color-gold)]" />
           </button>
         )}
       </div>
@@ -172,12 +152,12 @@ export default function CreatePost({ onPostCreated }) {
             placeholder="Search concepts..."
             value={conceptSearch}
             onChange={(e) => setConceptSearch(e.target.value)}
-            className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-colors"
+            className="input-field py-2 text-xs"
           />
 
-          <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+          <div className="max-h-[250px] overflow-y-auto space-y-1 pr-1">
             {concepts.filter((c) => c.name.toLowerCase().includes(conceptSearch.toLowerCase())).length === 0 ? (
-              <p className="text-xs text-gray-500 text-center py-6">No matching concepts</p>
+              <p className="text-xs text-[var(--color-text-secondary)] text-center py-6">No matching concepts</p>
             ) : (
               concepts
                 .filter((c) => c.name.toLowerCase().includes(conceptSearch.toLowerCase()))
@@ -190,9 +170,9 @@ export default function CreatePost({ onPostCreated }) {
                       setShowConceptPicker(false);
                       setConceptSearch("");
                     }}
-                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs text-gray-300 hover:text-purple-300 hover:bg-purple-500/5 transition-colors block truncate"
+                    className="w-full text-left px-3.5 py-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-gold-dark)] hover:bg-[var(--color-gold-pale)] transition-colors block truncate cursor-pointer"
                   >
-                    📚 {c.name}
+                    {c.name}
                   </button>
                 ))
             )}
@@ -202,24 +182,24 @@ export default function CreatePost({ onPostCreated }) {
 
       {/* Content Textarea */}
       <textarea
-        className="w-full resize-none bg-slate-950/60 border border-white/10 text-white text-xs sm:text-sm rounded-xl p-3.5 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 mb-3 transition-all duration-200"
+        className="input-field resize-none text-xs sm:text-sm p-3.5"
         rows={isExpanded ? 4 : 3}
-        placeholder="What are you building, learning, or discovering?"
+        placeholder="What concept or insight are you exploring?"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onFocus={() => setIsExpanded(true)}
       />
 
-      {/* Media Attachment Action Buttons (Mobile-optimized grid) */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <label className="flex items-center gap-2 px-3 py-2 bg-slate-950/60 hover:bg-white/10 border border-white/10 rounded-xl cursor-pointer text-xs font-semibold text-gray-300 hover:text-white transition-all">
-          <Image size={15} className="text-blue-400" />
+      {/* Media Attachment Action Buttons */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-bg-primary)] border border-[var(--color-border)] hover:border-[var(--color-gold)] rounded-xl cursor-pointer text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all">
+          <Image size={14} className="text-[var(--color-gold)]" />
           <span>Image</span>
           <input type="file" multiple accept="image/*" hidden onChange={handleImages} />
         </label>
 
-        <label className="flex items-center gap-2 px-3 py-2 bg-slate-950/60 hover:bg-white/10 border border-white/10 rounded-xl cursor-pointer text-xs font-semibold text-gray-300 hover:text-white transition-all">
-          <FileText size={15} className="text-emerald-400" />
+        <label className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-bg-primary)] border border-[var(--color-border)] hover:border-[var(--color-gold)] rounded-xl cursor-pointer text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all">
+          <FileText size={14} className="text-[var(--color-gold)]" />
           <span>Document</span>
           <input type="file" multiple hidden onChange={handleDocuments} />
         </label>
@@ -227,44 +207,44 @@ export default function CreatePost({ onPostCreated }) {
         <button
           type="button"
           onClick={() => setShowVideoInput(!showVideoInput)}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-950/60 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-semibold text-gray-300 hover:text-white transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-bg-primary)] border border-[var(--color-border)] hover:border-[var(--color-gold)] rounded-xl text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
         >
-          <Video size={15} className="text-red-400" />
+          <Video size={14} className="text-[var(--color-gold)]" />
           <span>YouTube Link</span>
         </button>
       </div>
 
-      {/* Mobile-Friendly YouTube Input Drawer */}
+      {/* YouTube Drawer */}
       {showVideoInput && (
-        <div className="p-3 bg-slate-950/80 border border-red-500/30 rounded-2xl mb-3 space-y-2">
-          <label className="block text-[11px] font-bold text-red-400">Add YouTube Video or Short Link</label>
+        <div className="p-3 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl space-y-2">
+          <label className="block text-[10px] font-bold text-[var(--color-text-primary)] uppercase">Add YouTube Video Link</label>
           <div className="flex gap-2">
             <input
               type="url"
-              placeholder="Paste YouTube URL (e.g., https://youtu.be/...)"
+              placeholder="Paste YouTube URL..."
               value={videoInput}
               onChange={(e) => setVideoInput(e.target.value)}
-              className="flex-1 bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+              className="input-field py-1.5 text-xs flex-1"
             />
             <button
               type="button"
               onClick={handleAddVideo}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0"
+              className="btn-gold px-4 py-1.5 text-xs font-bold shrink-0"
             >
-              Add Video
+              Add
             </button>
           </div>
-          {videoError && <p className="text-[11px] text-rose-400 font-semibold">{videoError}</p>}
+          {videoError && <p className="text-[10px] text-[var(--color-danger)] font-semibold">{videoError}</p>}
         </div>
       )}
 
       {/* Previews */}
-      {(imagePreviews.length > 0 || videos.length > 0 || documents.length > 0) && (
-        <div className="space-y-3 mb-4 p-3 bg-slate-950/40 rounded-2xl border border-white/5">
+      {(imagePreviews.length > 0 || videos.length > 0) && (
+        <div className="space-y-3 p-3 bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border)]">
           {imagePreviews.length > 0 && (
             <div className="grid grid-cols-3 gap-2">
               {imagePreviews.map((src, i) => (
-                <div key={i} className="relative group rounded-xl overflow-hidden aspect-square border border-white/10">
+                <div key={i} className="relative rounded-lg overflow-hidden aspect-square border border-[var(--color-border)]">
                   <img src={src} className="w-full h-full object-cover" />
                   <button onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full"><X size={12} /></button>
                 </div>
@@ -273,7 +253,7 @@ export default function CreatePost({ onPostCreated }) {
           )}
 
           {videos.map((url, i) => (
-            <div key={i} className="relative rounded-2xl overflow-hidden border border-red-500/30 bg-black aspect-video">
+            <div key={i} className="relative rounded-xl overflow-hidden border border-[var(--color-border)] bg-black aspect-video">
               <iframe
                 src={url}
                 className="w-full h-full border-0"
@@ -282,7 +262,7 @@ export default function CreatePost({ onPostCreated }) {
               />
               <button
                 onClick={() => removeVideo(i)}
-                className="absolute top-2 right-2 bg-black/80 text-white p-1.5 rounded-full hover:bg-red-600 transition-colors"
+                className="absolute top-2 right-2 bg-black/80 text-white p-1.5 rounded-full hover:bg-[var(--color-danger)] transition-colors"
               >
                 <X size={14} />
               </button>
@@ -292,15 +272,15 @@ export default function CreatePost({ onPostCreated }) {
       )}
 
       {/* Submit CTA */}
-      <div className="flex justify-end pt-2 border-t border-white/10">
+      <div className="flex justify-end pt-2 border-t border-[var(--color-border)]">
         <button
           onClick={submit}
           disabled={!content && !images.length && !videos.length && !documents.length}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-40 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all"
+          className="btn-gold px-5 py-2.5 rounded-xl text-xs font-bold disabled:opacity-40"
         >
-          Post to Community
+          Post Update
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

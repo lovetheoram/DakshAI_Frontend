@@ -1,8 +1,8 @@
 // src/components/learn/ConceptPracticeSection.jsx
+// Clean tactile Concept Practice Section aligned with Warm Ivory + Ink + Antique Gold styling.
+
 import React from "react";
-import { motion } from "framer-motion";
-import { Swords, Flame, Target, RotateCcw, Clock, ShieldAlert, Award } from "lucide-react";
-import GlassCard from "../ui/GlassCard";
+import { Flame, Target, RotateCcw, Clock, Award, ArrowRight } from "lucide-react";
 
 export default function ConceptPracticeSection({ onStartQuiz }) {
   const modes = [
@@ -10,137 +10,86 @@ export default function ConceptPracticeSection({ onStartQuiz }) {
       id: "quick",
       numQuestions: 5,
       type: "PYQS",
-      title: "Quick Challenge",
-      desc: "Test speed & core recall",
+      title: "Quick 5-Question Check",
+      desc: "Fast recall test for core formulas",
       questions: "5 Questions",
       time: "2 mins",
       badge: "Fast Track",
       icon: Flame,
-      color: "from-amber-500/20 to-orange-500/20",
-      borderColor: "border-amber-500/30",
-      textColor: "text-amber-400",
-      btnBg: "bg-amber-500 hover:bg-amber-400 text-slate-950"
     },
     {
       id: "exam",
       numQuestions: 20,
       type: "NEW",
-      title: "Exam Mode",
-      desc: "Full realistic test simulation",
+      title: "Full Exam Simulation",
+      desc: "Comprehensive topic test",
       questions: "20 Questions",
       time: "15 mins",
-      badge: "Real Test",
-      icon: Swords,
-      color: "from-purple-500/20 to-indigo-500/20",
-      borderColor: "border-purple-500/30",
-      textColor: "text-purple-400",
-      btnBg: "bg-purple-600 hover:bg-purple-500 text-white"
-    },
-    {
-      id: "weak",
-      numQuestions: 7,
-      type: "NEW",
-      title: "Weak Areas",
-      desc: "Target tricky sub-concepts",
-      questions: "7 Questions",
-      time: "5 mins",
-      badge: "AI Targeted",
+      badge: "Simulated Test",
       icon: Target,
-      color: "from-rose-500/20 to-red-500/20",
-      borderColor: "border-rose-500/30",
-      textColor: "text-rose-400",
-      btnBg: "bg-rose-600 hover:bg-rose-500 text-white"
     },
     {
       id: "mistakes",
-      numQuestions: 12,
+      numQuestions: 10,
       type: "PYQS",
-      title: "Mistake Revision",
-      desc: "Master questions you got wrong",
-      questions: "12 Questions",
+      title: "PYQs Practice Check",
+      desc: "Practice authentic previous year exam questions",
+      questions: "10 Questions",
       time: "8 mins",
-      badge: "Memory Retention",
+      badge: "Exam PYQs",
       icon: RotateCcw,
-      color: "from-blue-500/20 to-cyan-500/20",
-      borderColor: "border-blue-500/30",
-      textColor: "text-blue-400",
-      btnBg: "bg-blue-600 hover:bg-blue-500 text-white"
     }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Swords size={18} className="text-purple-400" />
-            Practice & Test Challenge
-          </h3>
-          <p className="text-xs text-gray-400">Choose a game mode to test your understanding</p>
-        </div>
+    <div className="space-y-6 select-none text-[var(--color-text-primary)]">
+      <div>
+        <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+          Practice & Retrieval Modes
+        </h3>
+        <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">Select a quiz format to test your retention evidence.</p>
       </div>
 
-      {/* Mode Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {modes.map((mode) => {
           const Icon = mode.icon;
 
           return (
-            <motion.div
+            <div
               key={mode.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`relative overflow-hidden rounded-2xl p-5 border ${mode.borderColor} bg-gradient-to-br ${mode.color} backdrop-blur-md bg-slate-900/80 flex flex-col justify-between space-y-4 shadow-xl`}
+              className="daksh-card p-5 space-y-4 flex flex-col justify-between"
             >
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <span className={`text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-0.5 rounded-full border border-white/10 bg-black/40 ${mode.textColor}`}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center font-bold">
+                    <Icon size={16} />
+                  </div>
+                  <span className="text-[10px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2 py-0.5 rounded-md border border-[var(--color-gold)]/20">
                     {mode.badge}
                   </span>
-                  <h4 className="text-base font-extrabold text-white pt-1">{mode.title}</h4>
-                  <p className="text-xs text-gray-300">{mode.desc}</p>
                 </div>
 
-                <div className={`p-3 rounded-xl bg-black/40 border border-white/10 ${mode.textColor}`}>
-                  <Icon size={22} />
+                <h4 className="text-xs font-bold text-[var(--color-text-primary)]">{mode.title}</h4>
+                <p className="text-[11px] text-[var(--color-text-secondary)]">{mode.desc}</p>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t border-[var(--color-border)]">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-[var(--color-text-secondary)]">
+                  <span>{mode.questions}</span>
+                  <span>~{mode.time}</span>
                 </div>
-              </div>
 
-              {/* Specs */}
-              <div className="flex items-center gap-4 text-xs font-semibold text-gray-300 pt-2 border-t border-white/10">
-                <span className="flex items-center gap-1">
-                  <Award size={13} className="text-gray-400" />
-                  {mode.questions}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock size={13} className="text-gray-400" />
-                  {mode.time}
-                </span>
+                <button
+                  onClick={() => onStartQuiz(mode.numQuestions, mode.type)}
+                  className="w-full py-2.5 rounded-xl btn-gold text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <span>Start Quiz</span>
+                  <ArrowRight size={14} />
+                </button>
               </div>
-
-              {/* Start CTA */}
-              <button
-                onClick={() => onStartQuiz(mode.numQuestions, mode.type)}
-                className={`w-full py-3 rounded-xl font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 transition-all ${mode.btnBg}`}
-              >
-                <span>Start Mission</span>
-                <Swords size={14} />
-              </button>
-            </motion.div>
+            </div>
           );
         })}
-      </div>
-
-      {/* Focus Mode Banner */}
-      <div className="p-4 rounded-2xl bg-purple-950/40 border border-purple-500/20 flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-300">
-          <Flame size={18} />
-        </div>
-        <div className="text-xs">
-          <span className="font-bold text-purple-200 block">Focus Mode Enabled</span>
-          <span className="text-gray-400">Launching a challenge will isolate your screen for maximum concentration.</span>
-        </div>
       </div>
     </div>
   );

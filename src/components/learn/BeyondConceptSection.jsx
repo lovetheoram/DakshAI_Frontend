@@ -1,51 +1,40 @@
 // src/components/learn/BeyondConceptSection.jsx
+// Clean tactile Beyond This Concept section aligned with Warm Ivory + Ink + Antique Gold styling.
+
 import React from "react";
-import { motion } from "framer-motion";
-import { Compass, ExternalLink, Cpu, Car, Satellite, Play, ArrowUpRight } from "lucide-react";
-import { getConceptTheme } from "./ConceptVisualTheme";
+import { Globe, Cpu, Car, Satellite, ArrowUpRight } from "lucide-react";
 
 export default function BeyondConceptSection({ conceptName, chapterName }) {
-  const theme = getConceptTheme(conceptName, chapterName);
-
   const applications = [
     {
       icon: Cpu,
-      title: "Smart Home Automation",
+      title: "Smart Automation Systems",
       subtitle: "Relays, Sensors & Power Distribution",
       badge: "Real World Tech",
-      color: "from-blue-500/20 to-cyan-500/20",
-      border: "border-blue-500/30",
-      tagColor: "text-blue-400"
     },
     {
       icon: Car,
       title: "Electric Vehicles (EVs)",
-      subtitle: "Regenerative Braking & High-Voltage Packs",
+      subtitle: "Regenerative Braking & Battery Systems",
       badge: "Automotive",
-      color: "from-amber-500/20 to-orange-500/20",
-      border: "border-amber-500/30",
-      tagColor: "text-amber-400"
     },
     {
       icon: Satellite,
-      title: "Satellite Solar Arrays",
-      subtitle: "Off-Grid Space Power & PV Cells",
+      title: "Space Electronics & PV Cells",
+      subtitle: "Off-Grid Solar & Orbital Power Arrays",
       badge: "Space Tech",
-      color: "from-purple-500/20 to-indigo-500/20",
-      border: "border-purple-500/30",
-      tagColor: "text-purple-400"
     }
   ];
 
   return (
-    <div className="space-y-4 pt-4 border-t border-white/10">
+    <div className="space-y-4 pt-6 border-t border-[var(--color-border)] select-none">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Compass size={18} className="text-amber-400" />
+          <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
+            <Globe size={14} className="text-[var(--color-gold)]" />
             Beyond This Concept
           </h3>
-          <p className="text-xs text-gray-400">Discover where this concept powers the modern world</p>
+          <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">Real engineering and computational applications.</p>
         </div>
       </div>
 
@@ -54,30 +43,24 @@ export default function BeyondConceptSection({ conceptName, chapterName }) {
           const Icon = app.icon;
 
           return (
-            <motion.div
+            <div
               key={idx}
-              whileHover={{ y: -3 }}
-              className={`p-4 rounded-2xl bg-gradient-to-br ${app.color} border ${app.border} bg-slate-900/80 space-y-3 cursor-pointer group backdrop-blur-md shadow-lg`}
+              className="daksh-card p-4 space-y-2 text-[var(--color-text-primary)] cursor-pointer group hover:border-[var(--color-gold)] transition-all"
             >
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/40 border border-white/10 ${app.tagColor}`}>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/20">
                   {app.badge}
                 </span>
-                <ArrowUpRight size={14} className="text-gray-400 group-hover:text-white transition-colors" />
+                <ArrowUpRight size={14} className="text-[var(--color-mid-gray)] group-hover:text-[var(--color-gold-dark)] transition-colors" />
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl bg-black/40 border border-white/10 ${app.tagColor}`}>
-                  <Icon size={18} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-extrabold text-white group-hover:text-amber-300 transition-colors">
-                    {app.title}
-                  </h4>
-                  <p className="text-[11px] text-gray-400">{app.subtitle}</p>
-                </div>
+              <div className="space-y-0.5 pt-1">
+                <h4 className="text-xs font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-gold-dark)] transition-colors">
+                  {app.title}
+                </h4>
+                <p className="text-[11px] text-[var(--color-text-secondary)]">{app.subtitle}</p>
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>

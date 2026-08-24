@@ -1,10 +1,13 @@
 // src/components/quiz/FullScreenQuiz.jsx
+// Strict real-data focus mode quiz experience
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import quizApi from "../../api/quizApi";
 import socialApi from "../../api/socialApi";
+import syllabusApi from "../../api/syllabusApi";
 import { useMindModel } from "../../context/MindModelContext";
-import { ArrowLeft, RefreshCw, Sparkles, Flame, CheckCircle2, Award, Zap, ArrowRight } from "lucide-react";
+import { ArrowLeft, RefreshCw, ArrowRight, CheckCircle2, HelpCircle } from "lucide-react";
 import JourneyComplete from "../learn/JourneyComplete";
 
 const OPTIONS = ["A", "B", "C", "D"];
@@ -18,6 +21,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
   const onClose = propOnClose || (() => navigate(`/learn/${conceptId}`));
   const { refreshCatalyst } = useMindModel();
 
+  const [conceptDetail, setConceptDetail] = useState(propConcept || null);
   const [session, setSession] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,10 +33,16 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
 
   useEffect(() => {
     socialApi.pingSession("quiz", conceptId).catch(() => {});
-    return () => {
-      socialApi.pingSession(null).catch(() => {});
-    };
+    return () => { socialApi.pingSession(null).catch(() => {}); };
   }, [conceptId]);
+
+  useEffect(() => {
+    if (!conceptDetail && conceptId) {
+      syllabusApi.getConceptDetail(conceptId)
+        .then((data) => setConceptDetail(data))
+        .catch(() => {});
+    }
+  }, [conceptId, conceptDetail]);
 
   useEffect(() => {
     const initializeQuiz = async () => {
@@ -45,53 +55,24 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
           quiz_type: "PYQS",
         });
 
-        let sessionData = res;
-        if (!sessionData.questions || sessionData.questions.length === 0) {
-          sessionData = {
-            session_id: res.session_id || 999,
-            total_questions: 3,
-            questions: [
-              {
-                qid: "mock-1",
-                question: "What is the primary factor determining electric potential difference between two points?",
-                option_a: "Work done in moving a unit positive charge between the points",
-                option_b: "Mass of electrons flowing through the circuit",
-                option_c: "Total resistance of the atmospheric air",
-                option_d: "Color of the copper wire insulation",
-                correct_option: "A"
-              },
-              {
-                qid: "mock-2",
-                question: "According to Ohm's Law (V = IR), if voltage is doubled while resistance remains constant, what happens to current?",
-                option_a: "Current doubles",
-                option_b: "Current drops to zero",
-                option_c: "Current remains unchanged",
-                option_d: "Current drops by half",
-                correct_option: "A"
-              },
-              {
-                qid: "mock-3",
-                question: "Which component is used to protect electrical circuits from overcurrent damage?",
-                option_a: "Fuse / Circuit Breaker",
-                option_b: "Voltmeter",
-                option_c: "Galvanometer",
-                option_d: "Rheostat",
-                correct_option: "A"
-              }
-            ]
-          };
+        if (res && res.questions && res.questions.length > 0) {
+          setSession(res);
+          setStartTime(Date.now());
+        } else {
+          setSession(null);
+          setError("No practice questions found for this concept.");
         }
-
-        setSession(sessionData);
-        setStartTime(Date.now());
       } catch (err) {
-        console.error(err);
-        setError("Failed to load questions. Please try again.");
+        console.error("Quiz init failed:", err);
+        setError("Failed to load questions for this concept.");
       } finally {
         setLoading(false);
       }
     };
-    initializeQuiz();
+
+    if (conceptId) {
+      initializeQuiz();
+    }
   }, [conceptId]);
 
   const getSelected = (qid, type = MAIN) =>
@@ -115,28 +96,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
         answers: answers,
       });
 
-      if (!res.score && res.score !== 0) {
-        let correctCount = 0;
-        const mockAnswers = answers.map((a) => {
-          const qObj = session.questions.find((q) => q.qid === a.question_id);
-          const isCorrect = qObj?.correct_option === a.marked_option;
-          if (isCorrect) correctCount += 1;
-          return {
-            question_text: qObj?.question,
-            marked_option: a.marked_option,
-            correct_option: qObj?.correct_option,
-            is_correct: isCorrect,
-          };
-        });
-        setResult({
-          session_id: session.session_id || 999,
-          score: correctCount / session.questions.length,
-          duration_seconds: duration,
-          answers: mockAnswers,
-        });
-      } else {
-        setResult(res);
-      }
+      setResult(res);
       refreshCatalyst();
     } catch (err) {
       console.error(err);
@@ -146,28 +106,12 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     }
   };
 
-  /* ================= EMOTIONAL RESULT SCREEN ================= */
+  /* ═══ RESULT SCREEN ═══ */
   if (result) {
-    const scorePct = Math.round(result.score * 100);
-    const accuracyGain = Math.round(scorePct >= 80 ? 12 : 8);
-
-    let streakBadge = "🔥 On Fire! 3 in a row";
-    let messageHeading = "Great job!";
-    if (scorePct >= 80) {
-      messageHeading = "🎉 Exceptional Performance!";
-      streakBadge = "⚡ Momentum Increasing";
-    } else if (scorePct >= 60) {
-      messageHeading = "✨ Nice Work!";
-      streakBadge = "🔥 Keeping Momentum";
-    } else {
-      messageHeading = "💪 Keep Going!";
-      streakBadge = "🌱 Building Foundation";
-    }
-
     return (
-      <div className="fixed inset-0 bg-[#090d16] text-white z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-white text-[var(--color-text-primary)] z-50 overflow-y-auto">
         <JourneyComplete
-          conceptName={result.concept_name || propConcept?.name || "Concept Mastery"}
+          conceptName={result.concept_name || conceptDetail?.name || "Concept Mastery"}
           questionsSolved={result.total_questions || session?.questions?.length || 5}
           onCompleteSession={() => navigate("/")}
         />
@@ -175,52 +119,62 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     );
   }
 
-  /* ================= LOADING SCREEN ================= */
+  /* ═══ LOADING ═══ */
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-slate-950 text-white flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-white text-[var(--color-text-primary)] flex items-center justify-center z-50">
         <div className="text-center space-y-3">
-          <RefreshCw className="animate-spin text-purple-400 mx-auto" size={28} />
-          <p className="text-xs font-bold text-gray-300 tracking-wider">Entering Focus Mode...</p>
+          <RefreshCw className="animate-spin text-[var(--color-gold)] mx-auto" size={28} />
+          <p className="text-xs font-semibold text-[var(--color-text-secondary)] tracking-wider">Loading Session...</p>
         </div>
       </div>
     );
   }
 
-  /* ================= ERROR SCREEN ================= */
-  if (error && !session) {
+  /* ═══ NO QUESTIONS / ERROR ═══ */
+  if ((error || !session || !session.questions || session.questions.length === 0)) {
     return (
-      <div className="fixed inset-0 bg-slate-950 text-white flex items-center justify-center z-50">
-        <div className="text-center space-y-4">
-          <p className="text-rose-400 text-sm font-semibold">{error}</p>
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-white/10 text-xs font-bold text-white">
-            Return to Concept
+      <div className="fixed inset-0 bg-white text-[var(--color-text-primary)] flex items-center justify-center z-50 p-4">
+        <div className="max-w-md w-full text-center space-y-4 daksh-card p-8">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center mx-auto">
+            <HelpCircle size={22} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-[var(--color-text-primary)]">
+              {conceptDetail?.name || "Concept Session"}
+            </h3>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              {error || "No practice questions available for this concept yet."}
+            </p>
+          </div>
+          <button onClick={onClose} className="btn-gold px-6 py-2.5 text-xs font-bold w-full rounded-xl">
+            Return to Learning Space
           </button>
         </div>
       </div>
     );
   }
 
-  /* ================= FOCUS MODE QUIZ SCREEN ================= */
-  const q = session?.questions?.[currentIndex];
+  /* ═══ QUIZ SCREEN ═══ */
+  const q = session.questions[currentIndex];
   return (
-    <div className="fixed inset-0 bg-slate-950 text-white z-50 flex items-center justify-center p-4 backdrop-blur-2xl animate-fade-in">
-      <div className="max-w-xl w-full bg-slate-900 border border-purple-500/30 rounded-3xl p-6 sm:p-8 flex flex-col justify-between min-h-[520px] shadow-2xl shadow-purple-500/10">
-        
+    <div className="fixed inset-0 bg-white text-[var(--color-text-primary)] z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="max-w-xl w-full border border-[var(--color-border)] rounded-2xl p-6 sm:p-8 flex flex-col justify-between min-h-[520px] shadow-[var(--shadow-lg)]">
+
         {/* Top Header */}
-        <div className="flex justify-between items-center pb-4 border-b border-white/10 text-xs font-bold">
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5">
-            <ArrowLeft size={14} /> Exit Mission
+        <div className="flex justify-between items-center pb-4 border-b border-[var(--color-border)] text-xs font-semibold">
+          <button onClick={onClose} className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1.5 cursor-pointer">
+            <ArrowLeft size={14} /> Exit
           </button>
-          <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            {currentIndex + 1} / {session?.questions?.length || 3}
+          <span className="px-3 py-1 rounded-full bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30">
+            {currentIndex + 1} / {session.questions.length}
           </span>
         </div>
 
-        {/* Minimalist Question Column */}
+        {/* Question */}
         <div className="flex-1 flex flex-col justify-center py-6 space-y-5">
           {q && (
-            <h2 className="text-base sm:text-lg font-bold text-white leading-relaxed">
+            <h2 className="text-base sm:text-lg font-semibold text-[var(--color-text-primary)] leading-relaxed">
               {q.question}
             </h2>
           )}
@@ -236,18 +190,21 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
                   <button
                     key={k}
                     onClick={() => saveAnswer(q.qid, k)}
-                    className={`w-full text-left p-4 rounded-2xl border text-xs sm:text-sm transition-all flex items-center gap-3 ${
+                    className={`w-full text-left p-4 rounded-xl border text-xs sm:text-sm transition-all flex items-center gap-3 cursor-pointer ${
                       isSelected
-                        ? "bg-purple-600 border-purple-400 text-white font-bold shadow-lg shadow-purple-500/20"
-                        : "bg-white/[0.02] border-white/10 text-gray-300 hover:bg-white/[0.05] hover:border-white/20"
+                        ? "bg-[var(--color-gold-pale)] border-[var(--color-gold)] text-[var(--color-text-primary)] font-semibold"
+                        : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-hover)]"
                     }`}
                   >
-                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-extrabold ${
-                      isSelected ? "bg-white/20 text-white" : "bg-white/10 border border-white/10 text-gray-400"
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                      isSelected
+                        ? "bg-[var(--color-gold)] text-white"
+                        : "bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-[var(--color-mid-gray)]"
                     }`}>
                       {k}
                     </div>
                     <span className="flex-1">{optionText}</span>
+                    {isSelected && <CheckCircle2 size={16} className="text-[var(--color-gold)] shrink-0" />}
                   </button>
                 );
               })}
@@ -255,31 +212,31 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
           )}
         </div>
 
-        {/* Footer Nav Bar */}
-        <div className="flex justify-between items-center pt-4 border-t border-white/10">
+        {/* Footer Nav */}
+        <div className="flex justify-between items-center pt-4 border-t border-[var(--color-border)]">
           <button
             disabled={currentIndex === 0 || submitting}
             onClick={() => setCurrentIndex((i) => i - 1)}
-            className="text-xs font-bold text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             Previous
           </button>
 
-          {session && currentIndex === session.questions?.length - 1 ? (
+          {currentIndex === session.questions.length - 1 ? (
             <button
               onClick={submitQuiz}
               disabled={submitting}
-              className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-lg transition-all"
+              className="btn-gold px-6 py-3 rounded-xl text-xs font-bold"
             >
-              {submitting ? "Submitting..." : "Submit Mission"}
+              {submitting ? "Submitting..." : "Submit"}
             </button>
           ) : (
             <button
               onClick={() => setCurrentIndex((i) => i + 1)}
               disabled={submitting}
-              className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold shadow-lg transition-all"
+              className="btn-gold px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-1.5"
             >
-              Next Question
+              Next <ArrowRight size={14} />
             </button>
           )}
         </div>

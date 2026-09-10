@@ -11,7 +11,9 @@ export default function Signup() {
 
   const FALLBACK_EXAM_TYPES = [
     { type: "jee", name: "JEE Main" },
-    { type: "placement", name: "Placement Preparation" }
+    { type: "neet", name: "NEET" },
+    { type: "placement", name: "Placement Preparation" },
+    { type: "pcs", name: "State PCS (BPSC, UPPCS, etc.)" }
   ];
 
   const [form, setForm] = useState({ username: "", email: "", password: "", exam_type: "jee" });
@@ -37,9 +39,15 @@ export default function Signup() {
     const types = new Map();
     exams.forEach((exam) => {
       if (exam.exam_type && !types.has(exam.exam_type)) {
+        let displayName = exam.name;
+        if (exam.exam_type === "jee") displayName = "JEE Main";
+        else if (exam.exam_type === "neet") displayName = "NEET";
+        else if (exam.exam_type === "placement") displayName = "Placement Preparation";
+        else if (exam.exam_type === "pcs") displayName = "State PCS (BPSC, UPPCS, etc.)";
+
         types.set(exam.exam_type, {
           type: exam.exam_type,
-          name: exam.exam_type === "jee" ? "JEE Main" : exam.exam_type === "neet" ? "NEET" : "Placement Preparation"
+          name: displayName
         });
       }
     });

@@ -93,7 +93,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-1.5">
-          {["JEE Main", "JEE Advanced", "NEET", "Board Exam"].map((exam) => (
+          {["JEE Main", "NEET", "Placement Prep", "State PCS"].map((exam) => (
             <button
               key={exam}
               onClick={() => setSelectedExam(exam)}

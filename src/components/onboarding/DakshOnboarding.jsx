@@ -27,6 +27,7 @@ const EXAM_OPTIONS = [
   { icon: "🚀", label: "JEE", sublabel: "Joint Entrance Exam", value: "jee" },
   { icon: "🧬", label: "NEET", sublabel: "National Eligibility", value: "neet" },
   { icon: "💻", label: "Placement", sublabel: "Coding Interviews", value: "placement" },
+  { icon: "🏛️", label: "State PCS", sublabel: "BPSC, UPPCS, etc.", value: "pcs" },
 ];
 
 const TIME_OPTIONS = [

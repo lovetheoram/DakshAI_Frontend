@@ -26,6 +26,7 @@ export default function ConceptSession({ conceptId }) {
 
   const [formulas, setFormulas] = useState([]);
   const [rules, setRules] = useState([]);
+  const [pyqs, setPyqs] = useState([]);
   const [aiMeta, setAiMeta] = useState({});
   const [subtopicId, setSubtopicId] = useState(null);
 
@@ -48,23 +49,12 @@ export default function ConceptSession({ conceptId }) {
         let meta = targetConcept.ai_meta || {};
         let desc = targetConcept.description || "";
         let sId = targetConcept.subtopic_id;
-
-        if (!meta.layer_1_hard_formulas && sId) {
-          try {
-            const subConcepts = await syllabusApi.getSubtopicConcepts(sId);
-            const match = subConcepts.find((c) => c.id === Number(conceptId));
-            if (match) {
-              if (match.ai_meta) meta = match.ai_meta;
-              if (match.description) desc = match.description;
-            }
-          } catch (e) {
-            console.error("Error fetching subtopic concepts:", e);
-          }
-        }
+        let conceptPyqs = targetConcept.pyqs || [];
 
         setAiMeta(meta);
         setFormulas(meta.layer_1_hard_formulas || []);
         setRules(meta.layer_2_rule_based_logics || []);
+        setPyqs(conceptPyqs);
         if (sId) setSubtopicId(sId);
 
         const examReadiness = typeof progressData?.exam_readiness === "number"
@@ -162,6 +152,7 @@ export default function ConceptSession({ conceptId }) {
                 description={concept?.description}
                 formulas={formulas}
                 rules={rules}
+                pyqs={pyqs}
                 aiMeta={aiMeta}
                 onStartPractice={() => setActiveTab("practice")}
               />

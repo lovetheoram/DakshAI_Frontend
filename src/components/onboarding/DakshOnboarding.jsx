@@ -5,9 +5,10 @@
 // State machine: transmission → introduction → exam_select → time_select → launch
 // No LLM. No backend calls during animation. Pure frontend state + copy.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import progressApi from "../../api/progressApi";
 import EventTracker from "../../intelligence/events/EventTracker";
 
@@ -68,11 +69,18 @@ function TypedLine({ text, speed = 30, onDone }) {
 // ── Main Onboarding component ─────────────────────────────────────────────────
 export default function DakshOnboarding({ exams = [], onComplete }) {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [step, setStep] = useState("transmission");
   const [transmissionLine, setTransmissionLine] = useState(0);
   const [showOrb, setShowOrb] = useState(false);
   const [introDone, setIntroDone] = useState(false);
-  const [selectedExam, setSelectedExam] = useState(null);
+  const [selectedExam, setSelectedExam] = useState(() => {
+    if (user?.selected_exam?.exam_type) {
+      const match = EXAM_OPTIONS.find((o) => o.value === user.selected_exam.exam_type);
+      if (match) return match;
+    }
+    return null;
+  });
   const [selectedHours, setSelectedHours] = useState(null);
   const [launching, setLaunching] = useState(false);
   const [launchLine, setLaunchLine] = useState(0);
@@ -241,7 +249,7 @@ export default function DakshOnboarding({ exams = [], onComplete }) {
                   <motion.button
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setStep("exam_select")}
+                    onClick={() => setStep(selectedExam ? "time_select" : "exam_select")}
                     className="px-8 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold transition-all shadow-xl shadow-purple-500/25 active:scale-[0.97]"
                   >
                     Tell me your mission

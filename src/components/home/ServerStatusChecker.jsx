@@ -35,7 +35,11 @@ export default function ServerStatusChecker({ onReady }) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-        const res = await fetch("https://dakshai.onrender.com/api/health/", {
+        const healthUrl = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
+          ? "http://localhost:8000/api/health/"
+          : "https://dakshai.onrender.com/api/health/";
+
+        const res = await fetch(healthUrl, {
           signal: controller.signal,
           mode: "cors",
         });

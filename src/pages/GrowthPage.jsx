@@ -184,8 +184,13 @@ export default function GrowthPage() {
       <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4">
         <div className="flex items-center gap-2">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">YOUR MAP</h1>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Where you actually stand.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight flex items-center gap-2">
+              <span>YOUR MAP</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] font-bold border border-[var(--color-gold)]/20">
+                The Truth Room
+              </span>
+            </h1>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Where you actually stand in your preparation trajectory.</p>
           </div>
           <InfoTooltip
             title="The Truth Room (Your Map)"
@@ -210,79 +215,103 @@ export default function GrowthPage() {
         )}
       </div>
 
-      {/* ── DAILY TARGET % QUOTA & EFFORT REALITY ── */}
+      {/* ── TOP VISUAL: MAP TRAJECTORY (YOU -> GOAL) HERO CARD ── */}
       {goal && !isEditingGoal && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="daksh-card p-6 border-t-3 border-t-[var(--color-gold)] space-y-5"
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-7 space-y-6 border border-amber-500/30 border-t-4 border-t-[var(--color-gold)] text-slate-100 shadow-xl"
         >
-          <div className="flex items-center justify-between">
+          {/* Ambient Glow */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="text-caption tracking-widest text-[var(--color-gold)] font-bold flex items-center gap-1">
-                <Target size={13} />
-                Today's Growth Quota & Effort Reality
+              <span className="text-caption tracking-widest text-amber-400 font-bold flex items-center gap-1">
+                <Target size={14} />
+                Overall Goal Trajectory
               </span>
               <InfoTooltip
-                title="Daily Growth & Effort Reality"
-                meaning="Compares your planned daily study hours against your actual logged hours and resulting growth quota fulfillment."
-                formula="Growth Quota % = Achieved Daily Growth / Required Target Growth Rate"
-                howToIncrease="Use the top navigation Clock icon to log your study hours. Your effort feeds directly into your daily growth quota."
+                title="Position Marker & Target Date"
+                meaning="Represents your real-time distance from syllabus completion based on current daily velocity."
+                formula="Predicted Date = Today + (Remaining % / Average Actual Daily Growth Rate)"
+                howToIncrease="Maintain daily revision target to increase daily growth rate and pull the predicted date closer to target."
               />
             </div>
-            <span className="text-xs font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2.5 py-0.5 rounded-full border border-[var(--color-gold)]/20">
-              {todayCompliance}% Quota Met
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="text-[10px] font-semibold text-[var(--color-mid-gray)] uppercase block">Today's Achieved Growth</span>
-              <span className="text-lg font-bold text-[var(--color-text-primary)] mt-0.5 block">
-                +{todayGrowth.toFixed(2)}%
-              </span>
-            </div>
-            <div className="border-l border-[var(--color-border)] pl-4">
-              <span className="text-[10px] font-semibold text-[var(--color-mid-gray)] uppercase block">Required Daily Target</span>
-              <span className="text-lg font-bold text-[var(--color-gold-dark)] mt-0.5 block">
-                +{targetGrowth.toFixed(2)}% / day
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-300 font-semibold bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700/60">
+                Target Date: <strong className="text-amber-300">{targetDateStr}</strong>
               </span>
             </div>
           </div>
 
-          <ProgressBar value={todayCompliance} />
+          {/* Vertical Position Diagram */}
+          <div className="relative z-10 py-3 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-4 w-full max-w-md">
 
-          {/* Effort Reality Hours Bar (Sourced from check-in modal) */}
-          <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 font-bold text-[var(--color-text-primary)]">
-                <Clock size={13} className="text-[var(--color-gold)]" />
-                <span>Logged Effort Reality:</span>
+              {/* YOU Marker */}
+              <div className="flex items-center gap-3 w-full">
+                <div className="w-24 text-right">
+                  <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30 shadow-xs">
+                    YOU
+                  </span>
+                </div>
+                <div className="relative flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-amber-400 border-2 border-slate-900 shadow-lg shadow-amber-500/50 z-10 animate-pulse" />
+                </div>
+                <div className="flex-1 text-xs text-slate-300">
+                  Readiness Score: <strong className="text-white text-sm font-bold ml-1">{dakshScore > 0 && dakshScore < 1 ? dakshScore.toFixed(2) : Math.round(dakshScore)}%</strong>
+                </div>
               </div>
-              <span className="font-bold text-[var(--color-gold-dark)]">
-                {actualHoursSpent.toFixed(1)} / {plannedHours.toFixed(1)} hrs ({effortRealityPct}%)
-              </span>
-            </div>
-            <div className="bar-track">
-              <div className="bar-fill-gold" style={{ width: `${effortRealityPct}%` }} />
+
+              {/* Line connector */}
+              <div className="w-[3px] h-14 bg-slate-800 relative rounded-full overflow-hidden">
+                <div className="absolute top-0 bottom-0 left-0 right-0 bg-gradient-to-b from-amber-400 to-amber-600 opacity-80" />
+              </div>
+
+              {/* GOAL Marker */}
+              <div className="flex items-center gap-3 w-full">
+                <div className="w-24 text-right">
+                  <span className="text-xs font-semibold text-slate-400">
+                    GOAL
+                  </span>
+                </div>
+                <div className="relative flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-full bg-slate-400 border-2 border-slate-900 z-10" />
+                </div>
+                <div className="flex-1 text-xs text-amber-200 font-bold truncate">
+                  {goal.name || goal.title}
+                </div>
+              </div>
+
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <button
-              onClick={() => navigate("/practice")}
-              className="text-xs font-bold text-[var(--color-gold-dark)] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <span>Fulfill Quota via Practice</span>
-              <ArrowRight size={13} />
-            </button>
+          {/* Trajectory Insight statement */}
+          <div className="relative z-10 p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed flex items-center justify-between gap-3">
+            <div>
+              {statusType === "behind" ? (
+                <>
+                  At your current pace (+{dashboard?.prediction?.actual_daily || 0.5}% / day), you are projected to complete your goal <strong className="text-red-400 font-bold">{daysDelta} days past</strong> your target date.
+                </>
+              ) : statusType === "ahead" ? (
+                <>
+                  At your current pace (+{dashboard?.prediction?.actual_daily || 0.5}% / day), you're on track to complete your preparation <strong className="text-emerald-400 font-bold">{daysDelta} days ahead</strong> of target.
+                </>
+              ) : (
+                <>
+                  At your current daily pace, you are moving steadily toward completing your target by <strong className="text-amber-300 font-bold">{targetDateStr}</strong>.
+                </>
+              )}
+            </div>
+
             <button
               onClick={() => setShowGrowthCalculator(!showGrowthCalculator)}
-              className="text-[11px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold shrink-0 transition-colors cursor-pointer border border-amber-500/30 flex items-center gap-1"
             >
               <HelpCircle size={12} />
-              {showGrowthCalculator ? "Hide Calculator" : "How Growth Is Calculated"}
+              {showGrowthCalculator ? "Hide Math" : "Growth Math"}
             </button>
           </div>
         </motion.div>
@@ -347,92 +376,6 @@ export default function GrowthPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ── TOP VISUAL: MAP TRAJECTORY (YOU -> GOAL) ── */}
-      {goal && !isEditingGoal && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="daksh-card p-6 sm:p-7 space-y-6"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-caption tracking-widest text-[var(--color-gold)] font-bold">
-                Overall Goal Trajectory
-              </span>
-              <InfoTooltip
-                title="Position Marker & Target Date"
-                meaning="Represents your real-time distance from syllabus completion based on current daily velocity."
-                formula="Predicted Date = Today + (Remaining % / Average Actual Daily Growth Rate)"
-                howToIncrease="Maintain daily revision target to increase daily growth rate and pull the predicted date closer to target."
-              />
-            </div>
-            <span className="text-xs text-[var(--color-text-secondary)] font-medium">
-              Target: <strong className="text-[var(--color-text-primary)]">{targetDateStr}</strong>
-            </span>
-          </div>
-
-          {/* Vertical Position Diagram */}
-          <div className="py-2 flex items-center justify-center">
-            <div className="flex flex-col items-center space-y-4 w-full max-w-md">
-
-              {/* YOU Marker */}
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-24 text-right">
-                  <span className="text-xs font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2.5 py-1 rounded-md border border-[var(--color-gold)]/20">
-                    YOU
-                  </span>
-                </div>
-                <div className="relative flex items-center justify-center">
-                  <div className="w-5 h-5 rounded-full bg-[var(--color-gold)] border-2 border-white shadow-xs z-10" />
-                </div>
-                <div className="flex-1 text-xs text-[var(--color-text-secondary)]">
-                  Overall Goal Readiness: <strong className="text-[var(--color-text-primary)]">{Math.round(dakshScore)}%</strong>
-                </div>
-              </div>
-
-              {/* Line connector */}
-              <div className="w-[2px] h-12 bg-[var(--color-border)] relative">
-                <div className="absolute top-0 bottom-0 left-0 right-0 bg-[var(--color-gold)] opacity-40" />
-              </div>
-
-              {/* GOAL Marker */}
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-24 text-right">
-                  <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                    GOAL
-                  </span>
-                </div>
-                <div className="relative flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-[var(--color-text-primary)] border-2 border-white z-10" />
-                </div>
-                <div className="flex-1 text-xs text-[var(--color-text-secondary)]">
-                  {goal.name || goal.title}
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Trajectory Insight statement */}
-          <div className="p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] leading-relaxed">
-            {statusType === "behind" ? (
-              <>
-                At your current pace (+{dashboard?.prediction?.actual_daily || 0.5}% / day), you are projected to complete your goal <strong className="text-[var(--color-danger)]">{daysDelta} days past</strong> your target date.
-              </>
-            ) : statusType === "ahead" ? (
-              <>
-                At your current pace (+{dashboard?.prediction?.actual_daily || 0.5}% / day), you're on track to complete your preparation <strong className="text-[var(--color-success)]">{daysDelta} days ahead</strong> of target.
-              </>
-            ) : (
-              <>
-                At your current daily pace, you are moving steadily toward completing your target by <strong className="text-[var(--color-text-primary)]">{targetDateStr}</strong>.
-              </>
-            )}
-          </div>
-        </motion.div>
-      )}
 
       {/* ── CURRENT REALITY TERRITORY MAP ────────────── */}
       {territories.length > 0 && (

@@ -10,7 +10,8 @@ import PostCard from "./PostCard";
 import CreatePost from "./CreatePost";
 import FollowButton from "./FollowButton";
 import InfoTooltip from "../ui/InfoTooltip";
-import { MessageSquare, Users, Sparkles, UserCheck, Trash2, Loader2, Globe, Layers } from "lucide-react";
+import Modal from "../ui/Modal";
+import { MessageSquare, Users, Sparkles, UserCheck, Trash2, Loader2, Globe, Layers, Plus, PenSquare } from "lucide-react";
 
 export default function FeedPage({ initialTab = "all" }) {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function FeedPage({ initialTab = "all" }) {
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [activeTab, setActiveTab] = useState(initialTab); // "all" | "projects" | "suggestions"
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Suggested peers state
   const [suggestedUsers, setSuggestedUsers] = useState([]);
@@ -88,55 +90,73 @@ export default function FeedPage({ initialTab = "all" }) {
 
   return (
     <div className="space-y-6 select-none">
-      {/* Tab Filter Navigation */}
-      <div className="flex gap-2 border-b border-[var(--color-border)] pb-3 overflow-x-auto scrollbar-hide">
+      {/* Top Action Bar & Tab Navigation */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-500/20 pb-3">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2.5 rounded-xl text-xs transition-all border cursor-pointer ${
+              activeTab === "all"
+                ? "bg-amber-500/10 text-amber-300 border-amber-500/40 font-black shadow-sm"
+                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-indigo-500/40 font-bold"
+            }`}
+          >
+            General Feed
+          </button>
+          <button
+            onClick={() => setActiveTab("projects")}
+            className={`px-4 py-2.5 rounded-xl text-xs transition-all border flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "projects"
+                ? "bg-amber-500/10 text-amber-300 border-amber-500/40 font-black shadow-sm"
+                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-indigo-500/40 font-bold"
+            }`}
+          >
+            <span>Learner Updates</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("suggestions")}
+            className={`px-4 py-2.5 rounded-xl text-xs transition-all border flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "suggestions"
+                ? "bg-amber-500/10 text-amber-300 border-amber-500/40 font-black shadow-sm"
+                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-indigo-500/40 font-bold"
+            }`}
+          >
+            <Users size={13} className="text-amber-400" />
+            <span>Recommended Peers</span>
+          </button>
+        </div>
+
+        {/* Top Button to Trigger Create Post Modal */}
         <button
-          onClick={() => setActiveTab("all")}
-          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
-            activeTab === "all"
-              ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 font-bold"
-              : "bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:text-[var(--color-text-primary)]"
-          }`}
+          onClick={() => setShowCreateModal(true)}
+          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md hover:shadow-amber-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shrink-0"
         >
-          General Peer Feed
-        </button>
-        <button
-          onClick={() => setActiveTab("projects")}
-          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1.5 cursor-pointer ${
-            activeTab === "projects"
-              ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 font-bold"
-              : "bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:text-[var(--color-text-primary)]"
-          }`}
-        >
-          <span>Learner Updates</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("suggestions")}
-          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1.5 cursor-pointer ${
-            activeTab === "suggestions"
-              ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 font-bold"
-              : "bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:text-[var(--color-text-primary)]"
-          }`}
-        >
-          <Users size={13} className="text-[var(--color-gold)]" />
-          <span>Recommended Peers</span>
+          <PenSquare size={14} />
+          <span>Create Post</span>
         </button>
       </div>
+
+      {/* Create Post Modal Drawer */}
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create Peer Study Update">
+        <CreatePost
+          onPostCreated={(newPost) => {
+            handlePostCreated(newPost);
+            setShowCreateModal(false);
+          }}
+        />
+      </Modal>
 
       {/* FEED MODE */}
       {activeTab !== "suggestions" && (
         <div className="space-y-5">
-          {/* Create Post Area */}
-          <CreatePost onPostCreated={handlePostCreated} />
-
           {/* Concept Filter */}
           {concepts.length > 0 && (
-            <div className="daksh-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <label className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 Filter by Concept
               </label>
               <select
-                className="input-field py-1.5 text-xs max-w-xs"
+                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none max-w-xs focus:border-amber-500/50"
                 value={selectedConcept || ""}
                 onChange={(e) => setSelectedConcept(e.target.value ? Number(e.target.value) : null)}
               >
@@ -154,16 +174,22 @@ export default function FeedPage({ initialTab = "all" }) {
           <AnimatePresence mode="wait">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                <Loader2 size={20} className="animate-spin text-[var(--color-gold)]" />
-                <p className="text-xs text-[var(--color-text-secondary)]">Loading peer updates...</p>
+                <Loader2 size={20} className="animate-spin text-amber-500" />
+                <p className="text-xs text-slate-400">Loading peer updates...</p>
               </div>
             ) : posts.length === 0 ? (
-              <div className="daksh-card p-8 text-center text-xs text-[var(--color-text-secondary)]">
-                No updates posted here yet.
+              <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-3">
+                <p className="text-xs text-slate-400 font-medium">No updates posted here yet.</p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Be the first to share an update 🚀
+                </button>
               </div>
             ) : (
               <div className="space-y-4">
-                {posts.map((post, index) => (
+                {posts.map((post) => (
                   <PostCard key={post.id} post={post} onConceptClick={(id) => setSelectedConcept(id)} />
                 ))}
               </div>

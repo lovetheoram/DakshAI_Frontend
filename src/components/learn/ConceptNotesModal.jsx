@@ -1,8 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileText, Layers, BookOpen, Lightbulb, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, HelpCircle, ArrowRight } from "lucide-react";
+import { X, FileText, Layers, BookOpen, Lightbulb, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, HelpCircle, ArrowRight, Volume2, Play, Square } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CuriosityEngine from "../../intelligence/curiosity/CuriosityEngine";
+import PreferenceStore from "../../product/preferenceStore";
 
 // Interactive Active Recall widget inside Notes modal
 function CuriosityQuickCheck({ formulas = [], conceptName, onCloseModal }) {
@@ -61,7 +62,7 @@ function CuriosityQuickCheck({ formulas = [], conceptName, onCloseModal }) {
       {!evaluated ? (
         <button
           onClick={handleEvaluate}
-          className="w-full py-2 px-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+          className="w-full py-2 px-4 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>See How Good You Are 🙂</span>
           <ArrowRight size={14} />
@@ -74,7 +75,7 @@ function CuriosityQuickCheck({ formulas = [], conceptName, onCloseModal }) {
             {evaluated.recommendation === "TAKE_QUIZ_DIRECT" && (
               <button
                 onClick={handleAction}
-                className="px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-xs font-extrabold transition-all"
+                className="px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-xs font-extrabold transition-all cursor-pointer"
               >
                 Take Challenge Quiz ⚡
               </button>
@@ -123,14 +124,14 @@ function HorizontalSectionSlider({ title, icon: Icon, badge, accentColor, items 
           <div className="flex items-center gap-1.5">
             <button
               onClick={scrollLeft}
-              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer"
               title="Scroll left"
             >
               <ChevronLeft size={14} />
             </button>
             <button
               onClick={scrollRight}
-              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10"
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer"
               title="Scroll right"
             >
               <ChevronRight size={14} />
@@ -171,6 +172,45 @@ export default function ConceptNotesModal({
   description = "",
   aiMeta = {}
 }) {
+  const [speakingCardId, setSpeakingCardId] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const speakText = (cardId, textToSpeak) => {
+    if (!("speechSynthesis" in window)) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    if (speakingCardId === cardId) {
+      window.speechSynthesis.cancel();
+      setSpeakingCardId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const prefs = PreferenceStore.getPreferences();
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.rate = prefs.speechRate || 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const targetLang = prefs.speechVoiceLang || "en-US";
+    const matchedVoice = voices.find((v) => v.lang.includes(targetLang) || v.lang.startsWith("en"));
+    if (matchedVoice) utterance.voice = matchedVoice;
+
+    utterance.onend = () => setSpeakingCardId(null);
+    utterance.onerror = () => setSpeakingCardId(null);
+
+    window.speechSynthesis.speak(utterance);
+    setSpeakingCardId(cardId);
+  };
+
   if (!isOpen) return null;
 
   // Normalize DB arrays
@@ -201,7 +241,7 @@ export default function ConceptNotesModal({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -239,29 +279,51 @@ export default function ConceptNotesModal({
 
             {/* 2. SECTION 1 CAROUSEL: Part 1 — Hard Formulas */}
             <HorizontalSectionSlider
-              title="Part 1 — Hard Formulas"
+              title="Part 1 — Hard Formulas & Equations"
               icon={Layers}
-              accentColor="text-indigo-400"
+              accentColor="text-amber-400"
               items={dbFormulas}
-              renderItem={(formula, idx) => (
-                <div
-                  key={idx}
-                  className="min-w-[280px] sm:min-w-[320px] max-w-[340px] p-5 rounded-2xl bg-slate-800/90 border border-indigo-500/30 space-y-2 shrink-0 snap-center shadow-lg hover:border-indigo-400/50 transition-all select-none"
-                >
-                  <span className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-wider block">
-                    Formula Card #{idx + 1} {formula.id ? `(${formula.id})` : ""}
-                  </span>
-                  <code className="text-base font-mono text-yellow-300 font-extrabold block my-1">
-                    {formula.formula || formula.equation || formula}
-                  </code>
-                  {formula.used_for && (
-                    <p className="text-xs text-gray-300 leading-snug">
-                      <strong>Used for:</strong> {formula.used_for}
-                    </p>
-                  )}
-                  {formula.notes && <p className="text-xs text-gray-400 leading-snug">{formula.notes}</p>}
-                </div>
-              )}
+              renderItem={(formula, idx) => {
+                const cardId = `m-formula-${idx}`;
+                const formulaText = typeof formula === "string" ? formula : formula.formula || formula.equation || "";
+                const isSpeakingCard = speakingCardId === cardId;
+
+                return (
+                  <div
+                    key={idx}
+                    className="min-w-[280px] sm:min-w-[320px] max-w-[340px] p-5 rounded-2xl bg-slate-900 border border-amber-500/40 space-y-3 shrink-0 snap-center shadow-xl hover:border-amber-400 transition-all select-none"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider block">
+                        Formula Card #{idx + 1}
+                      </span>
+                      <button
+                        onClick={() => speakText(cardId, `Formula: ${formulaText}`)}
+                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                          isSpeakingCard
+                            ? "bg-rose-500/30 text-rose-300 border-rose-400"
+                            : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
+                        }`}
+                        title="Listen formula"
+                      >
+                        {isSpeakingCard ? <Square size={12} className="fill-current" /> : <Volume2 size={13} />}
+                      </button>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 shadow-inner">
+                      <code className="text-sm sm:text-base font-mono text-yellow-300 font-extrabold block whitespace-pre-wrap break-words leading-relaxed select-text">
+                        {formulaText}
+                      </code>
+                    </div>
+
+                    {formula.used_for && (
+                      <p className="text-xs text-gray-300 leading-snug select-text">
+                        <strong className="text-amber-300">Used for:</strong> {formula.used_for}
+                      </p>
+                    )}
+                  </div>
+                );
+              }}
             />
 
             {/* 3. SECTION 2 CAROUSEL: Part 2 — Rule-Based Logics */}
@@ -270,24 +332,44 @@ export default function ConceptNotesModal({
               icon={CheckCircle2}
               accentColor="text-emerald-400"
               items={dbRules}
-              renderItem={(rule, idx) => (
-                <div
-                  key={idx}
-                  className="min-w-[280px] sm:min-w-[320px] max-w-[340px] p-5 rounded-2xl bg-slate-800/90 border border-emerald-500/30 space-y-2 shrink-0 snap-center shadow-lg hover:border-emerald-400/50 transition-all select-none"
-                >
-                  <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider block">
-                    Rule Card #{idx + 1} {rule.id ? `(${rule.id})` : ""}
-                  </span>
-                  <p className="text-xs sm:text-sm font-bold text-white leading-relaxed">
-                    {rule.rule || rule.statement || rule}
-                  </p>
-                  {rule.applied_when && (
-                    <p className="text-xs text-emerald-200 leading-snug">
-                      <strong>Applied when:</strong> {rule.applied_when}
+              renderItem={(rule, idx) => {
+                const cardId = `m-rule-${idx}`;
+                const ruleText = typeof rule === "string" ? rule : rule.rule || rule.statement || "";
+                const isSpeakingCard = speakingCardId === cardId;
+
+                return (
+                  <div
+                    key={idx}
+                    className="min-w-[280px] sm:min-w-[320px] max-w-[340px] p-5 rounded-2xl bg-slate-800/90 border border-emerald-500/30 space-y-2 shrink-0 snap-center shadow-lg hover:border-emerald-400/50 transition-all select-none"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider block">
+                        Rule Card #{idx + 1}
+                      </span>
+                      <button
+                        onClick={() => speakText(cardId, `Rule: ${ruleText}`)}
+                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                          isSpeakingCard
+                            ? "bg-rose-500/30 text-rose-300 border-rose-400"
+                            : "bg-white/10 hover:bg-white/20 text-gray-200 border-white/10"
+                        }`}
+                        title="Listen rule"
+                      >
+                        {isSpeakingCard ? <Square size={12} className="fill-current" /> : <Volume2 size={13} />}
+                      </button>
+                    </div>
+
+                    <p className="text-xs sm:text-sm font-bold text-white leading-relaxed">
+                      • {ruleText}
                     </p>
-                  )}
-                </div>
-              )}
+                    {rule.applied_when && (
+                      <p className="text-xs text-emerald-200 leading-snug">
+                        <strong>Applied when:</strong> {rule.applied_when}
+                      </p>
+                    )}
+                  </div>
+                );
+              }}
             />
 
             {/* 4. SECTION 3 CAROUSEL: Part 3 — Derived Consequences & Traps */}
@@ -296,24 +378,44 @@ export default function ConceptNotesModal({
               icon={Lightbulb}
               accentColor="text-amber-400"
               items={dbConsequences}
-              renderItem={(item, idx) => (
-                <div
-                  key={idx}
-                  className="min-w-[280px] sm:min-w-[320px] max-w-[340px] p-5 rounded-2xl bg-slate-800/90 border border-amber-500/30 space-y-2 shrink-0 snap-center shadow-lg hover:border-amber-400/50 transition-all select-none"
-                >
-                  <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider block">
-                    Consequence Card #{idx + 1} {item.id ? `(${item.id})` : ""}
-                  </span>
-                  <p className="text-xs sm:text-sm font-bold text-amber-100 leading-relaxed">
-                    {item.consequence || item}
-                  </p>
-                  {item.derived_from && (
-                    <span className="text-[10px] text-gray-400 block pt-1 border-t border-white/10">
-                      Derived from: {Array.isArray(item.derived_from) ? item.derived_from.join(", ") : item.derived_from}
-                    </span>
-                  )}
-                </div>
-              )}
+              renderItem={(item, idx) => {
+                const cardId = `m-consequence-${idx}`;
+                const itemText = typeof item === "string" ? item : item.consequence || "";
+                const isSpeakingCard = speakingCardId === cardId;
+
+                return (
+                  <div
+                    key={idx}
+                    className="min-w-[280px] sm:min-w-[320px] max-w-[340px] p-5 rounded-2xl bg-slate-800/90 border border-amber-500/30 space-y-2 shrink-0 snap-center shadow-lg hover:border-amber-400/50 transition-all select-none"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wider block">
+                        Consequence Card #{idx + 1}
+                      </span>
+                      <button
+                        onClick={() => speakText(cardId, `Consequence: ${itemText}`)}
+                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                          isSpeakingCard
+                            ? "bg-rose-500/30 text-rose-300 border-rose-400"
+                            : "bg-white/10 hover:bg-white/20 text-gray-200 border-white/10"
+                        }`}
+                        title="Listen consequence"
+                      >
+                        {isSpeakingCard ? <Square size={12} className="fill-current" /> : <Volume2 size={13} />}
+                      </button>
+                    </div>
+
+                    <p className="text-xs sm:text-sm font-bold text-amber-100 leading-relaxed">
+                      {itemText}
+                    </p>
+                    {item.derived_from && (
+                      <span className="text-[10px] text-gray-400 block pt-1 border-t border-white/10">
+                        Derived from: {Array.isArray(item.derived_from) ? item.derived_from.join(", ") : item.derived_from}
+                      </span>
+                    )}
+                  </div>
+                );
+              }}
             />
           </div>
         </motion.div>
@@ -321,3 +423,4 @@ export default function ConceptNotesModal({
     </AnimatePresence>
   );
 }
+

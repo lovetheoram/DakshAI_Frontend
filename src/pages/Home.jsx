@@ -208,8 +208,8 @@ export default function Home() {
               )}
             </div>
           </div>
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed font-normal">
-            You don't need to figure everything out today. Let's take the next step.
+          <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] leading-relaxed font-semibold">
+            Don't find out on exam day. Gathering evidence today to close the gap between assumption and reality.
           </p>
         </motion.div>
 

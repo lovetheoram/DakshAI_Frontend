@@ -76,6 +76,11 @@ const progressApi = {
   getGalaxy: async () => {
     const r = await axiosClient.get('/api/progress/galaxy/')
     return r.data
+  },
+
+  checkin: async () => {
+    const r = await axiosClient.post('/api/progress/checkin/')
+    return r.data
   }
 }
 

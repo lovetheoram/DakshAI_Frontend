@@ -57,26 +57,19 @@ export default function ConceptSession({ conceptId }) {
         setPyqs(conceptPyqs);
         if (sId) setSubtopicId(sId);
 
-        const examReadiness = typeof progressData?.exam_readiness === "number"
+        const readiness = typeof progressData?.readiness === "number"
+          ? progressData.readiness
+          : typeof progressData?.exam_readiness === "number"
           ? progressData.exam_readiness
-          : typeof targetConcept?.raw_mastry?.[0] === "number"
-          ? targetConcept.raw_mastry[0]
           : 0;
-
-        const chapterUnderstanding = typeof progressData?.chapter_understanding === "number"
-          ? progressData.chapter_understanding
-          : typeof targetConcept?.raw_mastry?.[1] === "number"
-          ? targetConcept.raw_mastry[1]
-          : 0;
-
-        const masteryArray = progressData?.mastery || targetConcept?.mastery || [examReadiness, chapterUnderstanding];
 
         const conceptObj = {
           name: targetConcept.name || "Concept",
           chapter_name: targetConcept.subtopic_name || targetConcept.topic_name || targetConcept.subject_name || "Syllabus Topic",
-          exam_readiness: examReadiness,
-          chapter_understanding: chapterUnderstanding,
-          mastery: masteryArray,
+          readiness: readiness,
+          exam_readiness: readiness,
+          chapter_understanding: readiness,
+          mastery: [readiness, readiness],
           last_practiced: progressData?.last_practiced || targetConcept?.last_practiced || null,
           total_questions_solved: progressData?.total_questions_solved || 0,
           description: desc || `${targetConcept.name} is a key concept under ${targetConcept.subtopic_name || "this topic"}.`,

@@ -7,8 +7,7 @@ import quizApi from "../../api/quizApi";
 import socialApi from "../../api/socialApi";
 import syllabusApi from "../../api/syllabusApi";
 import { useMindModel } from "../../context/MindModelContext";
-import { ArrowLeft, RefreshCw, ArrowRight, CheckCircle2, HelpCircle } from "lucide-react";
-import JourneyComplete from "../learn/JourneyComplete";
+import { ArrowLeft, RefreshCw, ArrowRight, CheckCircle2, HelpCircle, XCircle, Award, Check, X } from "lucide-react";
 
 const OPTIONS = ["A", "B", "C", "D"];
 const MAIN = "__main__";
@@ -49,18 +48,23 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
       try {
         setLoading(true);
         setError(null);
-        const res = await quizApi.start({
-          concept_id: conceptId,
-          num_questions: 5,
-          quiz_type: "PYQS",
-        });
+
+        let res = null;
+        try {
+          res = await quizApi.start({
+            concept_id: conceptId,
+            num_questions: 5,
+            quiz_type: "PYQS",
+          });
+        } catch (apiErr) {
+          console.warn("Backend quiz start endpoint error:", apiErr);
+        }
 
         if (res && res.questions && res.questions.length > 0) {
           setSession(res);
           setStartTime(Date.now());
         } else {
-          setSession(null);
-          setError("No practice questions found for this concept.");
+          setError("No practice questions found for this concept yet.");
         }
       } catch (err) {
         console.error("Quiz init failed:", err);
@@ -73,7 +77,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     if (conceptId) {
       initializeQuiz();
     }
-  }, [conceptId]);
+  }, [conceptId, conceptDetail]);
 
   const getSelected = (qid, type = MAIN) =>
     answers.find((a) => a.question_id === qid && a.sub_question_type === type)?.marked_option;
@@ -91,7 +95,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
       setSubmitting(true);
       const duration = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
       const res = await quizApi.submit({
-        session_id: session.session_id,
+        session_id: session.session_id || session.id,
         duration_seconds: duration,
         answers: answers,
       });
@@ -106,15 +110,165 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     }
   };
 
-  /* ═══ RESULT SCREEN ═══ */
+  /* ═══ RESULT & QUESTION REVIEW SCREEN ═══ */
   if (result) {
+    const answersList = result.answers || [];
+    const scorePct = Math.round((result.score || 0) * 100);
+    const correctCount = answersList.filter(a => a.is_correct).length;
+    const totalCount = answersList.length || session?.questions?.length || 0;
+
     return (
-      <div className="fixed inset-0 bg-white text-[var(--color-text-primary)] z-50 overflow-y-auto">
-        <JourneyComplete
-          conceptName={result.concept_name || conceptDetail?.name || "Concept Mastery"}
-          questionsSolved={result.total_questions || session?.questions?.length || 5}
-          onCompleteSession={() => navigate("/")}
-        />
+      <div className="fixed inset-0 bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] z-50 overflow-y-auto p-4 sm:p-8 select-none">
+        <div className="max-w-2xl mx-auto space-y-6 pb-16">
+          
+          {/* Top Performance Header Card */}
+          <div className="daksh-card p-6 sm:p-8 text-center space-y-4 border-t-4 border-t-[var(--color-gold)]">
+            <div className="w-16 h-16 rounded-full bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center mx-auto shadow-xs">
+              <Award size={32} />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">Quiz Review & Results</h2>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1 font-medium">
+                {conceptDetail?.name || result.concept_name || "Concept Mastery Practice"}
+              </p>
+            </div>
+
+            {/* Score Ring & Metrics */}
+            <div className="flex items-center justify-center gap-8 py-3 bg-[var(--color-bg-primary)] rounded-2xl border border-[var(--color-border)]">
+              <div className="text-center">
+                <span className="text-3xl font-black text-[var(--color-gold-dark)] block">{scorePct}%</span>
+                <span className="text-[10px] text-[var(--color-mid-gray)] uppercase font-extrabold tracking-wider block">Accuracy Score</span>
+              </div>
+              <div className="h-8 w-px bg-[var(--color-border)]" />
+              <div className="text-center">
+                <span className="text-3xl font-black text-emerald-600 block">{correctCount} / {totalCount}</span>
+                <span className="text-[10px] text-[var(--color-mid-gray)] uppercase font-extrabold tracking-wider block">Correct Solved</span>
+              </div>
+            </div>
+
+            {/* Action Buttons Header */}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => { setResult(null); setCurrentIndex(0); setAnswers([]); setStartTime(Date.now()); }}
+                className="px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-white text-xs font-bold text-[var(--color-text-primary)] flex items-center gap-1.5 hover:border-[var(--color-gold)] transition-all cursor-pointer"
+              >
+                <RefreshCw size={13} />
+                <span>Retake Quiz</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="btn-gold px-6 py-2.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Return to Learning Space
+              </button>
+            </div>
+          </div>
+
+          {/* Detailed Question Review Breakdown */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-[var(--color-gold)]" />
+              Question & Answer Breakdown ({answersList.length})
+            </h3>
+
+            {answersList.map((item, idx) => {
+              const opts = item.options || {};
+              const optionKeys = ["A", "B", "C", "D"];
+              const userMarked = item.marked_option;
+              const correctOpt = item.correct_option;
+              const isUserCorrect = item.is_correct;
+
+              return (
+                <div
+                  key={idx}
+                  className={`daksh-card p-5 sm:p-6 space-y-4 border-l-4 ${
+                    isUserCorrect ? "border-l-emerald-500 bg-emerald-50/20" : "border-l-rose-500 bg-rose-50/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">
+                      Question {idx + 1}
+                    </span>
+                    {isUserCorrect ? (
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center gap-1 border border-emerald-300">
+                        <CheckCircle2 size={13} /> Correct (+10 XP)
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 text-[11px] font-bold flex items-center gap-1 border border-rose-300">
+                        <XCircle size={13} /> Incorrect
+                      </span>
+                    )}
+                  </div>
+
+                  <h4 className="text-sm sm:text-base font-bold text-[var(--color-text-primary)] leading-relaxed">
+                    {item.question_text || `Question ${idx + 1}`}
+                  </h4>
+
+                  {/* Options List */}
+                  <div className="space-y-2">
+                    {optionKeys.map((key) => {
+                      const text = opts[key];
+                      if (!text) return null;
+
+                      const isSelectedByUser = userMarked === key;
+                      const isOptionCorrect = correctOpt === key;
+
+                      let styleClasses = "border-[var(--color-border)] bg-white text-[var(--color-text-secondary)]";
+                      let badge = null;
+
+                      if (isSelectedByUser && isOptionCorrect) {
+                        styleClasses = "border-emerald-500 bg-emerald-50 text-emerald-950 font-bold shadow-xs";
+                        badge = (
+                          <span className="ml-auto text-emerald-700 text-xs font-black flex items-center gap-1">
+                            <Check size={14} className="stroke-[3]" /> Your Answer (Correct)
+                          </span>
+                        );
+                      } else if (isSelectedByUser && !isOptionCorrect) {
+                        styleClasses = "border-rose-400 bg-rose-50 text-rose-950 font-bold shadow-xs";
+                        badge = (
+                          <span className="ml-auto text-rose-700 text-xs font-black flex items-center gap-1">
+                            <X size={14} className="stroke-[3]" /> Your Answer (Incorrect)
+                          </span>
+                        );
+                      } else if (isOptionCorrect) {
+                        styleClasses = "border-emerald-400 bg-emerald-50/60 text-emerald-900 font-semibold";
+                        badge = (
+                          <span className="ml-auto text-emerald-700 text-xs font-bold flex items-center gap-1">
+                            <Check size={14} /> Correct Answer
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={key}
+                          className={`p-3.5 rounded-xl border text-xs sm:text-sm flex items-center gap-3 ${styleClasses}`}
+                        >
+                          <span className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isOptionCorrect ? "bg-emerald-600 text-white" : isSelectedByUser ? "bg-rose-600 text-white" : "bg-gray-100 text-gray-700"
+                          }`}>
+                            {key}
+                          </span>
+                          <span className="flex-1">{text}</span>
+                          {badge}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Solution Explanation Box */}
+                  {item.explanation && (
+                    <div className="p-4 rounded-xl border border-[var(--color-gold)]/30 bg-[var(--color-gold-pale)]/50 text-xs space-y-1">
+                      <span className="font-bold text-[var(--color-gold-dark)] block">💡 Verified Explanation:</span>
+                      <p className="text-[var(--color-text-primary)] leading-relaxed">{item.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
       </div>
     );
   }

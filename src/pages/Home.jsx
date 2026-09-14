@@ -186,18 +186,27 @@ export default function Home() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-1.5"
+          className="space-y-3"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
               {timeGreeting}, {userName}.
             </h1>
-            {activeGoal && (
-              <span className="text-[10px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2.5 py-1 rounded-full border border-[var(--color-gold)]/20 flex items-center gap-1">
-                <Target size={11} />
-                +{todayGrowth.toFixed(2)}% / +{targetGrowth.toFixed(2)}% Target
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate("/map")}
+                className="px-3 py-1.5 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold)] hover:text-white transition-all cursor-pointer shadow-xs"
+              >
+                <MapPin size={13} />
+                <span>Map POC</span>
+              </button>
+              {activeGoal && (
+                <span className="text-[10px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2.5 py-1 rounded-full border border-[var(--color-gold)]/20 flex items-center gap-1">
+                  <Target size={11} />
+                  +{todayGrowth.toFixed(2)}% / +{targetGrowth.toFixed(2)}% Target
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed font-normal">
             You don't need to figure everything out today. Let's take the next step.

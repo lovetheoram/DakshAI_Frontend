@@ -4,8 +4,11 @@ import { Flame, Check, Zap, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function HeroHeader({ user, streak, dashboard }) {
+import progressApi from "../../api/progressApi";
+
+export default function HeroHeader({ user, streak, dashboard, onRefreshDashboard }) {
   const navigate = useNavigate();
+  const [checkingIn, setCheckingIn] = useState(false);
   const hours = new Date().getHours();
   const greeting =
     hours < 5
@@ -17,11 +20,24 @@ export default function HeroHeader({ user, streak, dashboard }) {
       : "🌆 Good evening";
 
   const streakDays = streak?.current_streak || 0;
+  const checkedInToday = dashboard?.target?.checked_in_today || false;
   const completed = dashboard?.target?.completed_growth ?? 0;
-  const target = dashboard?.target?.target_growth ?? 1;
+  const target = dashboard?.target?.target_growth ?? 100;
   const isComplete = dashboard?.target?.is_completed ?? false;
   const ratio = target > 0 ? Math.min(1, completed / target) : 1;
   const ratioPercent = Math.round(ratio * 100);
+
+  const handleCheckin = async () => {
+    try {
+      setCheckingIn(true);
+      await progressApi.checkin();
+      if (onRefreshDashboard) onRefreshDashboard();
+    } catch (err) {
+      console.error("Checkin failed:", err);
+    } finally {
+      setCheckingIn(false);
+    }
+  };
 
   const [showCelebration, setShowCelebration] = useState(false);
   useEffect(() => {
@@ -97,6 +113,22 @@ export default function HeroHeader({ user, streak, dashboard }) {
           </div>
 
           <div className="flex items-center gap-2">
+            {!checkedInToday ? (
+              <button
+                onClick={handleCheckin}
+                disabled={checkingIn}
+                className="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold hover:bg-emerald-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Check size={11} className="text-emerald-400" />
+                {checkingIn ? "Checking in..." : "Daily Check-in (+50%)"}
+              </button>
+            ) : (
+              <span className="px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold flex items-center gap-1.5">
+                <Check size={11} />
+                Checked in today
+              </span>
+            )}
+
             <button
               onClick={() => navigate("/about")}
               className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] font-bold hover:bg-purple-500/20 hover:border-purple-400/50 transition-all flex items-center gap-1.5 group"

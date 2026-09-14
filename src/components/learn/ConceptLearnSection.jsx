@@ -1,10 +1,10 @@
 // src/components/learn/ConceptLearnSection.jsx
-// Clean tactile Concept Learn Section aligned with Warm Ivory + Ink + Antique Gold identity.
-// Includes Web Speech API Audio Notes Player and Interactive PYQ Cards.
+// Clean, Focused Concept Learn Section aligned with Warm Ivory + Ink + Antique Gold identity.
+// Contains ONLY the concept notes with a simple speech reader (Speech speed & language are managed in Settings Page).
 
 import React, { useState, useEffect } from "react";
-import { BookOpen, Layers, CheckCircle2, ArrowRight, Zap, Play, Pause, Square, Volume2, HelpCircle } from "lucide-react";
-import PYQCard from "./PYQCard";
+import { BookOpen, Zap, CheckCircle2, Volume2, Play, Pause, Square } from "lucide-react";
+import PreferenceStore from "../../product/preferenceStore";
 
 export default function ConceptLearnSection({
   conceptName,
@@ -12,14 +12,12 @@ export default function ConceptLearnSection({
   description,
   formulas = [],
   rules = [],
-  pyqs = [],
-  aiMeta = {},
-  onStartPractice
+  aiMeta = {}
 }) {
   const dbFormulas = aiMeta.layer_1_hard_formulas || formulas || [];
   const dbRules = aiMeta.layer_2_rule_based_logics || rules || [];
 
-  // Web Speech API State
+  // Web Speech API State using global PreferenceStore settings
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -45,10 +43,18 @@ export default function ConceptLearnSection({
     }
 
     window.speechSynthesis.cancel();
-    const textToSpeak = `${conceptName}. ${description || "Prerequisite revision notes for State PCS."}`;
+    const prefs = PreferenceStore.getPreferences();
+    const textToSpeak = `${conceptName}. ${description || "Concept notes for syllabus revision."}`;
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.rate = 0.95;
+
+    // Apply speed and voice from Settings preferences
+    utterance.rate = prefs.speechRate || 1.0;
     utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const targetLang = prefs.speechVoiceLang || "en-US";
+    const matchedVoice = voices.find(v => v.lang.includes(targetLang) || v.lang.startsWith("en"));
+    if (matchedVoice) utterance.voice = matchedVoice;
 
     utterance.onend = () => {
       setIsSpeaking(false);
@@ -83,52 +89,54 @@ export default function ConceptLearnSection({
 
   return (
     <div className="space-y-6 select-none text-[var(--color-text-primary)]">
-      {/* 1. Formal Description Card with Web Speech API Audio Bar */}
-      <div className="daksh-card p-6 space-y-4">
+      
+      {/* ── 1. CONCEPT REVISION NOTES (ONLY THE NOTES) ── */}
+      <div className="daksh-card p-6 sm:p-7 space-y-4 border-t-3 border-t-[var(--color-gold)]">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-caption tracking-widest text-[var(--color-gold)] font-bold uppercase flex items-center gap-1.5">
-            <BookOpen size={14} />
-            Prerequisite Revision Notes
+          <span className="text-caption tracking-widest text-[var(--color-gold-dark)] font-bold uppercase flex items-center gap-1.5">
+            <BookOpen size={15} />
+            Concept Revision Notes
           </span>
 
-          {/* Web Speech Audio Controls */}
-          <div className="flex items-center gap-1.5 bg-[var(--color-gold-pale)] px-3 py-1.5 rounded-xl border border-[var(--color-gold)]/30">
-            <Volume2 size={13} className="text-[var(--color-gold-dark)] mr-1" />
+          {/* Simple Clean Audio Reader Button (Uses Settings Defaults) */}
+          <div className="flex items-center gap-2">
             {!isSpeaking && !isPaused ? (
               <button
                 onClick={handlePlayNotes}
-                className="flex items-center gap-1 text-xs font-bold text-[var(--color-gold-dark)] hover:opacity-80 cursor-pointer"
+                className="btn-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="Listen to notes (Speed & Voice configured in Settings)"
               >
+                <Volume2 size={14} />
                 <Play size={12} className="fill-current" />
-                Listen Notes
+                <span>Listen Notes</span>
               </button>
             ) : (
-              <>
+              <div className="flex items-center gap-1.5">
                 {isSpeaking ? (
                   <button
                     onClick={handlePauseNotes}
-                    className="flex items-center gap-1 text-xs font-bold text-[var(--color-gold-dark)] hover:opacity-80 cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30 text-xs font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Pause size={12} className="fill-current" />
-                    Pause
+                    <span>Pause</span>
                   </button>
                 ) : (
                   <button
                     onClick={handlePlayNotes}
-                    className="flex items-center gap-1 text-xs font-bold text-[var(--color-gold-dark)] hover:opacity-80 cursor-pointer"
+                    className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Play size={12} className="fill-current" />
-                    Resume
+                    <span>Resume</span>
                   </button>
                 )}
                 <button
                   onClick={handleStopNotes}
-                  className="flex items-center gap-1 text-xs font-bold text-rose-700 hover:opacity-80 ml-2 cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold cursor-pointer"
+                  title="Stop Audio"
                 >
                   <Square size={10} className="fill-current" />
-                  Stop
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -137,93 +145,112 @@ export default function ConceptLearnSection({
           {conceptName}
         </h2>
 
-        <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] leading-relaxed font-normal bg-[var(--color-bg-primary)] p-4 rounded-xl border border-[var(--color-border)]">
-          {description || `${conceptName} is a foundational concept under ${chapterName || "State PCS Syllabus"}. Review the core notes and previous year questions below.`}
+        {/* Clean Notes Paragraph */}
+        <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] leading-relaxed font-normal bg-[var(--color-bg-primary)] p-4 sm:p-5 rounded-xl border border-[var(--color-border)]">
+          {description || `${conceptName} is a key concept under ${chapterName || "Syllabus Topic"}. Review the notes and key takeaways below.`}
         </p>
       </div>
 
-      {/* 2. Previous Year Questions (PYQs) Section */}
-      {pyqs && pyqs.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)] flex items-center gap-1.5">
-              <HelpCircle size={15} className="text-[var(--color-gold)]" />
-              Authentic Exam PYQs ({pyqs.length})
-            </span>
-            <span className="text-[10px] text-[var(--color-mid-gray)]">Ghatnachakra Verified</span>
-          </div>
-
-          <div className="space-y-4">
-            {pyqs.map((pyq, idx) => (
-              <PYQCard key={pyq.id || idx} pyq={pyq} index={idx} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 3. Key Formulas List */}
+      {/* ── 2. JEE FORMULA & LOGIC MAP (IF AVAILABLE) ── */}
       {dbFormulas.length > 0 && (
         <div className="daksh-card p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-caption tracking-widest text-[var(--color-gold)] font-bold flex items-center gap-1.5">
+            <span className="text-caption tracking-widest text-[var(--color-gold-dark)] font-bold flex items-center gap-1.5">
               <Zap size={14} />
               Core Takeaways & Equations ({dbFormulas.length})
             </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {dbFormulas.map((f, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-2"
+                className="p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-1"
               >
                 <code className="text-xs sm:text-sm font-mono font-bold text-[var(--color-text-primary)] block bg-white p-3 rounded-lg border border-[var(--color-border)]">
                   {typeof f === "string" ? f : f.formula || f.equation}
                 </code>
+                {f.used_for && <p className="text-[11px] text-[var(--color-text-secondary)]">{f.used_for}</p>}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 4. Rule-Based Logics List */}
       {dbRules.length > 0 && (
         <div className="daksh-card p-6 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold flex items-center gap-1.5">
               <CheckCircle2 size={14} className="text-[var(--color-gold)]" />
-              Key Rules ({dbRules.length})
+              Key Rules & Constraints ({dbRules.length})
             </span>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {dbRules.map((rule, idx) => (
               <div
                 key={idx}
-                className="p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-xs font-bold text-[var(--color-text-primary)]"
+                className="p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-xs font-bold text-[var(--color-text-primary)]"
               >
-                {typeof rule === "string" ? rule : rule.rule || rule.statement}
+                • {typeof rule === "string" ? rule : rule.rule || rule.statement}
+                {rule.applied_when && <span className="block text-[10px] font-normal text-[var(--color-text-secondary)] mt-0.5">Applied when: {rule.applied_when}</span>}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Single CTA Card */}
-      <div className="daksh-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t-2 border-t-[var(--color-gold)]">
-        <div>
-          <h4 className="text-xs font-bold text-[var(--color-text-primary)]">Ready for custom practice test?</h4>
-          <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">Generate a timed quiz with adaptive revision items.</p>
+      {/* ── 3. STATE PCS KNOWLEDGE MAP SECTIONS (IF AVAILABLE) ── */}
+      {aiMeta.core_facts && aiMeta.core_facts.length > 0 && (
+        <div className="daksh-card p-6 space-y-3">
+          <span className="text-caption tracking-widest text-[var(--color-gold-dark)] font-bold flex items-center gap-1.5">
+            <Zap size={14} />
+            High-Yield Exam Facts ({aiMeta.core_facts.length})
+          </span>
+          <div className="space-y-2">
+            {aiMeta.core_facts.map((cf, idx) => (
+              <div key={idx} className="p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-xs font-semibold text-[var(--color-text-primary)]">
+                • {cf.fact || cf}
+              </div>
+            ))}
+          </div>
         </div>
+      )}
 
-        <button
-          onClick={onStartPractice}
-          className="btn-gold px-5 py-2.5 rounded-xl text-xs font-bold shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          <span>Start Practice Quiz</span>
-          <ArrowRight size={15} />
-        </button>
-      </div>
+      {aiMeta.chronology && aiMeta.chronology.length > 0 && (
+        <div className="daksh-card p-6 space-y-3">
+          <span className="text-caption tracking-widest text-[var(--color-gold-dark)] font-bold flex items-center gap-1.5">
+            <BookOpen size={14} />
+            Chronology & Key Milestones ({aiMeta.chronology.length})
+          </span>
+          <div className="space-y-2">
+            {aiMeta.chronology.map((ch, idx) => (
+              <div key={idx} className="p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-xs space-y-0.5">
+                <span className="font-bold text-[var(--color-gold-dark)]">{ch.year_or_period || "Timeline"}: </span>
+                <span className="font-semibold text-[var(--color-text-primary)]">{ch.event}</span>
+                {ch.significance && <p className="text-[10px] text-[var(--color-text-secondary)]">{ch.significance}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {aiMeta.common_traps && aiMeta.common_traps.length > 0 && (
+        <div className="daksh-card p-6 space-y-3 border-l-2 border-l-rose-500">
+          <span className="text-caption tracking-widest text-rose-700 font-bold flex items-center gap-1.5">
+            ⚠️ Common Candidate Traps & Misconceptions ({aiMeta.common_traps.length})
+          </span>
+          <div className="space-y-2">
+            {aiMeta.common_traps.map((tr, idx) => (
+              <div key={idx} className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 text-xs space-y-1">
+                <p className="font-bold text-rose-800">❌ Misconception: {tr.incorrect_belief}</p>
+                <p className="font-semibold text-emerald-800">✅ Correct Fact: {tr.correct_fact}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

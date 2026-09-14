@@ -7,7 +7,7 @@ import progressApi from "../../api/progressApi";
 import {
   Home,
   Map,
-  Swords,
+  BookOpen,
   Globe,
   User,
   Bell,
@@ -18,13 +18,12 @@ import {
   X,
 } from "lucide-react";
 
-// 5 Core Navigation Rooms
+// Core Navigation Rooms: Home, Learn, World, Profile (Map POC is in top header)
 const NAV_ITEMS = [
-  { to: "/",          icon: Home,   label: "Home" },
-  { to: "/map",       icon: Map,    label: "Map" },
-  { to: "/practice",  icon: Swords, label: "Practice" },
-  { to: "/world",     icon: Globe,  label: "World" },
-  { to: "/profile",   icon: User,   label: "Profile" },
+  { to: "/",        icon: Home,     label: "Home" },
+  { to: "/learn",   icon: BookOpen, label: "Learn" },
+  { to: "/world",   icon: Globe,    label: "World" },
+  { to: "/profile", icon: User,     label: "Profile" },
 ];
 
 export default function AppShell({ children }) {
@@ -134,6 +133,22 @@ export default function AppShell({ children }) {
 
           {/* Right section */}
           <div className="flex items-center gap-2">
+            {/* Map POC Direct Shortcut */}
+            <NavLink
+              to="/map"
+              className={({ isActive }) =>
+                `flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[var(--color-gold)] text-white border-[var(--color-gold)] shadow-xs"
+                    : "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)] hover:text-white"
+                }`
+              }
+              title="Map POC - Truth Trajectory"
+            >
+              <Map size={15} />
+              <span>Map POC</span>
+            </NavLink>
+
             {/* Daily Effort Check-in Icon */}
             <button
               onClick={() => setEffortModalOpen(true)}
@@ -168,7 +183,6 @@ export default function AppShell({ children }) {
               >
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </button>
-
               <AnimatePresence>
                 {menuOpen && (
                   <motion.div
@@ -209,7 +223,7 @@ export default function AppShell({ children }) {
 
       {/* ============= Mobile Top Bar ============= */}
       {showNav && (
-        <header className="flex md:hidden items-center justify-between px-5 py-3 border-b border-[var(--color-border)] bg-white sticky top-0 z-40">
+        <header className="flex md:hidden items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-white sticky top-0 z-40">
           <NavLink to="/" className="flex items-center gap-2 group">
             <div className="w-7 h-7 rounded-lg bg-[var(--color-gold)] flex items-center justify-center shadow-xs">
               <span className="text-white font-black text-xs">D</span>
@@ -219,13 +233,29 @@ export default function AppShell({ children }) {
             </span>
           </NavLink>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Map POC Icon Mobile */}
+            <NavLink
+              to="/map"
+              className={({ isActive }) =>
+                `px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
+                  isActive
+                    ? "bg-[var(--color-gold)] text-white border-[var(--color-gold)]"
+                    : "bg-[var(--color-gold-pale)] border-[var(--color-gold)]/30 text-[var(--color-gold-dark)]"
+                }`
+              }
+              title="Map POC"
+            >
+              <Map size={14} />
+              <span>Map POC</span>
+            </NavLink>
+
             {/* Daily Effort Icon Mobile */}
             <button
               onClick={() => setEffortModalOpen(true)}
-              className="px-2.5 py-1 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/20 text-[var(--color-gold-dark)] text-xs font-bold flex items-center gap-1 cursor-pointer"
+              className="px-2 py-1 rounded-xl bg-white border border-[var(--color-border)] text-[var(--color-text-secondary)] text-xs font-bold flex items-center gap-1 cursor-pointer"
             >
-              <Clock size={14} />
+              <Clock size={14} className="text-[var(--color-gold)]" />
               <span>{actualHours.toFixed(1)}h</span>
             </button>
 

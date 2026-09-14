@@ -7,6 +7,8 @@ export const DEFAULT_PREFERENCES = {
   activeThemeKey: "classic",
   motionIntensity: "standard", // 'standard' | 'reduced'
   mentorIntensity: "balanced", // 'low' | 'balanced' | 'guided'
+  speechRate: 1.0,             // 0.75 | 1.0 | 1.25 | 1.5 | 2.0
+  speechVoiceLang: "en-US",    // default speech voice language
   annoyanceDismissals: {},     // { [interventionType]: dismissalCount }
 };
 

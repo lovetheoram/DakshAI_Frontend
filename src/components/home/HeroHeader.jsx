@@ -4,8 +4,11 @@ import { Flame, Check, Zap, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function HeroHeader({ user, streak, dashboard }) {
+import progressApi from "../../api/progressApi";
+
+export default function HeroHeader({ user, streak, dashboard, onRefreshDashboard }) {
   const navigate = useNavigate();
+  const [checkingIn, setCheckingIn] = useState(false);
   const hours = new Date().getHours();
   const greeting =
     hours < 5
@@ -17,11 +20,32 @@ export default function HeroHeader({ user, streak, dashboard }) {
       : "🌆 Good evening";
 
   const streakDays = streak?.current_streak || 0;
-  const completed = dashboard?.target?.completed_growth ?? 0;
-  const target = dashboard?.target?.target_growth ?? 1;
-  const isComplete = dashboard?.target?.is_completed ?? false;
-  const ratio = target > 0 ? Math.min(1, completed / target) : 1;
-  const ratioPercent = Math.round(ratio * 100);
+  const targetData = dashboard?.target || {};
+  const checkedInToday = Boolean(targetData.study_checked_in || targetData.checked_in_today);
+
+  const completedCorrect = targetData.completed_correct_questions || 0;
+  const targetCorrect = targetData.target_correct_questions || 20;
+
+  const checkinGrowth = checkedInToday ? 50.0 : 0.0;
+  const questionsGrowth = targetData.questions_growth ?? (targetCorrect > 0 ? Math.min(50.0, Math.round((completedCorrect / targetCorrect) * 50.0)) : 0.0);
+
+  const completed = targetData.completed_growth ?? (checkinGrowth + questionsGrowth);
+  const target = targetData.target_growth ?? 100;
+  const isComplete = targetData.is_completed || completed >= 100;
+  const ratioPercent = Math.min(100, Math.round((completed / target) * 100));
+  const ratio = ratioPercent / 100;
+
+  const handleCheckin = async () => {
+    try {
+      setCheckingIn(true);
+      await progressApi.checkin();
+      if (onRefreshDashboard) onRefreshDashboard();
+    } catch (err) {
+      console.error("Checkin failed:", err);
+    } finally {
+      setCheckingIn(false);
+    }
+  };
 
   const [showCelebration, setShowCelebration] = useState(false);
   useEffect(() => {
@@ -34,23 +58,16 @@ export default function HeroHeader({ user, streak, dashboard }) {
 
   // Micro-copy with emotional intelligence
   let statusMessage = "";
-  let statusColor = "text-gray-500";
-  if (completed === 0) {
-    statusMessage = "Haven't started yet — your streak is at risk.";
-    statusColor = "text-rose-400/80";
-  } else if (isComplete && completed > target * 1.5) {
-    statusMessage = "🔥 You're absolutely crushing it today!";
-    statusColor = "text-emerald-400";
+  let statusColor = "text-gray-400";
+  if (!checkedInToday && completedCorrect === 0) {
+    statusMessage = "Tap 'Daily Check-in' (+50%) or solve practice questions to complete today's target!";
+    statusColor = "text-rose-400/90";
   } else if (isComplete) {
-    statusMessage = "🎯 Target hit! Every extra rep is bonus XP.";
-    statusColor = "text-emerald-400";
-  } else if (ratio >= 0.6) {
-    statusMessage = "Almost there — one more push and you're done.";
-    statusColor = "text-amber-400/90";
+    statusMessage = "🎯 100% Target Completed today! Check-in (+50%) + Practice Questions (+50%) complete.";
+    statusColor = "text-emerald-400 font-bold";
   } else {
-    const remaining = (target - completed).toFixed(2);
-    statusMessage = `+${remaining}% more to hit today's target.`;
-    statusColor = "text-gray-400";
+    statusMessage = `50/50 Target: Check-in (${checkinGrowth}%/50%) + Practice Questions (${questionsGrowth}%/50%).`;
+    statusColor = "text-amber-300 font-medium";
   }
 
   // Bar gradient based on progress
@@ -85,21 +102,37 @@ export default function HeroHeader({ user, streak, dashboard }) {
       {/* Border */}
       <div className="absolute inset-0 rounded-3xl border border-white/[0.06]" />
 
-      <div className="relative px-6 py-5">
+      <div className="relative px-6 py-5 space-y-4">
         {/* Row 1: Greeting + Streak + About */}
-        <div className="flex items-start justify-between mb-5">
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <p className="text-[11px] text-gray-500 font-semibold mb-0.5">{greeting}</p>
+            <p className="text-[11px] text-gray-400 font-semibold mb-0.5">{greeting}</p>
             <h1 className="text-xl font-black text-white tracking-tight">
               {user?.username || "Learner"}
               <span className="text-purple-400">.</span>
             </h1>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {!checkedInToday ? (
+              <button
+                onClick={handleCheckin}
+                disabled={checkingIn}
+                className="px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold hover:bg-emerald-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Check size={11} className="text-emerald-400" />
+                {checkingIn ? "Checking in..." : "1-Tap Check-in (+50%)"}
+              </button>
+            ) : (
+              <span className="px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-[11px] font-bold flex items-center gap-1.5 shadow-xs">
+                <Check size={11} />
+                Checked in today (+50%)
+              </span>
+            )}
+
             <button
               onClick={() => navigate("/about")}
-              className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] font-bold hover:bg-purple-500/20 hover:border-purple-400/50 transition-all flex items-center gap-1.5 group"
+              className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[11px] font-bold hover:bg-purple-500/20 hover:border-purple-400/50 transition-all flex items-center gap-1.5 group cursor-pointer"
             >
               <Sparkles size={11} className="text-purple-300 group-hover:text-purple-200" />
               About Us
@@ -112,24 +145,69 @@ export default function HeroHeader({ user, streak, dashboard }) {
                 transition={{ repeat: Infinity, duration: 2 }}
               >
                 <Flame size={12} className="text-orange-400" />
-                {streakDays}d
+                {streakDays}d Streak
               </motion.div>
             )}
           </div>
         </div>
 
-        {/* Row 2: Progress Section */}
-        <div className="space-y-2.5">
+        {/* Row 2: 50 / 50 Dual Criteria Breakdown Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          {/* 50% Track 1: Study Check-in */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                Track 1 (50%) — Daily Check-In
+              </span>
+              <span className="text-xs font-black text-white block">
+                {checkedInToday ? "Checked In (+50%)" : "Pending Check-In (+0%)"}
+              </span>
+            </div>
+            {checkedInToday ? (
+              <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                ✓
+              </div>
+            ) : (
+              <button
+                onClick={handleCheckin}
+                disabled={checkingIn}
+                className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold hover:bg-emerald-500/30 cursor-pointer"
+              >
+                {checkingIn ? "..." : "Check in"}
+              </button>
+            )}
+          </div>
+
+          {/* 50% Track 2: Practice Questions */}
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                Track 2 (50%) — Practice Questions
+              </span>
+              <span className="text-xs font-black text-white block">
+                {completedCorrect} / {targetCorrect} Correct (+{questionsGrowth}%)
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-extrabold text-amber-400 block">
+                {Math.round((completedCorrect / Math.max(1, targetCorrect)) * 100)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Total Combined Daily Progress Bar */}
+        <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black tracking-[0.12em] text-gray-500 uppercase flex items-center gap-1.5">
-              <Zap size={10} className="text-purple-400" />
-              Daily Progress
+            <p className="text-[10px] font-black tracking-[0.12em] text-gray-400 uppercase flex items-center gap-1.5">
+              <Zap size={11} className="text-purple-400" />
+              Total 50/50 Daily Target Progress
             </p>
-            <p className="text-[10px] font-bold tabular-nums text-gray-500">
+            <p className="text-[10px] font-bold tabular-nums text-gray-400">
               <span className={ratioPercent >= 100 ? "text-emerald-400 font-black" : "text-white"}>
                 {ratioPercent}%
               </span>
-              {" "}complete
+              {" "}completed (100% max)
             </p>
           </div>
 
@@ -139,7 +217,7 @@ export default function HeroHeader({ user, streak, dashboard }) {
               className={`h-full rounded-full bg-gradient-to-r ${barGradient} shadow-lg ${barGlow}`}
               initial={{ width: 0 }}
               animate={{ width: `${ratioPercent}%` }}
-              transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             />
             {/* Shimmer on bar */}
             {ratioPercent > 5 && (

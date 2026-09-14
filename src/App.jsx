@@ -76,11 +76,7 @@ export default function App() {
         />
         <Route
           path="/practice"
-          element={
-            <ProtectedRoute>
-              <PracticePage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/learn" replace />}
         />
         <Route
           path="/community"

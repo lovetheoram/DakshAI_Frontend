@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MessageSquare, Heart, Bookmark, Award, Sparkles, ArrowLeft } from "lucide-react";
+import { MessageSquare, Heart, Bookmark, Award, Sparkles, ArrowLeft, Loader2, UserCheck } from "lucide-react";
 import socialApi from "../../api/socialApi";
 import FollowButton from "./FollowButton";
 import PostCard from "./PostCard";
@@ -56,20 +56,20 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-        <p className="mt-4 text-gray-500 font-medium">Loading user profile...</p>
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3">
+        <Loader2 size={24} className="animate-spin text-amber-500" />
+        <p className="text-xs text-slate-400 font-medium">Loading user profile...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="max-w-2xl mx-auto p-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-800">User not found</h2>
+      <div className="max-w-2xl mx-auto p-8 text-center bg-slate-900/60 rounded-3xl border border-slate-800 shadow-xl">
+        <h2 className="text-xl font-bold text-slate-200">User not found</h2>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+          className="mt-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition cursor-pointer"
         >
           Go Back
         </button>
@@ -78,69 +78,71 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
+    <div className="max-w-3xl mx-auto p-4 sm:p-6 min-h-screen bg-slate-950 text-slate-100 space-y-6">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-600 hover:text-purple-600 font-semibold mb-6 transition"
+        className="flex items-center gap-2 text-slate-400 hover:text-amber-400 text-xs font-semibold transition cursor-pointer"
       >
-        <ArrowLeft size={18} />
-        Back
+        <ArrowLeft size={16} />
+        Back to Social
       </button>
 
       {/* Header Profile Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200 relative overflow-hidden mb-8">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-purple-100 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+      <div className="bg-slate-900/80 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Avatar */}
-          <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-4xl shadow-lg">
+          <div className="relative shrink-0">
+            <div className="w-24 h-24 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-lg border border-amber-400/30">
               {profile.username?.charAt(0).toUpperCase() || "U"}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-4 border-white"></div>
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-900" title="Active learner"></div>
           </div>
 
           {/* Details */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-black text-gray-800 flex items-center justify-center md:justify-start gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-100 flex items-center justify-center md:justify-start gap-2.5">
               {profile.username}
               {profile.is_self && (
-                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">You</span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  You
+                </span>
               )}
             </h1>
-            <p className="text-gray-500 font-medium mt-1">DakshAI Explorer</p>
-            <p className="text-gray-600 mt-4 max-w-xl mx-auto md:mx-0 leading-relaxed">
-              {profile.bio || "No bio yet. Learning and growing every day."}
+            <p className="text-xs text-slate-400 font-medium mt-1">DakshAI Peer Explorer</p>
+            <p className="text-slate-300 text-xs mt-3 max-w-xl mx-auto md:mx-0 leading-relaxed">
+              {profile.bio || "No bio set yet. Dedicated student pushing limits in concept mastery."}
             </p>
 
             {/* Stats */}
-            <div className="flex justify-center md:justify-start gap-8 mt-6 border-t border-gray-100 pt-6">
+            <div className="flex justify-center md:justify-start gap-8 mt-6 border-t border-slate-800 pt-5">
               <div className="text-center">
-                <span className="block text-xl font-bold text-gray-800">{posts.length}</span>
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Posts</span>
+                <span className="block text-lg font-black text-amber-400">{posts.length}</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Posts</span>
               </div>
               <div className="text-center">
-                <span className="block text-xl font-bold text-gray-800">{profile.followers_count || 0}</span>
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Followers</span>
+                <span className="block text-lg font-black text-amber-400">{profile.followers_count || 0}</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Followers</span>
               </div>
               <div className="text-center">
-                <span className="block text-xl font-bold text-gray-800">{profile.following_count || 0}</span>
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Following</span>
+                <span className="block text-lg font-black text-amber-400">{profile.following_count || 0}</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Following</span>
               </div>
             </div>
           </div>
 
           {/* Actions */}
           {!profile.is_self && (
-            <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto mt-4 md:mt-0">
+            <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto mt-4 md:mt-0 shrink-0">
               <FollowButton userId={profile.id} isFollowing={profile.is_following} />
               
               <button
                 onClick={() => navigate(`/messages/${profile.id}`)}
-                className="flex-1 md:flex-initial flex items-center justify-center gap-2 bg-purple-100 text-purple-600 px-6 py-3 rounded-xl hover:bg-purple-200 transition font-bold"
+                className="flex-1 md:flex-initial flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 px-5 py-2.5 rounded-xl transition text-xs font-bold cursor-pointer"
               >
-                <MessageSquare size={18} />
+                <MessageSquare size={15} className="text-amber-400" />
                 Message
               </button>
             </div>
@@ -149,17 +151,17 @@ export default function ProfilePage() {
       </div>
 
       {/* User's Posts */}
-      <h2 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2">
-        <Sparkles className="text-purple-600" size={20} />
+      <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
+        <Sparkles className="text-amber-400" size={18} />
         Recent Posts
       </h2>
       
       {posts.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center shadow-lg border border-slate-200">
-          <p className="text-gray-500 font-medium text-lg">No posts shared yet by this user.</p>
+        <div className="bg-slate-900/60 rounded-3xl p-8 text-center border border-slate-800">
+          <p className="text-slate-400 text-xs font-medium">No updates or posts shared yet by this peer.</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
@@ -168,3 +170,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

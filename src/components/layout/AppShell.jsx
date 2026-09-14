@@ -7,7 +7,7 @@ import progressApi from "../../api/progressApi";
 import {
   Home,
   Map,
-  Swords,
+  BookOpen,
   Globe,
   User,
   Bell,
@@ -18,13 +18,12 @@ import {
   X,
 } from "lucide-react";
 
-// 5 Core Navigation Rooms
+// Core Navigation Rooms: Home, Learn, World, Profile (Map POC is in top header)
 const NAV_ITEMS = [
-  { to: "/",          icon: Home,   label: "Home" },
-  { to: "/map",       icon: Map,    label: "Map" },
-  { to: "/practice",  icon: Swords, label: "Practice" },
-  { to: "/world",     icon: Globe,  label: "World" },
-  { to: "/profile",   icon: User,   label: "Profile" },
+  { to: "/",        icon: Home,     label: "Home" },
+  { to: "/learn",   icon: BookOpen, label: "Learn" },
+  { to: "/world",   icon: Globe,    label: "World" },
+  { to: "/profile", icon: User,     label: "Profile" },
 ];
 
 export default function AppShell({ children }) {
@@ -66,7 +65,12 @@ export default function AppShell({ children }) {
 
   const showNav = !!user;
 
-  // Hours telemetry
+  // Target & Checkin telemetry
+  const targetData = dashboard?.target || {};
+  const checkedInToday = Boolean(targetData.study_checked_in || targetData.checked_in_today);
+  const completedCorrect = targetData.completed_correct_questions || 0;
+  const targetCorrect = targetData.target_correct_questions || 20;
+
   const plannedHours = dashboard?.goal?.available_hours_per_day || 2.0;
   const todayStr = new Date().toISOString().split("T")[0];
   const todayDiary = diaryEntries.find((d) => d.date === todayStr) || diaryEntries[0];
@@ -134,18 +138,34 @@ export default function AppShell({ children }) {
 
           {/* Right section */}
           <div className="flex items-center gap-2">
-            {/* Daily Effort Check-in Icon */}
+            {/* Map POC Direct Shortcut */}
+            <NavLink
+              to="/map"
+              className={({ isActive }) =>
+                `flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[var(--color-gold)] text-white border-[var(--color-gold)] shadow-xs"
+                    : "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)] hover:text-white"
+                }`
+              }
+              title="Map POC - Truth Trajectory"
+            >
+              <Map size={15} />
+              <span>Map POC</span>
+            </NavLink>
+
+            {/* Daily Target Check-in Header Button */}
             <button
               onClick={() => setEffortModalOpen(true)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                actualHours > 0
-                  ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30"
-                  : "bg-white text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-gold)]"
+                checkedInToday
+                  ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+                  : "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/40 hover:bg-[var(--color-gold)] hover:text-white"
               }`}
-              title="Daily Effort Check-in"
+              title="Daily 50/50 Target Check-in Status"
             >
-              <Clock size={15} className="text-[var(--color-gold)]" />
-              <span>{actualHours.toFixed(1)} / {plannedHours.toFixed(1)}h</span>
+              <Clock size={15} className={checkedInToday ? "text-emerald-600" : "text-[var(--color-gold)]"} />
+              <span>{checkedInToday ? "Checked In (+50%)" : "Check-in (+50%)"}</span>
             </button>
 
             {/* Notification Bell */}
@@ -168,7 +188,6 @@ export default function AppShell({ children }) {
               >
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </button>
-
               <AnimatePresence>
                 {menuOpen && (
                   <motion.div
@@ -209,7 +228,7 @@ export default function AppShell({ children }) {
 
       {/* ============= Mobile Top Bar ============= */}
       {showNav && (
-        <header className="flex md:hidden items-center justify-between px-5 py-3 border-b border-[var(--color-border)] bg-white sticky top-0 z-40">
+        <header className="flex md:hidden items-center justify-between px-4 py-3 border-b border-[var(--color-border)] bg-white sticky top-0 z-40">
           <NavLink to="/" className="flex items-center gap-2 group">
             <div className="w-7 h-7 rounded-lg bg-[var(--color-gold)] flex items-center justify-center shadow-xs">
               <span className="text-white font-black text-xs">D</span>
@@ -219,14 +238,34 @@ export default function AppShell({ children }) {
             </span>
           </NavLink>
 
-          <div className="flex items-center gap-2">
-            {/* Daily Effort Icon Mobile */}
+          <div className="flex items-center gap-1.5">
+            {/* Map POC Icon Mobile */}
+            <NavLink
+              to="/map"
+              className={({ isActive }) =>
+                `px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
+                  isActive
+                    ? "bg-[var(--color-gold)] text-white border-[var(--color-gold)]"
+                    : "bg-[var(--color-gold-pale)] border-[var(--color-gold)]/30 text-[var(--color-gold-dark)]"
+                }`
+              }
+              title="Map POC"
+            >
+              <Map size={14} />
+              <span>Map POC</span>
+            </NavLink>
+
+            {/* Daily Target Check-in Mobile Button */}
             <button
               onClick={() => setEffortModalOpen(true)}
-              className="px-2.5 py-1 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/20 text-[var(--color-gold-dark)] text-xs font-bold flex items-center gap-1 cursor-pointer"
+              className={`px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
+                checkedInToday
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
+                  : "bg-[var(--color-gold-pale)] border-[var(--color-gold)]/40 text-[var(--color-gold-dark)]"
+              }`}
             >
-              <Clock size={14} />
-              <span>{actualHours.toFixed(1)}h</span>
+              <Clock size={14} className={checkedInToday ? "text-emerald-600" : "text-[var(--color-gold)]"} />
+              <span>{checkedInToday ? "✓ 50%" : "Check-in"}</span>
             </button>
 
             <NavLink
@@ -292,91 +331,122 @@ export default function AppShell({ children }) {
         </header>
       )}
 
-      {/* ============= DAILY EFFORT CHECK-IN MODAL ============= */}
+      {/* ============= DAILY TARGET & STUDY CHECK-IN MODAL (50/50 Structure) ============= */}
       <AnimatePresence>
         {effortModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.18 }}
-              className="max-w-sm w-full daksh-card p-6 space-y-5 shadow-lg border-t-3 border-t-[var(--color-gold)]"
+              className="max-w-md w-full daksh-card p-6 space-y-5 shadow-2xl border-t-3 border-t-[var(--color-gold)] select-none"
             >
+              {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center">
-                    <Clock size={16} />
+                  <div className="w-8 h-8 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center font-bold">
+                    <Clock size={18} />
                   </div>
-                  <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Daily Study Check-in</h3>
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--color-text-primary)]">50 / 50 Daily Target Status</h3>
+                    <p className="text-[10px] text-[var(--color-text-secondary)]">Check-in (+50%) + Practice Questions (+50%)</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setEffortModalOpen(false)}
-                  className="w-7 h-7 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] cursor-pointer"
+                  className="w-8 h-8 rounded-xl border border-[var(--color-border)] flex items-center justify-center text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] cursor-pointer"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-2">
+              {/* Overall Combined Target Card */}
+              <div className="p-4 rounded-xl bg-slate-900 text-white space-y-2.5 shadow-md">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[var(--color-text-secondary)] font-medium">Logged Today:</span>
-                  <strong className="text-[var(--color-text-primary)]">{actualHours.toFixed(1)} / {plannedHours.toFixed(1)} hrs</strong>
+                  <span className="font-semibold text-gray-300">Total 50/50 Daily Target:</span>
+                  <strong className="text-amber-400 font-extrabold text-sm">{Math.min(100, Math.round(dashboard?.target?.completed_growth ?? ( (checkedInToday ? 50 : 0) + (dashboard?.target?.questions_growth || 0) )))}% / 100%</strong>
                 </div>
-                <div className="bar-track">
-                  <div className="bar-fill-gold" style={{ width: `${effortPct}%` }} />
+                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-400 via-emerald-400 to-teal-400 transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round(dashboard?.target?.completed_growth ?? ( (checkedInToday ? 50 : 0) + (dashboard?.target?.questions_growth || 0) )))}%` }}
+                  />
                 </div>
-                <span className="text-[10px] text-[var(--color-gold-dark)] font-semibold block text-right">
-                  {effortPct}% Target Met
-                </span>
               </div>
 
-              <div className="space-y-2">
+              {/* Track A: 1-Tap Daily Check-in (+50%) */}
+              <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[var(--color-text-secondary)]">Log Effort Spent Today:</span>
-                  {loggingStatus && (
-                    <span className="text-[10px] font-bold text-[var(--color-success)] flex items-center gap-1">
-                      <Check size={12} /> {loggingStatus}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text-primary)]">
+                    <Check size={14} className="text-emerald-600" />
+                    <span>Track A (50%) — Daily 1-Tap Check-in</span>
+                  </div>
+                  <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${checkedInToday ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}`}>
+                    {checkedInToday ? "+50% Earned" : "0 / 50%"}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                {checkedInToday ? (
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs font-bold flex items-center justify-between">
+                    <span>✓ Checked In Today (+50% Growth)</span>
+                    <span className="text-[10px] text-emerald-600 font-medium">Recorded</span>
+                  </div>
+                ) : (
                   <button
-                    onClick={() => handleLogMinutes(15)}
-                    className="py-2 rounded-xl border border-[var(--color-border)] bg-white hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)] text-xs font-semibold text-[var(--color-text-primary)] transition-all cursor-pointer"
+                    onClick={async () => {
+                      try {
+                        setLoggingStatus("Checking in...");
+                        await progressApi.checkin();
+                        setLoggingStatus("Checked in (+50%)!");
+                        await fetchTelemetry();
+                        setTimeout(() => setLoggingStatus(""), 1200);
+                      } catch (err) {
+                        setLoggingStatus("Checkin failed");
+                      }
+                    }}
+                    className="w-full btn-gold py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                   >
-                    +15m
+                    <Check size={14} />
+                    <span>{loggingStatus || "Complete 1-Tap Daily Check-in (+50%)"}</span>
                   </button>
-                  <button
-                    onClick={() => handleLogMinutes(30)}
-                    className="py-2 rounded-xl border border-[var(--color-border)] bg-white hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)] text-xs font-semibold text-[var(--color-text-primary)] transition-all cursor-pointer"
-                  >
-                    +30m
-                  </button>
-                  <button
-                    onClick={() => handleLogMinutes(60)}
-                    className="py-2 rounded-xl border border-[var(--color-border)] bg-white hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)] text-xs font-semibold text-[var(--color-text-primary)] transition-all cursor-pointer"
-                  >
-                    +1 hour
-                  </button>
-                </div>
+                )}
+              </div>
 
-                <div className="flex gap-2 pt-2">
+              {/* Track B: Daily Practice Questions (+50%) */}
+              <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[var(--color-text-primary)]">Track B (50%) — Practice Questions</span>
+                  <span className="font-extrabold text-[var(--color-gold-dark)]">
+                    +{dashboard?.target?.questions_growth ?? Math.min(50, Math.round(((dashboard?.target?.completed_correct_questions || 0) / (dashboard?.target?.target_correct_questions || 20)) * 50))}% / 50%
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Questions Correct Today: <strong>{dashboard?.target?.completed_correct_questions || 0} / {dashboard?.target?.target_correct_questions || 20}</strong>
+                </p>
+              </div>
+
+              {/* Optional Manual Time Logger */}
+              <div className="pt-2 border-t border-[var(--color-border)] space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[var(--color-text-secondary)]">Optional: Log Extra Revision Minutes</span>
+                  {loggingStatus && <span className="text-[10px] font-bold text-emerald-600">{loggingStatus}</span>}
+                </div>
+                <div className="flex gap-2">
                   <input
                     type="number"
                     min="1"
                     max="600"
-                    placeholder="Enter custom minutes..."
+                    placeholder="Minutes spent revising..."
                     value={customMins}
                     onChange={(e) => setCustomMins(e.target.value)}
                     className="input-field py-2 text-xs flex-1"
                   />
                   <button
                     onClick={() => handleLogMinutes(customMins)}
-                    className="btn-gold px-4 py-2 rounded-xl text-xs font-bold"
+                    className="btn-gold px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
                   >
-                    Save
+                    Save Time
                   </button>
                 </div>
               </div>

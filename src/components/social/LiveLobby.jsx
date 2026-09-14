@@ -33,7 +33,7 @@ export default function LiveLobby() {
     const fetchConcepts = async () => {
       try {
         const data = await syllabusApi.getConceptList();
-        setConcepts(data);
+        setConcepts(Array.isArray(data) ? data : data?.concepts || []);
       } catch (err) {
         console.error("Error fetching concept list:", err);
       }
@@ -71,8 +71,8 @@ export default function LiveLobby() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <Loader2 size={24} className="animate-spin text-purple-400" />
-        <p className="text-xs text-gray-500">Syncing live learning matrix...</p>
+        <Loader2 size={24} className="animate-spin text-amber-500" />
+        <p className="text-xs text-slate-400">Syncing live learning matrix...</p>
       </div>
     );
   }
@@ -88,32 +88,32 @@ export default function LiveLobby() {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 rounded-3xl bg-gradient-to-br from-purple-900/25 via-slate-900/60 to-indigo-900/20 border border-purple-500/10 text-center relative overflow-hidden"
+        className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-amber-500/20 text-center relative overflow-hidden shadow-2xl"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
         
         <div className="relative z-10 flex flex-col items-center justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-3">
-            <Users className="text-purple-400 animate-pulse" size={24} />
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
+            <Users className="text-amber-400 animate-pulse" size={24} />
           </div>
-          <h2 className="text-3xl font-black text-white">
+          <h2 className="text-3xl font-black text-slate-100 tracking-tight">
             {onlineCount} studying now
           </h2>
-          <p className="text-xs text-gray-400 mt-1.5 max-w-sm">
+          <p className="text-xs text-slate-400 mt-1.5 max-w-sm">
             You are not studying alone. Join a subject room or list your focus to let peers sync with your momentum.
           </p>
         </div>
       </motion.div>
 
       {/* Check In Action Card */}
-      <GlassCard className="relative overflow-hidden border-purple-500/15">
+      <GlassCard className="relative overflow-hidden border-amber-500/20 bg-slate-950/80">
         <div className="flex items-center gap-2.5 mb-4">
           <span className="text-base">📍</span>
           <div>
-            <p className="text-xs font-bold text-white">
+            <p className="text-xs font-bold text-slate-100 uppercase tracking-wider">
               {mySession ? "You are Checked In" : "Declare Your Focus"}
             </p>
-            <p className="text-[10px] text-gray-500">
+            <p className="text-[10px] text-slate-400">
               {mySession 
                 ? `Active in: ${mySession.concept_name || "General Study"}` 
                 : "Checking in places you in the live room index"}
@@ -130,17 +130,17 @@ export default function LiveLobby() {
               exit={{ opacity: 0, height: 0 }}
               className="space-y-4"
             >
-              <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-between text-xs">
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} className="text-emerald-400" />
-                  <span className="text-gray-300">
+                  <span className="text-slate-300">
                     Studying <strong className="text-white">{mySession.concept_name || "General Concept"}</strong> ({mySession.status})
                   </span>
                 </div>
                 <button
                   onClick={handleClearSession}
                   disabled={submittingCheckIn}
-                  className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors"
+                  className="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors"
                 >
                   Leave Room
                 </button>
@@ -157,11 +157,11 @@ export default function LiveLobby() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Concept Topic
                   </label>
                   <select
-                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 transition"
                     value={selectedConcept}
                     onChange={(e) => setSelectedConcept(e.target.value)}
                     required
@@ -176,11 +176,11 @@ export default function LiveLobby() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Study Activity
                   </label>
                   <select
-                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 transition"
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
                   >
@@ -194,7 +194,7 @@ export default function LiveLobby() {
               <button
                 type="submit"
                 disabled={submittingCheckIn}
-                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition active:scale-[0.97] disabled:opacity-50"
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-bold shadow-md hover:shadow-amber-500/20 transition active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
                 {submittingCheckIn ? "Checking in..." : "Enter Study Lobby ⚡"}
               </button>
@@ -206,10 +206,10 @@ export default function LiveLobby() {
       {/* Grid: Lobbies per Subject & Active Sprints */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Lobbies List */}
-        <GlassCard>
+        <GlassCard className="bg-slate-950/80 border-slate-800">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm">🏛️</span>
-            <p className="text-xs font-bold text-white">Subject Lobbies</p>
+            <p className="text-xs font-bold text-slate-100 uppercase tracking-wider">Subject Lobbies</p>
           </div>
 
           <div className="space-y-2.5">
@@ -218,12 +218,12 @@ export default function LiveLobby() {
               return (
                 <div
                   key={subj}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs hover:border-purple-500/20 transition-colors"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs hover:border-amber-500/30 transition-colors"
                 >
-                  <span className="font-semibold text-gray-300">{subj} Lobby</span>
+                  <span className="font-semibold text-slate-300">{subj} Lobby</span>
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${cnt > 0 ? "bg-purple-400 animate-pulse" : "bg-white/[0.1]"}`} />
-                    <span className="font-bold text-white">{cnt} active</span>
+                    <span className={`w-2 h-2 rounded-full ${cnt > 0 ? "bg-amber-400 animate-pulse" : "bg-slate-700"}`} />
+                    <span className="font-bold text-slate-200">{cnt} active</span>
                   </div>
                 </div>
               );
@@ -232,14 +232,14 @@ export default function LiveLobby() {
         </GlassCard>
 
         {/* Active Sprints */}
-        <GlassCard>
+        <GlassCard className="bg-slate-950/80 border-slate-800">
           <div className="flex items-center gap-2 mb-4">
-            <BookOpen size={14} className="text-purple-400" />
-            <p className="text-xs font-bold text-white">Active Sprints</p>
+            <BookOpen size={14} className="text-amber-400" />
+            <p className="text-xs font-bold text-slate-100 uppercase tracking-wider">Active Sprints</p>
           </div>
 
           {sprints.length === 0 ? (
-            <div className="py-8 text-center text-xs text-gray-500 leading-relaxed">
+            <div className="py-8 text-center text-xs text-slate-500 leading-relaxed">
               No active group sprints. Check in above to declare your sprint and start the topic room!
             </div>
           ) : (
@@ -247,10 +247,10 @@ export default function LiveLobby() {
               {sprints.map((sp, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs"
+                  className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs"
                 >
-                  <span className="font-semibold text-white truncate max-w-[180px]">{sp.concept_name}</span>
-                  <span className="text-[10px] font-bold text-purple-400">{sp.count} in sprint</span>
+                  <span className="font-semibold text-slate-200 truncate max-w-[180px]">{sp.concept_name}</span>
+                  <span className="text-[10px] font-bold text-amber-400">{sp.count} in sprint</span>
                 </div>
               ))}
             </div>
@@ -260,21 +260,21 @@ export default function LiveLobby() {
 
       {/* Top Mentors Leaderboard */}
       {leaderboard.length > 0 && (
-        <GlassCard>
+        <GlassCard className="bg-slate-950/80 border-slate-800">
           <div className="flex items-center gap-2 mb-4">
             <Award size={16} className="text-amber-400" />
-            <p className="text-xs font-bold text-white">Weekly Mentor Leaderboard</p>
+            <p className="text-xs font-bold text-slate-100 uppercase tracking-wider">Weekly Mentor Leaderboard</p>
           </div>
 
           <div className="space-y-2.5">
             {leaderboard.map((item, idx) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-white/[0.01] border border-white/[0.04] text-xs"
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-900/40 border border-slate-800 text-xs"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-black text-gray-500 w-4">#{idx + 1}</span>
-                  <span className="font-semibold text-white">{item.username}</span>
+                  <span className="font-black text-slate-500 w-4">#{idx + 1}</span>
+                  <span className="font-semibold text-slate-200">{item.username}</span>
                 </div>
                 <div className="flex items-center gap-1 font-bold text-amber-400">
                   <Zap size={12} />
@@ -288,3 +288,4 @@ export default function LiveLobby() {
     </div>
   );
 }
+

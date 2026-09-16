@@ -52,9 +52,9 @@ export default function ConceptSession({ conceptId }) {
         let conceptPyqs = targetConcept.pyqs || [];
 
         setAiMeta(meta);
-        setFormulas(meta.layer_1_hard_formulas || []);
-        setRules(meta.layer_2_rule_based_logics || []);
-        setPyqs(conceptPyqs);
+        setFormulas(meta.layer_1_hard_formulas || meta.core_formulas_or_equations || []);
+        setRules(meta.layer_2_rule_based_logics || meta.biological_or_chemical_pathways || []);
+        setPyqs([...conceptPyqs, ...(targetConcept.questions || [])]);
         if (sId) setSubtopicId(sId);
 
         const readiness = typeof progressData?.readiness === "number"

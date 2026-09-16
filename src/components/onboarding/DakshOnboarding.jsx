@@ -82,6 +82,7 @@ export default function DakshOnboarding({ exams = [], onComplete }) {
     return null;
   });
   const [selectedHours, setSelectedHours] = useState(null);
+  const [pcsSection, setPcsSection] = useState("BPSC");
   const [launching, setLaunching] = useState(false);
   const [launchLine, setLaunchLine] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -153,6 +154,18 @@ export default function DakshOnboarding({ exams = [], onComplete }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050810] overflow-hidden">
+      {/* Skip button */}
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem("daksh_onboarding_done", "true");
+          if (onComplete) onComplete();
+        }}
+        className="absolute top-5 right-5 text-xs font-semibold text-gray-400 hover:text-white px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all z-50 cursor-pointer"
+      >
+        Skip ✕
+      </button>
+
       {/* Galaxy background particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(40)].map((_, i) => (
@@ -274,30 +287,69 @@ export default function DakshOnboarding({ exams = [], onComplete }) {
               </p>
               <div className="space-y-3">
                 {EXAM_OPTIONS.map((option) => (
-                  <motion.button
-                    key={option.value}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      setSelectedExam(option);
-                      setTimeout(() => setStep("time_select"), 350);
-                    }}
-                    className={`w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition-all ${
-                      selectedExam?.value === option.value
-                        ? "border-purple-500/60 bg-purple-950/40"
-                        : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12]"
-                    }`}
-                  >
-                    <span className="text-2xl">{option.icon}</span>
-                    <div>
-                      <p className="text-sm font-bold text-white">{option.label}</p>
-                      <p className="text-[10px] text-gray-500">{option.sublabel}</p>
-                    </div>
-                    {selectedExam?.value === option.value && (
-                      <div className="ml-auto w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-white" />
+                  <div key={option.value} className="space-y-2">
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => {
+                        setSelectedExam(option);
+                        if (option.value !== "pcs") {
+                          setTimeout(() => setStep("time_select"), 350);
+                        }
+                      }}
+                      className={`w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition-all ${
+                        selectedExam?.value === option.value
+                          ? "border-purple-500/60 bg-purple-950/40"
+                          : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12]"
+                      }`}
+                    >
+                      <span className="text-2xl">{option.icon}</span>
+                      <div>
+                        <p className="text-sm font-bold text-white">{option.label}</p>
+                        <p className="text-[10px] text-gray-500">{option.sublabel}</p>
                       </div>
+                      {selectedExam?.value === option.value && (
+                        <div className="ml-auto w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        </div>
+                      )}
+                    </motion.button>
+
+                    {/* PCS Sub-Section Options */}
+                    {option.value === "pcs" && selectedExam?.value === "pcs" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-2.5 ml-2"
+                      >
+                        <p className="text-[11px] font-bold text-amber-300">Select State Commission (Default: BPSC):</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { code: "BPSC", label: "BPSC (Bihar)" },
+                            { code: "UPPSC", label: "UPPSC (UP)" },
+                            { code: "MPPSC", label: "MPPSC (MP)" },
+                            { code: "RAS", label: "RAS (Rajasthan)" },
+                            { code: "WBPSC", label: "WBPSC (WB)" }
+                          ].map((pcs) => (
+                            <button
+                              key={pcs.code}
+                              type="button"
+                              onClick={() => {
+                                setPcsSection(pcs.code);
+                                setTimeout(() => setStep("time_select"), 300);
+                              }}
+                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
+                                pcsSection === pcs.code
+                                  ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-sm"
+                                  : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                              }`}
+                            >
+                              {pcs.label}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
                     )}
-                  </motion.button>
+                  </div>
                 ))}
               </div>
             </motion.div>

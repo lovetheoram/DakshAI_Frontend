@@ -12,14 +12,24 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const update = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "username" ? value.toLowerCase() : value
+    }));
+  };
 
   const submit = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const res = await authApi.login(form);
+      const payload = {
+        username: form.username.trim().toLowerCase(),
+        password: form.password
+      };
+      const res = await authApi.login(payload);
       login(res.user, res.tokens);
       navigate("/");
     } catch {

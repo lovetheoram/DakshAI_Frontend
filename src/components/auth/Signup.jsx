@@ -16,7 +16,7 @@ export default function Signup() {
     { type: "pcs", name: "State PCS (BPSC, UPPCS, etc.)" }
   ];
 
-  const [form, setForm] = useState({ username: "", email: "", password: "", exam_type: "jee" });
+  const [form, setForm] = useState({ username: "", email: "", password: "", confirm_password: "", exam_type: "jee", pcs_section: "BPSC" });
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,15 +54,32 @@ export default function Signup() {
     return Array.from(types.values());
   }, [exams]);
 
-  const update = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const update = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "username" ? value.toLowerCase() : value
+    }));
+  };
 
   const submit = async () => {
+    if (!form.username.trim()) { setError("Username is required."); return; }
+    if (!form.email.trim()) { setError("Email is required."); return; }
+    if (!form.password) { setError("Password is required."); return; }
+    if (form.password !== form.confirm_password) { setError("Passwords do not match."); return; }
     if (!form.exam_type) { setError("Please select an exam type first."); return; }
+
     setLoading(true);
     setError("");
 
     try {
-      const payload = { username: form.username, email: form.email, password: form.password, exam_type: form.exam_type };
+      const payload = {
+        username: form.username.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        exam_type: form.exam_type,
+        pcs_section: form.exam_type === "pcs" ? (form.pcs_section || "BPSC") : "BPSC"
+      };
       const res = await authApi.register(payload);
       login(res.user, res.tokens);
       navigate("/");
@@ -97,17 +114,22 @@ export default function Signup() {
         <div className="space-y-4">
           <div>
             <label className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider block mb-1.5">Username</label>
-            <input type="text" name="username" value={form.username} onChange={update} className="input-field text-base md:text-sm" />
+            <input type="text" name="username" value={form.username} onChange={update} placeholder="e.g. johndoe" className="input-field text-base md:text-sm" />
           </div>
 
           <div>
             <label className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider block mb-1.5">Email</label>
-            <input type="email" name="email" value={form.email} onChange={update} className="input-field text-base md:text-sm" />
+            <input type="email" name="email" value={form.email} onChange={update} placeholder="e.g. john@example.com" className="input-field text-base md:text-sm" />
           </div>
 
           <div>
             <label className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider block mb-1.5">Password</label>
-            <input type="password" name="password" value={form.password} onChange={update} className="input-field text-base md:text-sm" />
+            <input type="password" name="password" value={form.password} onChange={update} placeholder="••••••••" className="input-field text-base md:text-sm" />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider block mb-1.5">Confirm Password</label>
+            <input type="password" name="confirm_password" value={form.confirm_password} onChange={update} placeholder="••••••••" className="input-field text-base md:text-sm" />
           </div>
 
           {uniqueExamTypes.length > 0 && (
@@ -121,10 +143,23 @@ export default function Signup() {
             </div>
           )}
 
+          {form.exam_type === "pcs" && (
+            <div>
+              <label className="text-[10px] font-bold text-[var(--color-gold-dark)] uppercase tracking-wider block mb-1.5">State PCS Target Exam (Default: BPSC)</label>
+              <select name="pcs_section" value={form.pcs_section} onChange={update} className="input-field text-base md:text-sm appearance-none border-amber-400 bg-amber-50/20 font-semibold">
+                <option value="BPSC">BPSC (Bihar Public Service Commission)</option>
+                <option value="UPPSC">UPPSC (Uttar Pradesh Public Service Commission)</option>
+                <option value="MPPSC">MPPSC (Madhya Pradesh Public Service Commission)</option>
+                <option value="RAS">RAS (Rajasthan Administrative Services)</option>
+                <option value="WBPSC">WBPSC (West Bengal Public Service Commission)</option>
+              </select>
+            </div>
+          )}
+
           <button
             onClick={submit}
             disabled={loading}
-            className="w-full py-3 mt-2 btn-gold rounded-xl text-sm disabled:opacity-50 flex items-center justify-center"
+            className="w-full py-3 mt-2 btn-gold rounded-xl text-sm disabled:opacity-50 flex items-center justify-center cursor-pointer"
           >
             {loading ? "Signing up..." : "Sign Up"}
           </button>

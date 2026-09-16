@@ -128,11 +128,14 @@ export default function ConceptLearnSection({
   rules = [],
   aiMeta = {},
 }) {
-  const dbFormulas = aiMeta.layer_1_hard_formulas || formulas || [];
+  const dbFormulas = aiMeta.layer_1_hard_formulas || aiMeta.core_formulas_or_equations || formulas || [];
   const dbRules = aiMeta.layer_2_rule_based_logics || rules || [];
-  const dbFacts = aiMeta.core_facts || [];
+  const dbFacts = aiMeta.core_facts || aiMeta.ncert_key_definitions_and_facts || [];
   const dbChronology = aiMeta.chronology || [];
-  const dbTraps = aiMeta.common_traps || [];
+  const dbTraps = aiMeta.common_traps || aiMeta.assertion_reason_traps || [];
+  const dbPathways = aiMeta.biological_or_chemical_pathways || [];
+  const dbExceptions = aiMeta.ncert_exceptions_and_anomalies || [];
+  const dbTerms = aiMeta.key_terms_and_entities || aiMeta.scientific_terms_and_classifications || [];
 
   // Web Speech API State using global PreferenceStore settings
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -244,9 +247,34 @@ export default function ConceptLearnSection({
   };
 
   const playTrapAudio = (cardId, item) => {
-    const incorrect = item.incorrect_belief ? `Misconception: ${item.incorrect_belief}. ` : "";
-    const correct = item.correct_fact ? `Correct Fact: ${item.correct_fact}` : "";
-    speakText(cardId, `Candidate Trap. ${incorrect}${correct}`);
+    if (item.assertion) {
+      const assertion = `Assertion: ${item.assertion}. `;
+      const reason = `Reason: ${item.reason}. `;
+      const exp = item.is_reason_correct_explanation ? "Reason is the correct explanation." : "Reason is NOT the correct explanation.";
+      speakText(cardId, `Assertion-Reason Trap. ${assertion}${reason}${exp}`);
+    } else {
+      const incorrect = item.incorrect_belief ? `Misconception: ${item.incorrect_belief}. ` : "";
+      const correct = item.correct_fact ? `Correct Fact: ${item.correct_fact}` : "";
+      speakText(cardId, `Candidate Trap. ${incorrect}${correct}`);
+    }
+  };
+
+  const playPathwaysAudio = (cardId, item) => {
+    const processStr = item.process || "";
+    const stepsStr = item.key_steps_or_enzymes ? `. Key steps or enzymes: ${item.key_steps_or_enzymes}` : "";
+    speakText(cardId, `Biological or Chemical Pathway: ${processStr}${stepsStr}`);
+  };
+
+  const playTermsAudio = (cardId, item) => {
+    const termStr = item.term || "";
+    const defStr = item.definition_or_example || item.meaning ? `. Details: ${item.definition_or_example || item.meaning}` : "";
+    speakText(cardId, `Scientific Term: ${termStr}${defStr}`);
+  };
+
+  const playExceptionAudio = (cardId, item) => {
+    const ruleStr = item.general_rule ? `General rule: ${item.general_rule}. ` : "";
+    const excStr = item.exception ? `NCERT Exception: ${item.exception}` : "";
+    speakText(cardId, `NCERT Exception. ${ruleStr}${excStr}`);
   };
 
   return (
@@ -547,10 +575,186 @@ export default function ConceptLearnSection({
         />
       )}
 
-      {/* ── 6. COMMON TRAPS SLIDER ── */}
+      {/* ── 6. BIOLOGICAL & CHEMICAL PATHWAYS SLIDER ── */}
+      {dbPathways.length > 0 && (
+        <SingleCardSlider
+          title="Biological & Chemical Pathways"
+          icon={Zap}
+          accentColorClass="text-cyan-600"
+          items={dbPathways}
+          sectionKey="pathway"
+          speakingCardId={speakingCardId}
+          onPlayCard={playPathwaysAudio}
+          renderCardContent={(item, idx, isCardSpeaking, playAudio) => (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider">
+                  Pathway #{idx + 1}
+                </span>
+
+                <button
+                  onClick={playAudio}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isCardSpeaking
+                      ? "bg-rose-500/20 text-rose-600 border border-rose-500/30"
+                      : "bg-cyan-500/10 text-cyan-700 border border-cyan-500/30 hover:bg-cyan-600 hover:text-white"
+                  }`}
+                >
+                  {isCardSpeaking ? (
+                    <>
+                      <Square size={12} className="fill-current" />
+                      <span>Stop</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 size={13} />
+                      <Play size={10} className="fill-current" />
+                      <span>Listen</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="space-y-2 text-xs sm:text-sm select-text">
+                <p className="font-extrabold text-slate-900 dark:text-white">
+                  🔄 Process: {item.process}
+                </p>
+                {item.key_steps_or_enzymes && (
+                  <div className="p-3 rounded-xl bg-cyan-500/10 dark:bg-cyan-950/40 border border-cyan-500/20">
+                    <p className="font-bold text-cyan-900 dark:text-cyan-300">
+                      🧪 Key Steps / Enzymes / Reagents: {item.key_steps_or_enzymes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        />
+      )}
+
+      {/* ── 7. SCIENTIFIC TERMS & CLASSIFICATIONS SLIDER ── */}
+      {dbTerms.length > 0 && (
+        <SingleCardSlider
+          title="Scientific Terms & Classifications"
+          icon={BookOpen}
+          accentColorClass="text-purple-600"
+          items={dbTerms}
+          sectionKey="term"
+          speakingCardId={speakingCardId}
+          onPlayCard={playTermsAudio}
+          renderCardContent={(item, idx, isCardSpeaking, playAudio) => {
+            const termStr = item.term || item.entity_a || "";
+            const defStr = item.definition_or_example || item.meaning || item.relationship || "";
+
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                    Scientific Term #{idx + 1}
+                  </span>
+
+                  <button
+                    onClick={playAudio}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isCardSpeaking
+                        ? "bg-rose-500/20 text-rose-600 border border-rose-500/30"
+                        : "bg-purple-500/10 text-purple-700 border border-purple-500/30 hover:bg-purple-600 hover:text-white"
+                    }`}
+                  >
+                    {isCardSpeaking ? (
+                      <>
+                        <Square size={12} className="fill-current" />
+                        <span>Stop</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 size={13} />
+                        <Play size={10} className="fill-current" />
+                        <span>Listen</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-xs sm:text-sm select-text">
+                  <p className="font-extrabold text-slate-900 dark:text-white">
+                    🏷️ Term: {termStr}
+                  </p>
+                  {defStr && (
+                    <div className="p-3 rounded-xl bg-purple-500/10 dark:bg-purple-950/40 border border-purple-500/20">
+                      <p className="font-medium text-purple-900 dark:text-purple-300">
+                        {defStr}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }}
+        />
+      )}
+
+      {/* ── 8. NCERT EXCEPTIONS & ANOMALIES SLIDER ── */}
+      {dbExceptions.length > 0 && (
+        <SingleCardSlider
+          title="NCERT Exceptions & Anomalies"
+          icon={AlertTriangle}
+          accentColorClass="text-amber-600"
+          items={dbExceptions}
+          sectionKey="exception"
+          speakingCardId={speakingCardId}
+          onPlayCard={playExceptionAudio}
+          renderCardContent={(item, idx, isCardSpeaking, playAudio) => (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                  Exception #{idx + 1}
+                </span>
+
+                <button
+                  onClick={playAudio}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isCardSpeaking
+                      ? "bg-rose-500/20 text-rose-600 border border-rose-500/30"
+                      : "bg-amber-500/10 text-amber-700 border border-amber-500/30 hover:bg-amber-600 hover:text-white"
+                  }`}
+                >
+                  {isCardSpeaking ? (
+                    <>
+                      <Square size={12} className="fill-current" />
+                      <span>Stop</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 size={13} />
+                      <Play size={10} className="fill-current" />
+                      <span>Listen</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="space-y-2 text-xs sm:text-sm select-text">
+                <div className="p-3 rounded-xl bg-slate-900/10 dark:bg-slate-950/40 border border-slate-500/20">
+                  <p className="font-bold text-slate-800 dark:text-slate-300">
+                    📜 General Rule: {item.general_rule}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/20">
+                  <p className="font-black text-amber-900 dark:text-amber-300">
+                    ⚠️ NCERT Exception: {item.exception}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        />
+      )}
+
+      {/* ── 9. COMMON TRAPS & ASSERTION-REASON SLIDER ── */}
       {dbTraps.length > 0 && (
         <SingleCardSlider
-          title="Common Candidate Traps & Misconceptions"
+          title="Common Candidate Traps & Assertion-Reason Couplets"
           icon={AlertTriangle}
           accentColorClass="text-rose-600"
           items={dbTraps}
@@ -561,7 +765,7 @@ export default function ConceptLearnSection({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-extrabold text-rose-600 uppercase tracking-wider">
-                  Trap #{idx + 1}
+                  Trap / Couplet #{idx + 1}
                 </span>
 
                 <button
@@ -588,16 +792,36 @@ export default function ConceptLearnSection({
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm select-text">
-                <div className="p-3 rounded-xl bg-rose-500/10 dark:bg-rose-950/40 border border-rose-500/20">
-                  <p className="font-bold text-rose-900 dark:text-rose-300">
-                    ❌ Misconception: {item.incorrect_belief}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20">
-                  <p className="font-bold text-emerald-900 dark:text-emerald-300">
-                    ✅ Correct Fact: {item.correct_fact}
-                  </p>
-                </div>
+                {item.assertion ? (
+                  <>
+                    <div className="p-3 rounded-xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/20">
+                      <p className="font-bold text-amber-900 dark:text-amber-300">
+                        📌 Assertion (A): {item.assertion}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-indigo-500/10 dark:bg-indigo-950/40 border border-indigo-500/20">
+                      <p className="font-bold text-indigo-900 dark:text-indigo-300">
+                        💡 Reason (R): {item.reason}
+                      </p>
+                      <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 block pt-1">
+                        {item.is_reason_correct_explanation ? "✅ (R) is the correct explanation of (A)" : "⚠️ (R) is NOT the correct explanation of (A)"}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 rounded-xl bg-rose-500/10 dark:bg-rose-950/40 border border-rose-500/20">
+                      <p className="font-bold text-rose-900 dark:text-rose-300">
+                        ❌ Misconception: {item.incorrect_belief}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20">
+                      <p className="font-bold text-emerald-900 dark:text-emerald-300">
+                        ✅ Correct Fact: {item.correct_fact}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

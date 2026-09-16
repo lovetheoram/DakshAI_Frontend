@@ -214,9 +214,9 @@ export default function ConceptNotesModal({
   if (!isOpen) return null;
 
   // Normalize DB arrays
-  const dbFormulas = aiMeta.layer_1_hard_formulas || formulas || [];
-  const dbRules = aiMeta.layer_2_rule_based_logics || rules || [];
-  const dbConsequences = aiMeta.layer_3_derived_consequences || consequences || [];
+  const dbFormulas = aiMeta.layer_1_hard_formulas || aiMeta.core_formulas_or_equations || formulas || [];
+  const dbRules = aiMeta.layer_2_rule_based_logics || aiMeta.biological_or_chemical_pathways || rules || [];
+  const dbConsequences = aiMeta.layer_3_derived_consequences || aiMeta.assertion_reason_traps || aiMeta.ncert_exceptions_and_anomalies || consequences || [];
 
   return (
     <AnimatePresence>

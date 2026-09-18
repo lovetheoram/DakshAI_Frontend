@@ -1,7 +1,7 @@
 // src/pages/LearnPage.jsx
 // Learning Space — Mind Map + List View with Vibrant Architecture & High Contrast Theme.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import syllabusApi from "../api/syllabusApi";
 import progressApi from "../api/progressApi";
@@ -9,8 +9,11 @@ import GlassCard from "../components/ui/GlassCard";
 import ProgressBar from "../components/ui/ProgressBar";
 import SkeletonLoader from "../components/ui/SkeletonLoader";
 import ConceptSession from "../components/learn/ConceptSession";
+import ExamReadinessDreamPage, { DEFAULT_AI_ENGINEERING_SERIES } from "../components/learn/ExamReadinessDreamPage";
+import aiEngineeringScenes from "../data/ai_engineering_vocal_scenes.json";
+import SubjectPassModal from "../components/learn/SubjectPassModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, ChevronRight, ArrowLeft, Network, List, RefreshCw, Sparkles, Layers, Zap } from "lucide-react";
+import { BookOpen, ChevronRight, ArrowLeft, Network, List, RefreshCw, Sparkles, Layers, Zap, Headphones, Play, Lock } from "lucide-react";
 import { getConceptIcon } from "../components/learn/ConceptVisualTheme";
 
 export const getMasteryPercent = (mastery) => {
@@ -24,6 +27,57 @@ export const getMasteryPercent = (mastery) => {
   return 0;
 };
 
+export const getLessonsForSubject = (subject) => {
+  const fullPdfScenes = (aiEngineeringScenes && Array.isArray(aiEngineeringScenes.scenes) && aiEngineeringScenes.scenes.length > 0)
+    ? aiEngineeringScenes.scenes
+    : DEFAULT_AI_ENGINEERING_SERIES;
+
+  if (!subject) return fullPdfScenes;
+  const name = (subject.name || "").toLowerCase();
+  if (name.includes("ai engineering") || name.includes("ai eng") || name.includes("generative ai")) {
+    return fullPdfScenes;
+  }
+
+  const generatedLessons = [];
+  const topics = subject.topics || [];
+  let lessonCounter = 1;
+
+  topics.forEach((topic) => {
+    const subtopics = topic.subtopics || [];
+    subtopics.forEach((sub) => {
+      generatedLessons.push({
+        id: sub.id || `gen-${lessonCounter}`,
+        module: topic.name || subject.name,
+        title: `Scene ${lessonCounter}: ${sub.name}`,
+        narration: [
+          `Suno, imagine karo kal tumhara ${subject.name} ka exam hai, aur topic hai ${sub.name}. Pehle isko intuitively samajhte hain ki ye kaam kaise karta hai.`,
+          `Agar ${sub.name} ke core concepts clear nahi honge, toh exam ke pressure me options choose karne me confusion hoga. Isliye real intuition build karte hain.`,
+          `Direct exam question: What are the essential principles, key facts, and analytical takeaways of ${sub.name}?`,
+          `High-yield takeaways: Pehla, ${sub.name} ka core definition. Doosra, standard parameters and analytical framework. Teesra, high-probability points jo kal paper me pooche jaenge.`
+        ]
+      });
+      lessonCounter++;
+    });
+  });
+
+  if (generatedLessons.length === 0) {
+    return [
+      {
+        id: `fallback-1-${subject.name}`,
+        module: `${subject.name} Core`,
+        title: `Scene 1: Foundations of ${subject.name}`,
+        narration: [
+          `Suno, exam se ek din pehle ${subject.name} ko understand karna bilkul relaxed experience hona chahiye. Main tumko step-by-step clear karungi.`,
+          `Core syllabus me sabse zyaada weightage wale questions direct foundation aur key analytical framework se aate hain.`,
+          `Is subject ke 3 key pillars mind me rakho: Base definitions, exam facts, aur high-frequency PYQs.`
+        ]
+      }
+    ];
+  }
+
+  return generatedLessons;
+};
+
 // Vibrant subject color palette helper
 const SUBJECT_THEMES = [
   { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-700", ring: "ring-amber-400", fill: "#D97706" },
@@ -35,9 +89,28 @@ const SUBJECT_THEMES = [
 
 function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, conceptsCache, conceptsLoading, loadConcepts }) {
   const [efficiency, setEfficiency] = useState(0);
+  const [isInView, setIsInView] = useState(false);
+  const nodeRef = useRef(null);
   const theme = SUBJECT_THEMES[themeIdx % SUBJECT_THEMES.length];
 
   useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "150px" }
+    );
+    if (nodeRef.current) {
+      observer.observe(nodeRef.current);
+    }
+    return () => observer.disconnect();
+  }, [subtopic.id]);
+
+  useEffect(() => {
+    if (!isInView) return;
     const fetchProgress = async () => {
       try {
         const data = await progressApi.getSubtopic(subtopic.id);
@@ -47,7 +120,7 @@ function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, c
       }
     };
     fetchProgress();
-  }, [subtopic.id]);
+  }, [subtopic.id, isInView]);
 
   const handleToggle = () => {
     onToggle();
@@ -57,7 +130,7 @@ function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, c
   const fillPct = Math.round(efficiency * 100);
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={nodeRef} className="flex flex-col items-center">
       {/* Node Circle */}
       <motion.div
         onClick={handleToggle}
@@ -66,9 +139,8 @@ function SubtopicNode({ subtopic, themeIdx, isOpen, onToggle, onSelectConcept, c
         whileTap={{ scale: 0.95 }}
       >
         <div
-          className={`w-full h-full rounded-full border-2 relative overflow-hidden bg-white shadow-sm transition-all ${
-            isOpen ? `${theme.border} ring-4 ${theme.ring}/20 shadow-md` : "border-[var(--color-border)]"
-          }`}
+          className={`w-full h-full rounded-full border-2 relative overflow-hidden bg-white shadow-sm transition-all ${isOpen ? `${theme.border} ring-4 ${theme.ring}/20 shadow-md` : "border-[var(--color-border)]"
+            }`}
         >
           {/* Progress fill from bottom */}
           <div
@@ -147,9 +219,8 @@ function ConceptOrb({ concept, index, themeIdx, onClick }) {
       whileTap={{ scale: 0.95 }}
     >
       <div
-        className={`w-full h-full rounded-full border relative overflow-hidden bg-white shadow-xs ${
-          current > 0.5 ? theme.border : "border-[var(--color-border)]"
-        }`}
+        className={`w-full h-full rounded-full border relative overflow-hidden bg-white shadow-xs ${current > 0.5 ? theme.border : "border-[var(--color-border)]"
+          }`}
       >
         <div
           className="absolute bottom-0 left-0 w-full rounded-b-full pointer-events-none opacity-30"
@@ -181,9 +252,46 @@ export default function LearnPage() {
   const [expandedChapter, setExpandedChapter] = useState(null);
   const [activeSubjectIndex, setActiveSubjectIndex] = useState(0);
   const [activeChapterId, setActiveChapterId] = useState(null);
+  const [selectedExamId, setSelectedExamId] = useState(null);
 
   const [conceptsCache, setConceptsCache] = useState({});
   const [conceptsLoading, setConceptsLoading] = useState({});
+
+  const [activeDreamSubject, setActiveDreamSubject] = useState(null);
+  const [showPassModal, setShowPassModal] = useState(false);
+  const [pendingSubject, setPendingSubject] = useState(null);
+  const [unlockedSubjects, setUnlockedSubjects] = useState(() => {
+    try {
+      const saved = localStorage.getItem("daksh_unlocked_subjects");
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const handleOpenSubjectSpace = (subject) => {
+    if (!subject) return;
+    const isUnlocked = unlockedSubjects.includes(subject.id || subject.name);
+    if (isUnlocked) {
+      setActiveDreamSubject(subject);
+    } else {
+      setPendingSubject(subject);
+      setShowPassModal(true);
+    }
+  };
+
+  const handleUnlockSuccess = () => {
+    if (pendingSubject) {
+      const updated = [...unlockedSubjects, pendingSubject.id || pendingSubject.name];
+      setUnlockedSubjects(updated);
+      try {
+        localStorage.setItem("daksh_unlocked_subjects", JSON.stringify(updated));
+      } catch (e) {}
+      setActiveDreamSubject(pendingSubject);
+    }
+    setShowPassModal(false);
+    setPendingSubject(null);
+  };
 
   useEffect(() => {
     const fetchTree = async () => {
@@ -205,9 +313,11 @@ export default function LearnPage() {
     try {
       setConceptsLoading(prev => ({ ...prev, [subtopicId]: true }));
       const data = await syllabusApi.getSubtopicConcepts(subtopicId);
-      setConceptsCache(prev => ({ ...prev, [subtopicId]: data || [] }));
+      const list = Array.isArray(data) ? data : data?.concepts || data?.results || [];
+      setConceptsCache(prev => ({ ...prev, [subtopicId]: list }));
     } catch (err) {
       console.error(`Failed to load concepts for subtopic ${subtopicId}:`, err);
+      setConceptsCache(prev => ({ ...prev, [subtopicId]: [] }));
     } finally {
       setConceptsLoading(prev => ({ ...prev, [subtopicId]: false }));
     }
@@ -238,23 +348,39 @@ export default function LearnPage() {
     );
   }
 
-  const subjects = [];
-  if (tree?.exams) {
-    tree.exams.forEach(exam => {
-      exam.subjects?.forEach(s => {
-        if (!subjects.find(sub => sub.id === s.id)) subjects.push(s);
-      });
-    });
-  } else if (tree?.subjects) {
-    subjects.push(...tree.subjects);
-  } else if (Array.isArray(tree)) {
-    subjects.push(...tree);
-  } else if (tree) {
-    subjects.push(tree);
-  }
+  const rawExams = Array.isArray(tree?.exams)
+    ? tree.exams
+    : Array.isArray(tree)
+      ? tree
+      : tree
+        ? [tree]
+        : [];
 
-  const currentSubject = subjects[activeSubjectIndex];
+  const exams = rawExams.filter((e) => e && (e.subjects?.length > 0 || e.name));
+
+  // Determine active exam object (defaulting to State PCS if available)
+  const activeExam =
+    exams.find((e) => String(e.id) === String(selectedExamId)) ||
+    exams.find((e) => e.exam_type === "pcs" || e.code === "PCS" || e.name?.toLowerCase().includes("pcs")) ||
+    exams[0];
+
+  // Extract subjects STRICTLY from activeExam
+  const subjects = activeExam?.subjects || (tree?.subjects ? tree.subjects : []);
+  const currentSubject = subjects[activeSubjectIndex] || subjects[0];
   const activeTheme = SUBJECT_THEMES[activeSubjectIndex % SUBJECT_THEMES.length];
+
+  if (activeDreamSubject) {
+    return (
+      <div className="max-w-4xl mx-auto px-5 py-6">
+        <ExamReadinessDreamPage
+          subjectName={activeDreamSubject.name}
+          examTitle={activeExam?.name || "State Provincial Civil Services (PCS)"}
+          lessons={getLessonsForSubject(activeDreamSubject)}
+          onBack={() => setActiveDreamSubject(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-8 space-y-6 select-none">
@@ -271,27 +397,48 @@ export default function LearnPage() {
         <div className="flex items-center bg-white border border-[var(--color-border)] rounded-xl p-1 shadow-xs">
           <button
             onClick={() => setViewMode("mindmap")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === "mindmap"
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "mindmap"
                 ? "bg-[var(--color-gold)] text-white shadow-xs font-bold"
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-            }`}
+              }`}
           >
             <Network size={14} />
             Mind Map
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === "list"
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "list"
                 ? "bg-[var(--color-gold)] text-white shadow-xs font-bold"
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-            }`}
+              }`}
           >
             <List size={14} />
             List
           </button>
         </div>
+      </div>
+
+      {/* Specific Target Exam Badge Header */}
+      <div className="daksh-card p-4 sm:p-5 border-l-4 border-l-[var(--color-gold)] bg-white dark:bg-slate-900 shadow-xs flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2.5 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] font-bold">
+            <BookOpen size={18} />
+          </div>
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--color-gold-dark)] block">
+              Active Exam Syllabus
+            </span>
+            <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+              {activeExam?.name || "State Provincial Civil Services (PCS)"}
+            </h2>
+          </div>
+        </div>
+
+        {(activeExam?.exam_type === "pcs" || activeExam?.code === "PCS" || activeExam?.name?.toLowerCase().includes("pcs") || !activeExam) && (
+          <span className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] shadow-xs">
+            BPSC — Bihar Public Service Commission
+          </span>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -306,14 +453,33 @@ export default function LearnPage() {
                 return (
                   <button
                     key={subject.id || idx}
-                    onClick={() => { setActiveSubjectIndex(idx); setActiveChapterId(null); }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      isActive
+                    onClick={() => {
+                      setActiveSubjectIndex(idx);
+                      setActiveChapterId(null);
+                    }}
+                    onDoubleClick={() => {
+                      handleOpenSubjectSpace(subject);
+                    }}
+                    title="Single-click to view Mind Map • Double-click to open Vocal Scenes"
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 ${isActive
                         ? `${t.bg} ${t.border} ${t.text} ring-2 ${t.ring}/30 shadow-xs`
                         : "bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                    }`}
+                      }`}
                   >
-                    {subject.name}
+                    <span>{subject.name}</span>
+                    {isActive && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenSubjectSpace(subject);
+                        }}
+                        className="ml-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-800 dark:text-amber-300 hover:bg-amber-500/30 transition-all flex items-center gap-1 border border-amber-500/30 cursor-pointer"
+                        title="Open Vocal Scenes"
+                      >
+                        <Headphones size={11} />
+                        <span>Scenes</span>
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -374,9 +540,9 @@ export default function LearnPage() {
                 >
                   <div
                     onClick={() => setExpandedSubject(expandedSubject === si ? null : si)}
-                    className={`daksh-card p-5 cursor-pointer hover:border-[var(--color-gold)] transition-all ${
-                      expandedSubject === si ? `border-2 ${t.border}` : ""
-                    }`}
+                    onDoubleClick={() => handleOpenSubjectSpace(subject)}
+                    className={`daksh-card p-5 cursor-pointer hover:border-[var(--color-gold)] transition-all ${expandedSubject === si ? `border-2 ${t.border}` : ""
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -390,10 +556,19 @@ export default function LearnPage() {
                           </p>
                         </div>
                       </div>
-                      <ChevronRight
-                        size={16}
-                        className={`text-[var(--color-mid-gray)] transition-transform duration-200 ${expandedSubject === si ? "rotate-90 text-[var(--color-gold)]" : ""}`}
-                      />
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenSubjectSpace(subject);
+                          }}
+                          className="text-xs font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] hover:bg-[var(--color-gold)] hover:text-white transition-all px-3.5 py-1.5 rounded-xl border border-[var(--color-gold)]/30 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Headphones size={13} />
+                          <span>Open Scenes</span>
+                        </button>
+                      </div>
                     </div>
 
                     {subject.mastery !== undefined && (
@@ -465,6 +640,19 @@ export default function LearnPage() {
               );
             })}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showPassModal && (
+          <SubjectPassModal
+            subjectName={pendingSubject?.name}
+            onUnlock={handleUnlockSuccess}
+            onClose={() => {
+              setShowPassModal(false);
+              setPendingSubject(null);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

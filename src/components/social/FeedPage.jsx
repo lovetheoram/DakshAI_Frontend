@@ -1,143 +1,148 @@
 // src/components/social/FeedPage.jsx
-// Peer Feed & Quick Add — 100% Strict Ivory + Ink + Antique Gold styling.
+// World Activity Stream — 2-Scope Text Switcher, Concept Filter & Progressive Editorial Feed.
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import socialApi from "../../api/socialApi";
-import syllabusApi from "../../api/syllabusApi";
 import PostCard from "./PostCard";
 import CreatePost from "./CreatePost";
-import FollowButton from "./FollowButton";
-import InfoTooltip from "../ui/InfoTooltip";
 import Modal from "../ui/Modal";
-import { MessageSquare, Users, Sparkles, UserCheck, Trash2, Loader2, Globe, Layers, Plus, PenSquare } from "lucide-react";
+import { Loader2, PenSquare, X } from "lucide-react";
 
-export default function FeedPage({ initialTab = "all" }) {
+export default function FeedPage({ initialScope = "my_world" }) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const conceptId = searchParams.get("concept_id");
+  const conceptName = searchParams.get("concept_name");
+
+  const [scope, setScope] = useState(initialScope); // "my_world" | "wider_world"
   const [posts, setPosts] = useState([]);
-  const [concepts, setConcepts] = useState([]);
-  const [selectedConcept, setSelectedConcept] = useState(null);
-  const [activeTab, setActiveTab] = useState(initialTab); // "all" | "projects" | "suggestions"
   const [loading, setLoading] = useState(true);
+  const [fetchingMore, setFetchingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Suggested peers state
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const fetchFeed = useCallback(async (targetScope, pageNum = 1, append = false) => {
+    if (pageNum === 1) setLoading(true);
+    else setFetchingMore(true);
 
-  useEffect(() => {
-    const fetchConcepts = async () => {
-      try {
-        const data = await syllabusApi.getConceptList();
-        setConcepts(Array.isArray(data) ? data : data?.concepts || []);
-      } catch (err) {
-        console.error("Error fetching concepts:", err);
-        setConcepts([]);
-      }
-    };
-    fetchConcepts();
-  }, []);
-
-  // Fetch posts when tab or selected concept changes
-  useEffect(() => {
-    if (activeTab === "suggestions") return;
-
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const filters = {
-          ...(selectedConcept ? { concept_id: selectedConcept } : {}),
-        };
-        const res = await socialApi.getPosts(filters);
-        setPosts(res.data?.posts || []);
-      } catch (err) {
-        console.error("Error fetching posts:", err);
-        setPosts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, [selectedConcept, activeTab]);
-
-  // Fetch suggested peers
-  useEffect(() => {
-    if (activeTab === "suggestions") {
-      const fetchSuggestions = async () => {
-        setLoadingSuggestions(true);
-        try {
-          const res = await socialApi.getSuggestedUsers();
-          setSuggestedUsers(res.data.suggestions || []);
-        } catch (err) {
-          console.error("Error fetching suggestions:", err);
-          setSuggestedUsers([]);
-        } finally {
-          setLoadingSuggestions(false);
-        }
+    try {
+      const params = {
+        scope: targetScope,
+        page: pageNum,
+        page_size: 10,
       };
-      fetchSuggestions();
+      if (conceptId) {
+        params.concept_id = conceptId;
+      }
+
+      const res = await socialApi.getPosts(params);
+      const data = res.data;
+      const newPosts = data.posts || [];
+      const more = data.has_more ?? false;
+
+      if (append) {
+        setPosts((prev) => [...prev, ...newPosts]);
+      } else {
+        setPosts(newPosts);
+      }
+      setHasMore(more);
+    } catch (err) {
+      console.error("Error fetching feed:", err);
+      if (!append) setPosts([]);
+    } finally {
+      setLoading(false);
+      setFetchingMore(false);
     }
-  }, [activeTab]);
+  }, [conceptId]);
+
+  useEffect(() => {
+    setPage(1);
+    fetchFeed(scope, 1, false);
+  }, [scope, conceptId, fetchFeed]);
+
+  const handleLoadMore = () => {
+    if (fetchingMore || !hasMore) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchFeed(scope, nextPage, true);
+  };
 
   const handlePostCreated = (newPost) => {
     setPosts((prev) => [newPost, ...prev]);
   };
 
-  const handleDismissSuggestion = (id) => {
-    setSuggestedUsers((prev) => prev.filter((u) => u.id !== id));
+  const clearConceptFilter = () => {
+    const updated = new URLSearchParams(searchParams);
+    updated.delete("concept_id");
+    updated.delete("concept_name");
+    setSearchParams(updated);
   };
 
   return (
-    <div className="space-y-6 select-none">
-      {/* Top Action Bar & Tab Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-500/20 pb-3">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+    <div className="space-y-4 select-none">
+      {/* 1. Context Switcher & Top Action */}
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2.5">
+        <div className="flex items-center gap-6">
           <button
-            onClick={() => setActiveTab("all")}
-            className={`px-4 py-2.5 rounded-xl text-xs transition-all border cursor-pointer ${
-              activeTab === "all"
-                ? "bg-amber-500/10 text-amber-300 border-amber-500/40 font-black shadow-sm"
-                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-indigo-500/40 font-bold"
+            onClick={() => setScope("my_world")}
+            className={`text-xs sm:text-sm font-bold pb-2 transition-all cursor-pointer relative ${
+              scope === "my_world"
+                ? "text-[var(--color-gold-dark)]"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            General Feed
+            <span>My World</span>
+            {scope === "my_world" && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--color-gold)] rounded-full" />
+            )}
           </button>
+
           <button
-            onClick={() => setActiveTab("projects")}
-            className={`px-4 py-2.5 rounded-xl text-xs transition-all border flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "projects"
-                ? "bg-amber-500/10 text-amber-300 border-amber-500/40 font-black shadow-sm"
-                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-indigo-500/40 font-bold"
+            onClick={() => setScope("wider_world")}
+            className={`text-xs sm:text-sm font-bold pb-2 transition-all cursor-pointer relative ${
+              scope === "wider_world"
+                ? "text-[var(--color-gold-dark)]"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             }`}
           >
-            <span>Learner Updates</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("suggestions")}
-            className={`px-4 py-2.5 rounded-xl text-xs transition-all border flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "suggestions"
-                ? "bg-amber-500/10 text-amber-300 border-amber-500/40 font-black shadow-sm"
-                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-indigo-500/40 font-bold"
-            }`}
-          >
-            <Users size={13} className="text-amber-400" />
-            <span>Recommended Peers</span>
+            <span>Wider World</span>
+            {scope === "wider_world" && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--color-gold)] rounded-full" />
+            )}
           </button>
         </div>
 
-        {/* Top Button to Trigger Create Post Modal */}
+        {/* Share Button */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md hover:shadow-amber-500/20 transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
         >
-          <PenSquare size={14} />
-          <span>Create Post</span>
+          <PenSquare size={13} />
+          <span>Share</span>
         </button>
       </div>
 
-      {/* Create Post Modal Drawer */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create Peer Study Update">
+      {/* 2. Active Concept Filter Bar (if filtered from Concept Page) */}
+      {conceptId && (
+        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-gold-pale)]/60 border border-[var(--color-gold)]/30 text-xs">
+          <span className="font-bold text-[var(--color-text-primary)] flex items-center gap-1.5">
+            <span>Filtered by concept:</span>
+            <span className="text-[var(--color-gold-dark)]">{conceptName || "Concept"}</span>
+          </span>
+          <button
+            onClick={clearConceptFilter}
+            className="p-1 rounded-lg text-[var(--color-gold-dark)] hover:bg-[var(--color-gold)]/20 transition-all cursor-pointer"
+            title="Clear concept filter"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* 3. Create Post Modal Drawer */}
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Share Learner Experience">
         <CreatePost
           onPostCreated={(newPost) => {
             handlePostCreated(newPost);
@@ -146,119 +151,79 @@ export default function FeedPage({ initialTab = "all" }) {
         />
       </Modal>
 
-      {/* FEED MODE */}
-      {activeTab !== "suggestions" && (
-        <div className="space-y-5">
-          {/* Concept Filter */}
-          {concepts.length > 0 && (
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Filter by Concept
-              </label>
-              <select
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none max-w-xs focus:border-amber-500/50"
-                value={selectedConcept || ""}
-                onChange={(e) => setSelectedConcept(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">All Concepts</option>
-                {concepts.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Posts Stream */}
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                <Loader2 size={20} className="animate-spin text-amber-500" />
-                <p className="text-xs text-slate-400">Loading peer updates...</p>
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-3">
-                <p className="text-xs text-slate-400 font-medium">No updates posted here yet.</p>
+      {/* 4. Feed Activity Stream */}
+      <div className="min-h-[250px]">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 space-y-2">
+            <Loader2 size={18} className="animate-spin text-[var(--color-gold)]" />
+            <p className="text-xs text-[var(--color-mid-gray)]">Gathering learner experiences...</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="py-12 px-4 text-center space-y-3 daksh-card p-6">
+            {conceptId ? (
+              <>
+                <p className="text-xs text-[var(--color-text-primary)] font-bold">
+                  No notes shared yet for {conceptName || "this concept"}.
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
+                  Be the first learner to share an insight or reflection for this concept.
+                </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer mt-2"
                 >
-                  Be the first to share an update 🚀
+                  <span>Share first takeaway</span>
+                </button>
+              </>
+            ) : scope === "my_world" ? (
+              <>
+                <p className="text-xs text-[var(--color-text-primary)] font-bold">Your learning world is quiet.</p>
+                <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
+                  Start studying concepts or following peers to see updates from your immediate learning circle.
+                </p>
+                <button
+                  onClick={() => navigate("/learn")}
+                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer mt-2"
+                >
+                  <span>Continue learning</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-[var(--color-text-primary)] font-bold">No public updates found.</p>
+                <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
+                  Check back later or share your own experience with the community.
+                </p>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+
+            {hasMore && (
+              <div className="pt-4 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={fetchingMore}
+                  className="text-xs font-bold text-[var(--color-gold-dark)] hover:underline inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {fetchingMore ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      <span>Loading more...</span>
+                    </>
+                  ) : (
+                    <span>Load more updates ↓</span>
+                  )}
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <PostCard key={post.id} post={post} onConceptClick={(id) => setSelectedConcept(id)} />
-                ))}
-              </div>
             )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* SUGGESTED PEERS TAB */}
-      {activeTab === "suggestions" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold">
-              Recommended Study Peers
-            </span>
-            <span className="text-[10px] text-[var(--color-mid-gray)]">{suggestedUsers.length} Recommendations</span>
           </div>
-
-          {loadingSuggestions ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-2">
-              <Loader2 size={20} className="animate-spin text-[var(--color-gold)]" />
-              <p className="text-xs text-[var(--color-text-secondary)]">Finding peer matches...</p>
-            </div>
-          ) : suggestedUsers.length === 0 ? (
-            <div className="daksh-card p-8 text-center text-xs text-[var(--color-text-secondary)]">
-              No recommended study peers found at this time.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {suggestedUsers.map((u) => (
-                <div
-                  key={u.id}
-                  className="daksh-card p-4 flex items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/20 text-[var(--color-gold-dark)] font-bold text-sm flex items-center justify-center shrink-0">
-                      {u.username?.charAt(0).toUpperCase() || "P"}
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-[var(--color-text-primary)] text-xs truncate">{u.username}</h4>
-                      <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5 flex items-center gap-1">
-                        <UserCheck size={10} className="text-[var(--color-gold-dark)]" />
-                        Complementary study match
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <FollowButton userId={u.id} isFollowing={u.is_following} />
-                    <button
-                      onClick={() => navigate(`/messages/${u.id}`)}
-                      className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] bg-white hover:border-[var(--color-gold)] text-xs font-semibold text-[var(--color-text-primary)] transition-all cursor-pointer"
-                    >
-                      Chat
-                    </button>
-                    <button
-                      onClick={() => handleDismissSuggestion(u.id)}
-                      className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-mid-gray)] hover:text-[var(--color-danger)] transition-all cursor-pointer"
-                      title="Ignore"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

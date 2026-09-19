@@ -27,7 +27,7 @@ export const getMasteryPercent = (mastery) => {
   return 0;
 };
 
-export const getLessonsForSubject = (subject) => {
+const getLessonsForSubject = (subject) => {
   const fullPdfScenes = (aiEngineeringScenes && Array.isArray(aiEngineeringScenes.scenes) && aiEngineeringScenes.scenes.length > 0)
     ? aiEngineeringScenes.scenes
     : DEFAULT_AI_ENGINEERING_SERIES;

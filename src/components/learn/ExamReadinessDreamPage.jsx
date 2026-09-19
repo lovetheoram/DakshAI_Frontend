@@ -15,6 +15,9 @@ import {
   Sliders,
   X,
   Volume2,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
 } from "lucide-react";
 
 export const DEFAULT_VOCAL_LEARNING_SERIES = [
@@ -41,7 +44,15 @@ export function prepareCompanionStory(rawLessons) {
   if (!Array.isArray(list) || list.length === 0) {
     return DEFAULT_VOCAL_LEARNING_SERIES;
   }
-  return list.map((item, idx) => {
+
+  // Pre-calculate takeaways for previous scene recap
+  const items = list.map((item, idx) => {
+    const titleText = item.title || `Scene ${item.scene_number || idx + 1}`;
+    const keyTakeaway = item.key_takeaway || item.takeaway || item.fact || titleText;
+    return { item, idx, titleText, keyTakeaway };
+  });
+
+  return items.map(({ item, idx, titleText, keyTakeaway }) => {
     const rawNarration = Array.isArray(item.narration)
       ? item.narration
       : typeof item.narration === "string"
@@ -52,20 +63,60 @@ export function prepareCompanionStory(rawLessons) {
             ? item.persona_male
             : [];
 
-    const titleText = item.title || `Scene ${item.scene_number || idx + 1}`;
+    const fullNarration = [];
 
-    const fullNarration = [
-      `Do you have any idea about ${titleText}? Let's deep dive into it!`,
-      ...rawNarration
-    ];
+    // 0. Previous Scene Recap (for Scene 2, 3, etc.)
+    if (idx > 0) {
+      const prevTakeaway = items[idx - 1].keyTakeaway;
+      fullNarration.push(`पिछले सीन में हमने देखा कि — ${prevTakeaway}। अब चलिए आज के नए सीन की तरफ़ बढ़ते हैं!`);
+    }
+
+    // 1. Opening greeting with Title
+    fullNarration.push(`अरे वाह! चलो आज साथ मिलकर ${titleText} को एकदम आसान और इंट्यूटिव तरीक़े से समझते हैं। ध्यान से सुनो!`);
+
+    // 2. Necessity / Intent section
+    if (item.necessity || item.teaching_intent) {
+      fullNarration.push(`सबसे पहले समझते हैं कि इसकी ज़रूरत क्यों है —`);
+      fullNarration.push(item.necessity || item.teaching_intent);
+    }
+
+    // 3. Real-World Story / Analogy section
+    if (item.story) {
+      fullNarration.push(`आओ पहले एक मस्त रीयल-लाइफ़ कहानी से इसे इमेजिन करते हैं —`);
+      fullNarration.push(item.story);
+    }
+
+    // 4. Core Narration Explanation paragraphs
+    if (rawNarration.length > 0) {
+      fullNarration.push(`अब इसके कोर कांसेप्ट्स को ध्यान से सुनते हैं —`);
+      fullNarration.push(...rawNarration);
+    }
+
+    // 5. Direct Exam Question section
+    if (item.question) {
+      fullNarration.push(`अब direct एग्जाम में सवाल कैसा आएगा, यह देखते हैं —`);
+      fullNarration.push(item.question);
+    }
+
+    // 6. High-Yield Fact / Key Answer section
+    if (item.fact) {
+      fullNarration.push(`और इसका सबसे सॉलिड direct answer और key fact यह है —`);
+      fullNarration.push(item.fact);
+    }
+
+    // 7. Final Check-In Question for the scene
+    fullNarration.push(`क्या तुमको यह सीन अच्छे से समझ में आया, दोस्त?`);
 
     return {
       id: item.id || `scene-${item.scene_number || idx + 1}`,
       module: item.module || "Core Material",
       title: titleText,
       teaching_intent: item.teaching_intent || item.necessity || "",
+      story: item.story || "",
+      question: item.question || "",
+      fact: item.fact || "",
       narration: fullNarration,
-      key_takeaway: item.key_takeaway || item.takeaway || ""
+      key_takeaway: keyTakeaway
     };
   });
 }
@@ -191,29 +242,9 @@ export default function ExamReadinessDreamPage({
     };
   }, []);
 
-  // Character reveal animation
-  useEffect(() => {
-    let interval = null;
-    if (isSpeaking && !isPaused && !isSwitchingVoice && activeText) {
-      setRevealedChars(0);
-      const speedMs = Math.max(10, Math.floor(32 / speechRate));
-      interval = setInterval(() => {
-        setRevealedChars((prev) => {
-          if (prev < activeText.length) {
-            return prev + 1;
-          } else {
-            clearInterval(interval);
-            return prev;
-          }
-        });
-      }, speedMs);
-    } else if (!isSpeaking && !isPaused && !isSwitchingVoice) {
-      setRevealedChars(activeText.length);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [sceneIdx, paragraphIdx, isSpeaking, isPaused, activeText, speechRate, personaMode, isSwitchingVoice]);
+  const [spokenText, setSpokenText] = useState("");
+  const syncTimerRef = useRef(null);
+  const hasBoundaryRef = useRef(false);
 
   const speakText = (
     text,
@@ -228,69 +259,143 @@ export default function ExamReadinessDreamPage({
       window.speechSynthesis.cancel();
     } catch (e) {}
 
+    if (syncTimerRef.current) {
+      clearInterval(syncTimerRef.current);
+    }
+
+    hasBoundaryRef.current = false;
+    setSpokenText(text);
     setIsSpeaking(true);
     setIsPaused(false);
     setRevealedChars(0);
 
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isFemale = modeOverride === "female";
+
+    // Detect if text contains Hindi Devanagari script
+    const hasHindiChars = /[\u0900-\u097F]/.test(text);
 
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
     
-    // Standard rate and pitch for universal mobile compatibility
-    utterance.rate = Math.max(0.7, Math.min(1.4, rateOverride * (isMobile ? 0.95 : 0.95)));
-    utterance.pitch = 1.0;
-    utterance.lang = "en-US";
+    // Set pitch & rate tuned for warmth and clear human articulation
+    utterance.pitch = isFemale ? 1.15 : 0.88;
+    const effectiveRate = Math.max(0.65, Math.min(1.3, rateOverride * (hasHindiChars ? 0.95 : 0.92)));
+    utterance.rate = effectiveRate;
+    utterance.lang = hasHindiChars ? "hi-IN" : "en-IN";
 
-    // Only assign explicit voice object on desktop; mobile WebKit/Chrome works best with native default voice
-    if (!isMobile) {
-      const availableVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
-      const eligibleVoices = availableVoices.filter(
-        (v) => v.lang.toLowerCase().includes("en") || v.lang.toLowerCase().includes("hi")
-      );
+    // Select distinct native voice from available WebSpeech engine pool
+    const availableVoices = voices.length > 0 ? voices : (("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : []);
+    if (availableVoices.length > 0) {
+      const eligibleVoices = availableVoices.filter((v) => {
+        const vLang = v.lang.toLowerCase();
+        return hasHindiChars
+          ? vLang.includes("hi") || vLang.includes("in")
+          : vLang.includes("en") || vLang.includes("in");
+      });
       const pool = eligibleVoices.length > 0 ? eligibleVoices : availableVoices;
-      const isFemale = modeOverride === "female";
 
       let targetVoice = null;
-      if (pool.length > 0) {
-        if (isFemale) {
-          targetVoice = pool.find((v) => {
-            const name = v.name.toLowerCase();
-            return (
-              name.includes("female") ||
-              name.includes("woman") ||
-              name.includes("swara") ||
-              name.includes("kalpana") ||
-              name.includes("zira") ||
-              name.includes("aria") ||
-              name.includes("jenny") ||
-              name.includes("sangeeta")
-            );
-          }) || pool[pool.length - 1];
-        } else {
-          targetVoice = pool.find((v) => {
-            const name = v.name.toLowerCase();
-            return (
-              name.includes("male") ||
-              name.includes("man") ||
-              name.includes("david") ||
-              name.includes("mark") ||
-              name.includes("hemant")
-            );
-          }) || pool[0];
-        }
+      if (isFemale) {
+        targetVoice = pool.find((v) => {
+          const name = v.name.toLowerCase();
+          return (
+            name.includes("female") ||
+            name.includes("woman") ||
+            name.includes("swara") ||
+            name.includes("kalpana") ||
+            name.includes("zira") ||
+            name.includes("aria") ||
+            name.includes("sangeeta") ||
+            name.includes("samantha") ||
+            name.includes("lekha")
+          );
+        }) || pool[pool.length - 1];
+      } else {
+        targetVoice = pool.find((v) => {
+          const name = v.name.toLowerCase();
+          return (
+            name.includes("male") ||
+            name.includes("man") ||
+            name.includes("david") ||
+            name.includes("rishi") ||
+            name.includes("hemant") ||
+            name.includes("guy") ||
+            name.includes("daniel") ||
+            name.includes("george")
+          );
+        }) || pool[0];
       }
 
       if (targetVoice && targetVoice.name) {
         try {
           utterance.voice = targetVoice;
-          utterance.lang = targetVoice.lang || "en-US";
+          if (targetVoice.lang) utterance.lang = targetVoice.lang;
         } catch (e) {}
       }
     }
 
+    // 1. Synchronize word-by-word reveal EXACTLY when audio starts playing
+    utterance.onstart = () => {
+      if (activeUtteranceRef.current !== utterance) return;
+      setIsSpeaking(true);
+      setIsPaused(false);
+      
+      // Reveal first word immediately on audio start
+      let firstSpace = text.indexOf(" ");
+      setRevealedChars(firstSpace > 0 ? firstSpace : Math.min(text.length, 4));
+
+      // Conversational speech rate calibration:
+      // Hindi Devanagari reading speed: ~85ms/char. English reading speed: ~72ms/char.
+      const baseMs = hasHindiChars ? 85 : 72;
+      const msPerChar = Math.max(18, Math.round(baseMs / effectiveRate));
+      let charCounter = firstSpace > 0 ? firstSpace : 4;
+
+      if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+
+      syncTimerRef.current = setInterval(() => {
+        if (activeUtteranceRef.current !== utterance) {
+          clearInterval(syncTimerRef.current);
+          return;
+        }
+        // If boundary events are active from WebSpeech API, boundary handler will update revealedChars.
+        // Otherwise, use calibrated fallback timer.
+        if (!hasBoundaryRef.current) {
+          setRevealedChars((prev) => {
+            if (prev < text.length) {
+              return Math.max(prev, charCounter + 1);
+            } else {
+              clearInterval(syncTimerRef.current);
+              return prev;
+            }
+          });
+          charCounter++;
+        }
+      }, msPerChar);
+    };
+
+    // 2. Real-time boundary event to align word position with audio engine output
+    utterance.onboundary = (event) => {
+      if (activeUtteranceRef.current !== utterance) return;
+      hasBoundaryRef.current = true;
+      if (typeof event.charIndex === "number" && event.charIndex >= 0) {
+        let wordEndPos = event.charIndex + (event.charLength || 1);
+        // If event.charLength is missing, scan to next space or punctuation
+        if (!event.charLength || event.charLength <= 1) {
+          let pos = event.charIndex;
+          while (pos < text.length && !/\s|[.,!?।!]/.test(text[pos])) {
+            pos++;
+          }
+          wordEndPos = pos > event.charIndex ? pos : event.charIndex + 1;
+        }
+        setRevealedChars((prev) => Math.max(prev, Math.min(text.length, wordEndPos)));
+      }
+    };
+
     utterance.onend = () => {
       if (activeUtteranceRef.current !== utterance) return;
+      if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+      setRevealedChars(text.length);
       if (onComplete) {
         onComplete();
       } else {
@@ -302,6 +407,8 @@ export default function ExamReadinessDreamPage({
     utterance.onerror = (err) => {
       console.warn("SpeechSynthesis utterance error:", err);
       if (activeUtteranceRef.current !== utterance) return;
+      if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+      setRevealedChars(text.length);
       setIsSpeaking(false);
       setIsPaused(false);
     };
@@ -314,12 +421,16 @@ export default function ExamReadinessDreamPage({
         console.error("Speech speak error, trying native fallback:", err);
         try {
           const fallbackUtterance = new SpeechSynthesisUtterance(text);
-          fallbackUtterance.lang = "en-US";
+          fallbackUtterance.lang = hasHindiChars ? "hi-IN" : "en-IN";
           fallbackUtterance.onend = () => {
+            if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+            setRevealedChars(text.length);
             setIsSpeaking(false);
             setIsPaused(false);
           };
           fallbackUtterance.onerror = () => {
+            if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+            setRevealedChars(text.length);
             setIsSpeaking(false);
             setIsPaused(false);
           };
@@ -332,7 +443,6 @@ export default function ExamReadinessDreamPage({
       }
     };
 
-    // Micro delay on mobile ensures cancel() completes before speak()
     if (isMobile) {
       setTimeout(executeSpeak, 50);
     } else {
@@ -364,6 +474,34 @@ export default function ExamReadinessDreamPage({
         setIsPaused(false);
       }
     }, modeOverride, rate);
+  };
+
+  const handleNoResponse = () => {
+    unlockAudioEngine();
+    if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+    if ("speechSynthesis" in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    setElapsedSeconds(0);
+    // Restart current scene from paragraph 0
+    speakCurrentParagraph(sceneIdx, 0);
+  };
+
+  const handleYesResponse = () => {
+    unlockAudioEngine();
+    if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+    if ("speechSynthesis" in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+
+    if (sceneIdx < story.length - 1) {
+      setElapsedSeconds(0);
+      // Advance to next scene (which begins with Previous Scene Recap)
+      speakCurrentParagraph(sceneIdx + 1, 0);
+    } else {
+      setIsSpeaking(false);
+      setIsPaused(false);
+    }
   };
 
   const handleVoiceSwitch = (targetMode) => {
@@ -411,23 +549,19 @@ export default function ExamReadinessDreamPage({
   };
 
   const handleReplay = () => {
-    unlockAudioEngine();
-    setElapsedSeconds(0);
-    speakCurrentParagraph(sceneIdx, 0);
+    handleNoResponse();
   };
 
   const handleNextScene = () => {
-    unlockAudioEngine();
-    if (sceneIdx < story.length - 1) {
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-      speakCurrentParagraph(sceneIdx + 1, 0);
-    }
+    handleYesResponse();
   };
 
   const handlePrevScene = () => {
     unlockAudioEngine();
     if (sceneIdx > 0) {
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if ("speechSynthesis" in window) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+      }
       speakCurrentParagraph(sceneIdx - 1, 0);
     }
   };
@@ -593,13 +727,50 @@ export default function ExamReadinessDreamPage({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
               transition={{ duration: 0.2 }}
-              className="text-center space-y-4 max-h-[240px] overflow-y-auto w-full px-2 py-2 my-auto"
+              className="text-center space-y-3 max-h-[240px] overflow-y-auto w-full px-2 py-2 my-auto"
             >
-              <p className={`text-base sm:text-lg font-medium leading-relaxed tracking-wide select-text ${
-                paragraphIdx === 0
+              {/* Dynamic Section Badge Header */}
+              {activeText.includes("पिछले सीन में") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs">
+                  <span>🔄 Previous Scene Recap</span>
+                </div>
+              ) : activeText.includes("ज़रूरत क्यों है") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
+                  <span>🎯 Necessity & Purpose</span>
+                </div>
+              ) : activeText.includes("रीयल-लाइफ़ कहानी") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-xs">
+                  <span>📖 Intuitive Story Analogy</span>
+                </div>
+              ) : activeText.includes("कोर कांसेप्ट्स") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-xs">
+                  <span>💡 Core Concept Explanation</span>
+                </div>
+              ) : activeText.includes("एग्जाम में सवाल") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-xs">
+                  <span>❓ Direct Exam Question</span>
+                </div>
+              ) : activeText.includes("key fact") || activeText.includes("direct answer") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-xs">
+                  <span>⚡ High-Yield Key Fact</span>
+                </div>
+              ) : activeText.includes("समझ में आया") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
+                  <span>❓ Scene Check-In</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest px-3 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10">
+                  <span>🎙️ Voice Companion</span>
+                </div>
+              )}
+
+              <p className={`text-base sm:text-lg font-medium leading-relaxed tracking-wide select-text mt-2 ${
+                activeText.includes("पिछले सीन में")
+                  ? "text-indigo-200 font-medium text-sm sm:text-base"
+                  : activeText.includes("अरे वाह!")
                   ? "text-amber-300 font-bold"
-                  : paragraphIdx === 1
-                  ? "text-cyan-200 italic text-sm sm:text-base"
+                  : activeText.includes("समझ में आया")
+                  ? "text-amber-200 font-bold text-base sm:text-lg"
                   : "text-gray-100"
               }`}>
                 {activeText.slice(0, revealedChars)}
@@ -636,31 +807,46 @@ export default function ExamReadinessDreamPage({
           ))}
         </div>
 
-        {/* End of Scene Check-In */}
+        {/* End of Scene Check-In Modal */}
         <AnimatePresence>
           {isFinalParagraph && !isSpeaking && !isPaused && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="mt-3 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-zinc-900 to-slate-900 border border-amber-500/30 shadow-2xl text-center space-y-3 w-full max-w-md mx-auto shrink-0"
+              className="mt-3 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-zinc-900 to-slate-900 border border-amber-500/40 shadow-2xl text-center space-y-3 w-full max-w-md mx-auto shrink-0"
             >
-              <div className="flex items-center justify-center gap-2 text-amber-300 font-extrabold text-xs sm:text-sm">
-                <span>❓ Did you understand this concept?</span>
+              <div className="flex items-center justify-center gap-2 text-amber-300 font-black text-xs sm:text-base">
+                <span>❓ Kya tumko ye scene samajh aaya?</span>
               </div>
               <p className="text-[11px] text-gray-300 font-medium">
-                Choose an action to continue your learning path:
+                Apna response chunen:
               </p>
-              <div className="flex items-center justify-center gap-2.5 pt-1">
+
+              {/* Yes & No Options Grid */}
+              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                {/* NO Option */}
                 <button
-                  onClick={handleNextScene}
-                  className={`w-full py-2.5 px-4 rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5 ${
+                  onClick={handleNoResponse}
+                  className="py-2.5 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-105"
+                  title="Nahi, phir se samjhao"
+                >
+                  <ThumbsDown size={14} />
+                  <span>Nahi, Phir Se Samjhao ↺</span>
+                </button>
+
+                {/* YES Option */}
+                <button
+                  onClick={handleYesResponse}
+                  className={`py-2.5 px-3 rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5 hover:scale-105 ${
                     personaMode === "female"
                       ? "bg-purple-500 hover:bg-purple-400 text-white"
                       : "bg-sky-500 hover:bg-sky-400 text-slate-950"
                   }`}
+                  title="Haan, samajh aaya"
                 >
-                  <span>Continue to Next Scene →</span>
+                  <ThumbsUp size={14} />
+                  <span>Haan, Samajh Aaya! →</span>
                 </button>
               </div>
             </motion.div>

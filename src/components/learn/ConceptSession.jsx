@@ -183,8 +183,8 @@ export default function ConceptSession({ conceptId }) {
         </AnimatePresence>
       </div>
 
-      {/* 4. Beyond This Concept */}
-      <BeyondConceptSection conceptName={concept?.name} chapterName={concept?.chapter_name} />
+      {/* Organic Learner Takeaways & World Bridge */}
+      <BeyondConceptSection conceptId={conceptId} conceptName={concept?.name} />
     </div>
   );
 }

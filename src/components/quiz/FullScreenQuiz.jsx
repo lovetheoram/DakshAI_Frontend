@@ -110,6 +110,28 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     }
   };
 
+  const [strategyNote, setStrategyNote] = useState("");
+  const [sharedStrategy, setSharedStrategy] = useState(false);
+
+  const handleShareStrategy = async () => {
+    if (!strategyNote.trim() || sharedStrategy) return;
+    try {
+      await socialApi.createPost({
+        content: strategyNote.trim(),
+        concept: conceptId,
+        source: "quiz",
+        content_type: "strategy",
+        post_metadata: {
+          score: `${correctCount} / ${totalCount}`,
+          concept_name: conceptDetail?.name || "Concept Quiz",
+        },
+      });
+      setSharedStrategy(true);
+    } catch (err) {
+      console.error("Failed to share strategy:", err);
+    }
+  };
+
   /* ═══ RESULT & QUESTION REVIEW SCREEN ═══ */
   if (result) {
     const answersList = result.answers || [];
@@ -143,6 +165,30 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
               <div className="text-center">
                 <span className="text-3xl font-black text-emerald-600 block">{correctCount} / {totalCount}</span>
                 <span className="text-[10px] text-[var(--color-mid-gray)] uppercase font-extrabold tracking-wider block">Correct Solved</span>
+              </div>
+            </div>
+
+            {/* Optional Non-Intrusive Strategy Reflection */}
+            <div className="p-4 rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-2 text-left">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-[var(--color-text-primary)]">What did this attempt teach you?</span>
+                <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold">Optional Strategy Note</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="e.g. Next time I will draw FBD before solving force pairs..."
+                  value={strategyNote}
+                  onChange={(e) => setStrategyNote(e.target.value)}
+                  className="input-field py-1.5 text-xs flex-1"
+                />
+                <button
+                  onClick={handleShareStrategy}
+                  disabled={!strategyNote.trim() || sharedStrategy}
+                  className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer disabled:opacity-40"
+                >
+                  {sharedStrategy ? "Shared ✓" : "Share Strategy"}
+                </button>
               </div>
             </div>
 

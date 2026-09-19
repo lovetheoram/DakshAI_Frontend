@@ -151,7 +151,7 @@ export default function AppShell({ children }) {
               title="Map POC - Truth Trajectory"
             >
               <Map size={15} />
-              <span>Map POC</span>
+              <span>Map</span>
             </NavLink>
 
             {/* Daily Target Check-in Header Button */}
@@ -252,7 +252,7 @@ export default function AppShell({ children }) {
               title="Map POC"
             >
               <Map size={14} />
-              <span>Map POC</span>
+              <span>Map</span>
             </NavLink>
 
             {/* Daily Target Check-in Mobile Button */}

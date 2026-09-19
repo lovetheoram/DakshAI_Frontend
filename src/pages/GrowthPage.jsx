@@ -558,7 +558,10 @@ export default function GrowthPage() {
             </button>
 
             <button
-              onClick={() => navigate("/practice")}
+              onClick={() => {
+                const targetConceptId = dashboard?.last_active_concept?.id || dashboard?.decay_alerts?.[0]?.concept_id;
+                navigate(targetConceptId ? `/learn/${targetConceptId}` : "/learn");
+              }}
               className="w-full p-3.5 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)]/40 transition-all text-left flex items-center justify-between group cursor-pointer"
             >
               <div>

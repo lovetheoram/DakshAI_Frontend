@@ -418,29 +418,6 @@ export default function LearnPage() {
         </div>
       </div>
 
-      {/* Specific Target Exam Badge Header */}
-      <div className="daksh-card p-4 sm:p-5 border-l-4 border-l-[var(--color-gold)] bg-white dark:bg-slate-900 shadow-xs flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2.5 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] font-bold">
-            <BookOpen size={18} />
-          </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--color-gold-dark)] block">
-              Active Exam Syllabus
-            </span>
-            <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-              {activeExam?.name || "State Provincial Civil Services (PCS)"}
-            </h2>
-          </div>
-        </div>
-
-        {(activeExam?.exam_type === "pcs" || activeExam?.code === "PCS" || activeExam?.name?.toLowerCase().includes("pcs") || !activeExam) && (
-          <span className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] shadow-xs">
-            BPSC — Bihar Public Service Commission
-          </span>
-        )}
-      </div>
-
       <AnimatePresence mode="wait">
         {/* ═══ MIND MAP ═══ */}
         {viewMode === "mindmap" && (

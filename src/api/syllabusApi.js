@@ -1,8 +1,8 @@
 import axiosClient from './axiosClient'
 
 const syllabusApi = {
-  getTree: async () => {
-    const r = await axiosClient.get('/api/syllabus/tree/')
+  getTree: async (params = {}) => {
+    const r = await axiosClient.get('/api/syllabus/tree/', { params })
     return r.data
   },
   getConceptList: async () => {

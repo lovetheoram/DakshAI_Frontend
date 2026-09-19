@@ -71,14 +71,14 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {/* 2. Default Speech & Audio Notes Settings (User Requirement) */}
+      {/* 2. Vocal Learning Speech Settings */}
       <div className="daksh-card p-5 space-y-4 border-t-2 border-t-[var(--color-gold)]">
         <div className="flex items-center gap-2 text-xs font-bold">
           <Volume2 size={16} className="text-[var(--color-gold)]" />
-          <span>Default Speech & Audio Notes</span>
+          <span>Vocal Learning Speech Settings</span>
         </div>
         <p className="text-[11px] text-[var(--color-text-secondary)]">
-          Configure default playback speed and voice language for concept audio notes.
+          Configure default playback speed and voice language for concept vocal explanations.
         </p>
 
         {/* Speed Selector */}

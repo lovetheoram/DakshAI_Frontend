@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileText, Layers, BookOpen, Lightbulb, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, HelpCircle, ArrowRight, Volume2, Play, Square } from "lucide-react";
+import { X, FileText, Headphones, Layers, BookOpen, Lightbulb, CheckCircle2, ChevronLeft, ChevronRight, Sparkles, HelpCircle, ArrowRight, Volume2, Play, Square } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CuriosityEngine from "../../intelligence/curiosity/CuriosityEngine";
 import PreferenceStore from "../../product/preferenceStore";
@@ -44,11 +44,10 @@ function CuriosityQuickCheck({ formulas = [], conceptName, onCloseModal }) {
               key={idx}
               type="button"
               onClick={() => toggleCheck(idx)}
-              className={`flex items-center gap-2 p-2.5 rounded-lg text-xs text-left transition-all border ${
-                isChecked
+              className={`flex items-center gap-2 p-2.5 rounded-lg text-xs text-left transition-all border ${isChecked
                   ? "bg-purple-600/30 border-purple-400 text-purple-100 font-bold"
                   : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
-              }`}
+                }`}
             >
               <div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? "bg-purple-500 border-purple-300 text-white" : "border-gray-500"}`}>
                 {isChecked && <CheckCircle2 size={12} />}
@@ -91,17 +90,49 @@ function CuriosityQuickCheck({ formulas = [], conceptName, onCloseModal }) {
 // Reusable Horizontal Slider / Carousel for each section
 function HorizontalSectionSlider({ title, icon: Icon, badge, accentColor, items = [], renderItem }) {
   const containerRef = useRef(null);
+  const cardRefs = useRef([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const scrollLeft = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({ left: -320, behavior: "smooth" });
+  const scrollToCard = (index) => {
+    const container = containerRef.current;
+    const card = cardRefs.current[index];
+    if (container && card) {
+      const targetLeft = card.offsetLeft - (container.clientWidth - card.clientWidth) / 2;
+      container.scrollTo({ left: Math.max(0, targetLeft), behavior: "smooth" });
     }
   };
 
-  const scrollRight = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollBy({ left: 320, behavior: "smooth" });
+  const handleScroll = () => {
+    const container = containerRef.current;
+    if (!container || !items.length) return;
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = 0;
+    let minDistance = Infinity;
+    cardRefs.current.forEach((card, idx) => {
+      if (card) {
+        const cardCenter = card.offsetLeft + card.clientWidth / 2;
+        const distance = Math.abs(containerCenter - cardCenter);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = idx;
+        }
+      }
+    });
+    if (closestIndex !== currentIndex) {
+      setCurrentIndex(closestIndex);
     }
+  };
+
+  const scrollPrev = () => {
+    const nextIdx = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+    setCurrentIndex(nextIdx);
+    scrollToCard(nextIdx);
+  };
+
+  const scrollNext = () => {
+    const nextIdx = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+    setCurrentIndex(nextIdx);
+    scrollToCard(nextIdx);
   };
 
   return (
@@ -116,23 +147,23 @@ function HorizontalSectionSlider({ title, icon: Icon, badge, accentColor, items 
             {title}
           </h4>
           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
-            {items.length} {items.length === 1 ? "card" : "cards"}
+            {currentIndex + 1} of {items.length}
           </span>
         </div>
 
         {items.length > 1 && (
           <div className="flex items-center gap-1.5">
             <button
-              onClick={scrollLeft}
+              onClick={scrollPrev}
               className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer"
-              title="Scroll left"
+              title="Previous card"
             >
               <ChevronLeft size={14} />
             </button>
             <button
-              onClick={scrollRight}
+              onClick={scrollNext}
               className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer"
-              title="Scroll right"
+              title="Next card"
             >
               <ChevronRight size={14} />
             </button>
@@ -144,12 +175,17 @@ function HorizontalSectionSlider({ title, icon: Icon, badge, accentColor, items 
       {items.length > 0 ? (
         <div
           ref={containerRef}
-          className="flex gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+          onScroll={handleScroll}
+          className="flex gap-3 sm:gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory touch-pan-x overscroll-x-contain scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
         >
           {items.map((item, idx) => (
-            <React.Fragment key={idx}>
+            <div
+              key={idx}
+              ref={(el) => (cardRefs.current[idx] = el)}
+              className="shrink-0 snap-center"
+            >
               {renderItem(item, idx)}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       ) : (
@@ -231,11 +267,11 @@ export default function ConceptNotesModal({
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/70">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400">
-                <FileText size={20} />
+                <Headphones size={20} />
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-white">{conceptName} — Interactive Notes</h3>
-                <p className="text-xs text-gray-400">{chapterName || "Structured Syllabus Notes & Slider Carousel"}</p>
+                <h3 className="text-base font-extrabold text-white">{conceptName} — Vocal Explanation</h3>
+                <p className="text-xs text-gray-400">{chapterName || "Slide Deck & Vocal Narration"}</p>
               </div>
             </div>
 
@@ -249,7 +285,7 @@ export default function ConceptNotesModal({
 
           {/* Content Body */}
           <div className="p-6 overflow-y-auto flex-1 space-y-6">
-            
+
             {/* 1. TOP HERO: Curiosity Spark & Active Recall Banner */}
             <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-indigo-950/40 to-slate-900 border border-purple-500/30 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
@@ -299,11 +335,10 @@ export default function ConceptNotesModal({
                       </span>
                       <button
                         onClick={() => speakText(cardId, `Formula: ${formulaText}`)}
-                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                          isSpeakingCard
+                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${isSpeakingCard
                             ? "bg-rose-500/30 text-rose-300 border-rose-400"
                             : "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
-                        }`}
+                          }`}
                         title="Listen formula"
                       >
                         {isSpeakingCard ? <Square size={12} className="fill-current" /> : <Volume2 size={13} />}
@@ -348,11 +383,10 @@ export default function ConceptNotesModal({
                       </span>
                       <button
                         onClick={() => speakText(cardId, `Rule: ${ruleText}`)}
-                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                          isSpeakingCard
+                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${isSpeakingCard
                             ? "bg-rose-500/30 text-rose-300 border-rose-400"
                             : "bg-white/10 hover:bg-white/20 text-gray-200 border-white/10"
-                        }`}
+                          }`}
                         title="Listen rule"
                       >
                         {isSpeakingCard ? <Square size={12} className="fill-current" /> : <Volume2 size={13} />}
@@ -394,11 +428,10 @@ export default function ConceptNotesModal({
                       </span>
                       <button
                         onClick={() => speakText(cardId, `Consequence: ${itemText}`)}
-                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                          isSpeakingCard
+                        className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${isSpeakingCard
                             ? "bg-rose-500/30 text-rose-300 border-rose-400"
                             : "bg-white/10 hover:bg-white/20 text-gray-200 border-white/10"
-                        }`}
+                          }`}
                         title="Listen consequence"
                       >
                         {isSpeakingCard ? <Square size={12} className="fill-current" /> : <Volume2 size={13} />}

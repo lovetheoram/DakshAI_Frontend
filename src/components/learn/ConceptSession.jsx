@@ -60,8 +60,8 @@ export default function ConceptSession({ conceptId }) {
         const readiness = typeof progressData?.readiness === "number"
           ? progressData.readiness
           : typeof progressData?.exam_readiness === "number"
-          ? progressData.exam_readiness
-          : 0;
+            ? progressData.exam_readiness
+            : 0;
 
         const conceptObj = {
           name: targetConcept.name || "Concept",
@@ -98,10 +98,10 @@ export default function ConceptSession({ conceptId }) {
 
   useEffect(() => {
     fetchConceptData();
-    socialApi.pingSession("reading", conceptId).catch(() => {});
+    socialApi.pingSession("reading", conceptId).catch(() => { });
 
     return () => {
-      socialApi.pingSession(null).catch(() => {});
+      socialApi.pingSession(null).catch(() => { });
     };
   }, [conceptId]);
 

@@ -111,8 +111,34 @@ export default function ExamReadinessDreamPage({
   const totalSeconds = Math.max(3, Math.round((fullSceneText.length * 0.072) / speechRate));
   const sceneProgressPct = Math.min(100, Math.round((elapsedSeconds / Math.max(1, totalSeconds)) * 100));
 
-  // Audio unlock helper for mobile browsers (iOS / Android)
+  // Audio unlock & speaker chime helper for mobile browsers (iOS Safari / Android Chrome)
   const unlockAudioEngine = () => {
+    if (typeof window === "undefined") return;
+
+    // 1. Play audible Web Audio API chime to activate phone speaker and verify volume
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        const audioCtx = new AudioContextClass();
+        if (audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5 tone
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.15);
+      }
+    } catch (e) {
+      console.warn("WebAudio unlock error:", e);
+    }
+
+    // 2. Unpause Web Speech API queue if stuck
     if ("speechSynthesis" in window) {
       try {
         window.speechSynthesis.resume();
@@ -158,7 +184,9 @@ export default function ExamReadinessDreamPage({
   useEffect(() => {
     return () => {
       if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {}
       }
     };
   }, []);
@@ -195,64 +223,70 @@ export default function ExamReadinessDreamPage({
   ) => {
     if (!("speechSynthesis" in window)) return;
     unlockAudioEngine();
-    window.speechSynthesis.cancel();
+
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
 
     setIsSpeaking(true);
     setIsPaused(false);
     setRevealedChars(0);
 
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
     
-    // Clamp speech rate between 0.6 and 1.6 for clear audio playback
-    utterance.rate = Math.max(0.6, Math.min(1.6, rateOverride * 0.95));
+    // Standard rate and pitch for universal mobile compatibility
+    utterance.rate = Math.max(0.7, Math.min(1.4, rateOverride * (isMobile ? 0.95 : 0.95)));
+    utterance.pitch = 1.0;
+    utterance.lang = "en-US";
 
-    const isFemale = modeOverride === "female";
-    // Safe clamped pitch values for iOS Safari & Android WebSpeech engines
-    utterance.pitch = isFemale ? 1.1 : 0.95;
+    // Only assign explicit voice object on desktop; mobile WebKit/Chrome works best with native default voice
+    if (!isMobile) {
+      const availableVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
+      const eligibleVoices = availableVoices.filter(
+        (v) => v.lang.toLowerCase().includes("en") || v.lang.toLowerCase().includes("hi")
+      );
+      const pool = eligibleVoices.length > 0 ? eligibleVoices : availableVoices;
+      const isFemale = modeOverride === "female";
 
-    const availableVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
-    const eligibleVoices = availableVoices.filter(
-      (v) => v.lang.toLowerCase().includes("hi") || v.lang.toLowerCase().includes("in") || v.lang.toLowerCase().includes("en")
-    );
-    const pool = eligibleVoices.length > 0 ? eligibleVoices : availableVoices;
-
-    let targetVoice = null;
-    if (pool.length > 0) {
-      if (isFemale) {
-        targetVoice = pool.find((v) => {
-          const name = v.name.toLowerCase();
-          return (
-            name.includes("female") ||
-            name.includes("woman") ||
-            name.includes("swara") ||
-            name.includes("kalpana") ||
-            name.includes("zira") ||
-            name.includes("aria") ||
-            name.includes("jenny") ||
-            name.includes("sangeeta")
-          );
-        }) || pool.find((v) => !v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("david")) || pool[pool.length - 1];
-      } else {
-        targetVoice = pool.find((v) => {
-          const name = v.name.toLowerCase();
-          return (
-            name.includes("male") ||
-            name.includes("man") ||
-            name.includes("david") ||
-            name.includes("mark") ||
-            name.includes("hemant") ||
-            name.includes("guy")
-          );
-        }) || pool[0];
+      let targetVoice = null;
+      if (pool.length > 0) {
+        if (isFemale) {
+          targetVoice = pool.find((v) => {
+            const name = v.name.toLowerCase();
+            return (
+              name.includes("female") ||
+              name.includes("woman") ||
+              name.includes("swara") ||
+              name.includes("kalpana") ||
+              name.includes("zira") ||
+              name.includes("aria") ||
+              name.includes("jenny") ||
+              name.includes("sangeeta")
+            );
+          }) || pool[pool.length - 1];
+        } else {
+          targetVoice = pool.find((v) => {
+            const name = v.name.toLowerCase();
+            return (
+              name.includes("male") ||
+              name.includes("man") ||
+              name.includes("david") ||
+              name.includes("mark") ||
+              name.includes("hemant")
+            );
+          }) || pool[0];
+        }
       }
-    }
 
-    if (targetVoice) {
-      utterance.voice = targetVoice;
-      utterance.lang = targetVoice.lang || "en-US";
-    } else {
-      utterance.lang = "en-US";
+      if (targetVoice && targetVoice.name) {
+        try {
+          utterance.voice = targetVoice;
+          utterance.lang = targetVoice.lang || "en-US";
+        } catch (e) {}
+      }
     }
 
     utterance.onend = () => {
@@ -265,13 +299,45 @@ export default function ExamReadinessDreamPage({
       }
     };
 
-    utterance.onerror = () => {
+    utterance.onerror = (err) => {
+      console.warn("SpeechSynthesis utterance error:", err);
       if (activeUtteranceRef.current !== utterance) return;
       setIsSpeaking(false);
       setIsPaused(false);
     };
 
-    window.speechSynthesis.speak(utterance);
+    const executeSpeak = () => {
+      try {
+        window.speechSynthesis.resume();
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.error("Speech speak error, trying native fallback:", err);
+        try {
+          const fallbackUtterance = new SpeechSynthesisUtterance(text);
+          fallbackUtterance.lang = "en-US";
+          fallbackUtterance.onend = () => {
+            setIsSpeaking(false);
+            setIsPaused(false);
+          };
+          fallbackUtterance.onerror = () => {
+            setIsSpeaking(false);
+            setIsPaused(false);
+          };
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(fallbackUtterance);
+        } catch (e) {
+          setIsSpeaking(false);
+          setIsPaused(false);
+        }
+      }
+    };
+
+    // Micro delay on mobile ensures cancel() completes before speak()
+    if (isMobile) {
+      setTimeout(executeSpeak, 50);
+    } else {
+      executeSpeak();
+    }
   };
 
   const speakCurrentParagraph = (
@@ -304,7 +370,7 @@ export default function ExamReadinessDreamPage({
     unlockAudioEngine();
     setIsSwitchingVoice(true);
     if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      try { window.speechSynthesis.cancel(); } catch (e) {}
     }
     setIsSpeaking(false);
     setIsPaused(false);
@@ -324,7 +390,7 @@ export default function ExamReadinessDreamPage({
       setIsSpeaking(true);
       setIsPaused(false);
       if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
+        try { window.speechSynthesis.cancel(); } catch (e) {}
       }
       speakCurrentParagraph(sceneIdx, paragraphIdx, newRate, personaMode);
     }
@@ -333,14 +399,12 @@ export default function ExamReadinessDreamPage({
   const handlePlayPause = () => {
     unlockAudioEngine();
     if (!("speechSynthesis" in window)) return;
-    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-      window.speechSynthesis.pause();
+    if (isSpeaking) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
       setIsPaused(true);
       setIsSpeaking(false);
-    } else if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setIsPaused(false);
-      setIsSpeaking(true);
     } else {
       speakCurrentParagraph(sceneIdx, paragraphIdx, speechRate, personaMode);
     }
@@ -507,7 +571,7 @@ export default function ExamReadinessDreamPage({
 
       {/* Scene Title Block Below Header */}
       <div className="relative z-10 shrink-0 w-full px-4 pt-3 pb-1 text-center bg-black/40">
-        <h2 className="text-sm sm:text-base font-black text-amber-300 tracking-wide leading-snug max-w-xl mx-auto line-clamp-2">
+        <h2 className="text-sm sm:text-lg font-black text-white tracking-wide leading-snug max-w-xl mx-auto line-clamp-2 drop-shadow-sm">
           {activeScene.title}
         </h2>
       </div>
@@ -645,10 +709,14 @@ export default function ExamReadinessDreamPage({
           {/* Main Play / Pause Button */}
           <button
             onClick={handlePlayPause}
-            className={`px-6 py-2.5 rounded-2xl text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all hover:scale-105 cursor-pointer min-w-[130px] justify-center ${
-              personaMode === "female"
-                ? "bg-purple-400 hover:bg-purple-300"
-                : "bg-sky-400 hover:bg-sky-300"
+            className={`px-6 py-2.5 rounded-2xl text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all hover:scale-105 cursor-pointer min-w-[140px] justify-center ${
+              isSpeaking
+                ? personaMode === "female"
+                  ? "bg-purple-400 hover:bg-purple-300"
+                  : "bg-sky-400 hover:bg-sky-300"
+                : isPaused
+                ? "bg-amber-400 hover:bg-amber-300"
+                : "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:scale-105 ring-4 ring-amber-400/30 animate-pulse"
             }`}
           >
             {isSpeaking ? (
@@ -664,7 +732,7 @@ export default function ExamReadinessDreamPage({
             ) : (
               <>
                 <Play size={18} className="fill-current ml-0.5" />
-                <span>Listen</span>
+                <span>Tap to Listen 🔊</span>
               </>
             )}
           </button>

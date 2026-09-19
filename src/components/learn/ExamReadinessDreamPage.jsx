@@ -36,23 +36,137 @@ export const DEFAULT_VOCAL_LEARNING_SERIES = [
 
 export const DEFAULT_AI_ENGINEERING_SERIES = DEFAULT_VOCAL_LEARNING_SERIES;
 
-export function prepareCompanionStory(rawLessons) {
+// // Varied Intermediate Transition sentence pools to prevent repetitive phrasing across 78+ scenes
+const SCENE_ONE_HOOKS = [
+  (title) => `अब सबसे पहले सीन में हम समझने वाले हैं — ${title}। चलिए देखते हैं इसकी पूरी कहानी और ज़रूरत!`,
+  (title) => `चलिए सबसे पहले सीन की शुरुआत करते हैं — ${title} से। देखते हैं रियल-वर्ल्ड में इसकी क्या ज़रूरत पड़ी!`,
+  (title) => `आइए पहले सीन में एक्सप्लोर करते हैं — ${title}। देखते हैं इंजीनियर्स ने इसे कैसे अप्रोच किया!`,
+];
+
+const RECAP_BRIDGE_VARIATIONS = [
+  (takeaway, title) => `पिछली बार हमने देखा था — ${takeaway}। अब इस अगले सीन में हम समझेंगे — ${title}। चलिए देखते हैं कि अब क्या नया मोड़ आता है!`,
+  (takeaway, title) => `अब तक हमने समझा — ${takeaway}। लेकिन अब आगे की चुनौती है — ${title}! आइए इसकी गहराई में उतरते हैं।`,
+  (takeaway, title) => `लास्ट सीन का टेकअवे था — ${takeaway}। चलिए अब इससे आगे बढ़ते हैं और देखते हैं — ${title}!`,
+  (takeaway, title) => `पिछली गुत्थी हमने सुलझाई कि — ${takeaway}। अब देखते हैं ${title} का असली इंजीनियरिंग खेल!`,
+  (takeaway, title) => `अभी तक की कहानी में देखा — ${takeaway}। लेकिन कहानी यहाँ खत्म नहीं होती, अब बात करते हैं — ${title} की!`,
+  (takeaway, title) => `पिछला कॉन्सेप्ट याद है ना — ${takeaway}? उसी के आधार पर अब समझते हैं — ${title}!`,
+  (takeaway, title) => `पिछले सीन में हमने सीखा — ${takeaway}। अब अगला बड़ा सवाल है — ${title}! आइए देखते हैं।`,
+];
+
+const TEACHING_INTENT_HOOKS = [
+  "इस सीन में हमारा मेन गोल और इंटेंट यह है कि —",
+  "आइए सबसे पहले समझते हैं कि आज हम क्या अचीव करने वाले हैं —",
+  "इस टॉपिक को सीखने का हमारा मुख्य मकसद यह है —",
+  "यहाँ हमारा मेन लर्निंग गोल यह समझना है —",
+  "इस पूरे सेशन की मुख्य थीम यह है —",
+  "आइए देखते हैं इस टॉपिक को मास्टर करने की असली वजह —",
+];
+
+const NECESSITY_HOOKS = [
+  "अब समझते हैं कि आखिर इसकी ज़रूरत क्यों पड़ी —",
+  "सोचिए, असल में परेशानी क्या आ रही थी —",
+  "आइए देखते हैं कि पुरानी एप्रोच में क्या बड़ी कमी थी —",
+  "यहाँ असली मुद्दा यह था कि काम अटूट तरीके से नहीं चल पा रहा था —",
+  "पहले यह समझते हैं कि इंजीनियर्स के सामने क्या असली चुनौती थी —",
+  "आखिर इस नए तरीके को बनाने की नौबत क्यों आई, इसे ध्यान से सुनिए —",
+  "यहाँ सबसे बड़ा सवाल यह उठता है कि क्या पुरानी सिस्टम काफी थी —",
+];
+
+const STORY_ANALOGY_HOOKS = [
+  "आओ इसे एक बहुत ही सिंपल और रीयल-लाइफ़ मिसाल से इमेजिन करते हैं —",
+  "इस बात को समझने के लिए एक छोटी-सी रोज़मर्रा की कहानी देखते हैं —",
+  "मान लीजिए आप एक रीयल-लाइफ़ सिचुएशन में हैं —",
+  "आइए एक प्रैक्टिकल सिनेरियो से इसे दिमाग में विज़ुअलाइज़ करते हैं —",
+  "एक मिनट के लिए सोचिए कि आपकी रियल लाइफ में क्या होता है —",
+  "इस बात को एक आसान-सी इंसानियत की मिसाल से समझते हैं —",
+  "इमेजिन करिए एक ऐसी स्थिति जहाँ आपको यह डिसीजन लेना है —",
+];
+
+const DETAILED_CONCEPT_HOOKS = [
+  "अब इसके कोर टेक्निकल कॉन्सेप्ट और इनर वर्किंग को ध्यान से समझते हैं —",
+  "आइए अब इसके पीछे की पूरी इंजीनियरिंग और आर्किटेक्चर को ब्रेकडाउन करते हैं —",
+  "अब देखते हैं कि सिस्टम के अंदर असल में क्या प्रोसेस चल रही है —",
+  "यहाँ टेक्निकल लेवल पर काम कैसे होता है, ध्यान से सुनिए —",
+  "आइए अब इसके डिटेल मैकेनिज्म की गहराई में उतरते हैं —",
+  "अब इसके सबसे इम्पोर्टेंट इंजीनियरिंग लॉजिक को समझते हैं —",
+];
+
+const EXAM_QUESTION_HOOKS = [
+  "अब डायरेक्ट इंटरव्यू में आपसे यह सवाल कैसे पूछा जाएगा, यह देखिए —",
+  "एग्ज़ामिनर अक्सर इस टॉपिक से ऐसा डायरेक्ट सवाल बनाता है —",
+  "अगर आप किसी टॉप टेक इंटरव्यू में बैठे हैं, तो सवाल कुछ ऐसा होगा —",
+  "आइए देखते हैं कि इस कांसेप्ट पर सबसे ट्रिकी सवाल क्या बन सकता है —",
+  "इंटरव्यू बोर्ड आपसे सीधे यह पूछ सकता है —",
+  "एग्ज़ाम रेडीनेस के लिए यह सवाल बहुत ही हाई-यील्ड है —",
+];
+
+const KEY_FACT_HOOKS = [
+  "और इसका सबसे सॉलिड direct answer और key fact यह है —",
+  "इसका एक-लाइन का क्रिस्टल-क्लियर टू-द-पॉइंट जवाब यह होगा —",
+  "अगर आपको एक सेंटेंस में बाज़ी मारनी है, तो बस यह याद रखिए —",
+  "इसका कोर टेकअवे और सबसे इम्पोर्टेंट फैक्ट यह है —",
+  "इंटरव्यू में आपको ठीक यही 100% सटीक जवाब देना है —",
+  "इस पूरे कांसेप्ट की सबसे काम की चाबी यही है —",
+];
+
+const KEY_TAKEAWAY_HOOKS = [
+  "संक्षेप में, इस पूरे सीन की सबसे बड़ी समरी और मास्टर टेकअवे यह है —",
+  "याद रखने लायक सबसे काम की पंचलाइन यह है —",
+  "इस पूरे डिस्कशन का निचोड़ बस एक लाइन में यह है —",
+  "अगर आपको कोई एक बात दिमाग में लॉक करनी है, तो वो यह है —",
+  "इस टॉपिक का फाइनल इंजीनियरिंग वर्डिक्ट यह है —",
+];
+
+const CHECKIN_VARIATIONS = [
+  "यहाँ तक की बात क्लियर है, दोस्त?",
+  "क्या यह कॉन्सेप्ट दिमाग में एकदम सेट हो गया?",
+  "क्या यहाँ तक की कहानी समझ में आई, दोस्त?",
+  "बढ़िया! क्या यहाँ तक सब समझ आ गया?",
+  "क्या यह पॉइंट एकदम क्रिस्टल-क्लियर है?",
+  "क्या आप आगे बढ़ने के लिए तैयार हैं, दोस्त?",
+  "यहाँ तक की लॉजिक समझ आ गई?",
+];
+
+export function prepareCompanionStory(rawLessons, subjectName = "AI Engineering") {
   let list = rawLessons;
   if (rawLessons && !Array.isArray(rawLessons) && Array.isArray(rawLessons.scenes)) {
     list = rawLessons.scenes;
   }
   if (!Array.isArray(list) || list.length === 0) {
-    return DEFAULT_VOCAL_LEARNING_SERIES;
+    list = DEFAULT_VOCAL_LEARNING_SERIES;
   }
 
   // Pre-calculate takeaways for previous scene recap
   const items = list.map((item, idx) => {
     const titleText = item.title || `Scene ${item.scene_number || idx + 1}`;
-    const keyTakeaway = item.key_takeaway || item.takeaway || item.fact || titleText;
+    let keyTakeaway = item.key_takeaway || item.takeaway || item.fact || titleText;
+    if (keyTakeaway.length > 90) {
+      keyTakeaway = keyTakeaway.slice(0, 85).replace(/\s\w+$/, "") + "...";
+    }
     return { item, idx, titleText, keyTakeaway };
   });
 
-  return items.map(({ item, idx, titleText, keyTakeaway }) => {
+  // 1. Spoken Intro Session (Scene 0) - Full context setting before Scene 1
+  const introScene = {
+    id: "scene-intro-0",
+    module: "Orientation",
+    title: "🚀 Series Orientation & Master Roadmap",
+    teaching_intent: `Mastering ${subjectName}`,
+    story: "Welcome to the intuitive vocal journey.",
+    question: "",
+    fact: "",
+    narration: [
+      `नमस्ते दोस्त! मैं आपका ${subjectName} लर्निंग कंपैनियन हूँ। आज हम मिलकर इस पूरे सब्जेक्ट का सफ़र एक दम इंट्यूटिव और स्टोरी स्टाइल में तय करने वाले हैं।`,
+      `यहाँ हम कोई सूखी थ्योरी नहीं रटेंगे। हम देखेंगे कि रियल-वर्ल्ड में इंजीनियर्स कैसे सोचते हैं, कहाँ प्रॉब्लम्स आती हैं, और कैसे नए सॉल्यूशंस जन्म लेते हैं।`,
+      `इस पूरी सीरीज़ में कुल ${items.length} सीन्स हैं — जहाँ हम RAG, Transformers, Fine-Tuning, Agents और Production Deployments तक हर कॉन्सेप्ट की गहराई में उतरेंगे।`,
+      `हर सीन के बाद हम एक छोटा चेक-इन करेंगे ताकि आपकी समझ एकदम सॉलिड बनी रहे। तोचलिए, पहला सीन शुरू करते हैं!`,
+      "क्या आप इस शानदार सफ़र के लिए तैयार हैं, दोस्त?"
+    ],
+    key_takeaway: `${subjectName} Vocal Learning Journey Overview`
+  };
+
+  // 2. Main Content Scenes (Scene 1, 2, etc.)
+  const mainScenes = items.map(({ item, idx, titleText, keyTakeaway }) => {
     const rawNarration = Array.isArray(item.narration)
       ? item.narration
       : typeof item.narration === "string"
@@ -65,47 +179,68 @@ export function prepareCompanionStory(rawLessons) {
 
     const fullNarration = [];
 
-    // 0. Previous Scene Recap (for Scene 2, 3, etc.)
-    if (idx > 0) {
+    // Part 1: Topic Context / Memory Bridge Hook
+    if (idx === 0) {
+      const hookFn = SCENE_ONE_HOOKS[idx % SCENE_ONE_HOOKS.length];
+      fullNarration.push(hookFn(titleText));
+    } else {
       const prevTakeaway = items[idx - 1].keyTakeaway;
-      fullNarration.push(`पिछले सीन में हमने देखा कि — ${prevTakeaway}। अब चलिए आज के नए सीन की तरफ़ बढ़ते हैं!`);
+      const bridgeFn = RECAP_BRIDGE_VARIATIONS[idx % RECAP_BRIDGE_VARIATIONS.length];
+      fullNarration.push(bridgeFn(prevTakeaway, titleText));
     }
 
-    // 1. Opening greeting with Title
-    fullNarration.push(`अरे वाह! चलो आज साथ मिलकर ${titleText} को एकदम आसान और इंट्यूटिव तरीक़े से समझते हैं। ध्यान से सुनो!`);
-
-    // 2. Necessity / Intent section
-    if (item.necessity || item.teaching_intent) {
-      fullNarration.push(`सबसे पहले समझते हैं कि इसकी ज़रूरत क्यों है —`);
-      fullNarration.push(item.necessity || item.teaching_intent);
+    // Part 2: Teaching Intent
+    if (item.teaching_intent) {
+      const intentHook = TEACHING_INTENT_HOOKS[(idx + 1) % TEACHING_INTENT_HOOKS.length];
+      fullNarration.push(intentHook);
+      fullNarration.push(item.teaching_intent);
     }
 
-    // 3. Real-World Story / Analogy section
+    // Part 3: Necessity / Real-Life Problem
+    if (item.necessity && item.necessity !== item.teaching_intent) {
+      const necessityHook = NECESSITY_HOOKS[(idx + 2) % NECESSITY_HOOKS.length];
+      fullNarration.push(necessityHook);
+      fullNarration.push(item.necessity);
+    }
+
+    // Part 4: Real-World Story / Analogy
     if (item.story) {
-      fullNarration.push(`आओ पहले एक मस्त रीयल-लाइफ़ कहानी से इसे इमेजिन करते हैं —`);
+      const storyHook = STORY_ANALOGY_HOOKS[(idx + 3) % STORY_ANALOGY_HOOKS.length];
+      fullNarration.push(storyHook);
       fullNarration.push(item.story);
     }
 
-    // 4. Core Narration Explanation paragraphs
+    // Part 5: Core Detailed Technical Narration Explanation
     if (rawNarration.length > 0) {
-      fullNarration.push(`अब इसके कोर कांसेप्ट्स को ध्यान से सुनते हैं —`);
+      const conceptHook = DETAILED_CONCEPT_HOOKS[(idx + 4) % DETAILED_CONCEPT_HOOKS.length];
+      fullNarration.push(conceptHook);
       fullNarration.push(...rawNarration);
     }
 
-    // 5. Direct Exam Question section
+    // Part 6: Direct Exam Question
     if (item.question) {
-      fullNarration.push(`अब direct एग्जाम में सवाल कैसा आएगा, यह देखते हैं —`);
+      const examHook = EXAM_QUESTION_HOOKS[(idx + 5) % EXAM_QUESTION_HOOKS.length];
+      fullNarration.push(examHook);
       fullNarration.push(item.question);
     }
 
-    // 6. High-Yield Fact / Key Answer section
+    // Part 7: High-Yield Key Fact / Direct Answer
     if (item.fact) {
-      fullNarration.push(`और इसका सबसे सॉलिड direct answer और key fact यह है —`);
+      const factHook = KEY_FACT_HOOKS[(idx + 6) % KEY_FACT_HOOKS.length];
+      fullNarration.push(factHook);
       fullNarration.push(item.fact);
     }
 
-    // 7. Final Check-In Question for the scene
-    fullNarration.push(`क्या तुमको यह सीन अच्छे से समझ में आया, दोस्त?`);
+    // Part 8: Master Key Takeaway
+    if (keyTakeaway && keyTakeaway !== item.fact) {
+      const takeawayHook = KEY_TAKEAWAY_HOOKS[(idx + 7) % KEY_TAKEAWAY_HOOKS.length];
+      fullNarration.push(takeawayHook);
+      fullNarration.push(keyTakeaway);
+    }
+
+    // Part 9: Natural Companion Check-In
+    const checkInStr = CHECKIN_VARIATIONS[idx % CHECKIN_VARIATIONS.length];
+    fullNarration.push(checkInStr);
 
     return {
       id: item.id || `scene-${item.scene_number || idx + 1}`,
@@ -119,6 +254,8 @@ export function prepareCompanionStory(rawLessons) {
       key_takeaway: keyTakeaway
     };
   });
+
+  return [introScene, ...mainScenes];
 }
 
 const formatTime = (seconds) => {
@@ -132,8 +269,8 @@ export default function ExamReadinessDreamPage({
   lessons = DEFAULT_VOCAL_LEARNING_SERIES,
   onBack,
 }) {
-  const [personaMode, setPersonaMode] = useState("male");
-  const story = prepareCompanionStory(lessons);
+  const personaMode = "female";
+  const story = prepareCompanionStory(lessons, subjectName);
 
   const storageKey = `daksh_vocal_engine_${subjectName.replace(/\s+/g, "_").toLowerCase()}_saved_pos`;
   const savedSceneIdx = parseInt(localStorage.getItem(storageKey) || "0", 10);
@@ -150,6 +287,7 @@ export default function ExamReadinessDreamPage({
 
   const [voices, setVoices] = useState([]);
   const [isSwitchingVoice, setIsSwitchingVoice] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
 
   const activeUtteranceRef = useRef(null);
 
@@ -193,7 +331,7 @@ export default function ExamReadinessDreamPage({
     if ("speechSynthesis" in window) {
       try {
         window.speechSynthesis.resume();
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
@@ -237,7 +375,7 @@ export default function ExamReadinessDreamPage({
       if ("speechSynthesis" in window) {
         try {
           window.speechSynthesis.cancel();
-        } catch (e) {}
+        } catch (e) { }
       }
     };
   }, []);
@@ -257,7 +395,7 @@ export default function ExamReadinessDreamPage({
 
     try {
       window.speechSynthesis.cancel();
-    } catch (e) {}
+    } catch (e) { }
 
     if (syncTimerRef.current) {
       clearInterval(syncTimerRef.current);
@@ -270,21 +408,20 @@ export default function ExamReadinessDreamPage({
     setRevealedChars(0);
 
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isFemale = modeOverride === "female";
 
     // Detect if text contains Hindi Devanagari script
     const hasHindiChars = /[\u0900-\u097F]/.test(text);
 
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
-    
-    // Set pitch & rate tuned for warmth and clear human articulation
-    utterance.pitch = isFemale ? 1.15 : 0.88;
+
+    // Pitch & rate tuned for female voice warmth and clear human articulation
+    utterance.pitch = 1.15;
     const effectiveRate = Math.max(0.65, Math.min(1.3, rateOverride * (hasHindiChars ? 0.95 : 0.92)));
     utterance.rate = effectiveRate;
     utterance.lang = hasHindiChars ? "hi-IN" : "en-IN";
 
-    // Select distinct native voice from available WebSpeech engine pool
+    // Select distinct native female voice from available WebSpeech engine pool
     const availableVoices = voices.length > 0 ? voices : (("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : []);
     if (availableVoices.length > 0) {
       const eligibleVoices = availableVoices.filter((v) => {
@@ -295,43 +432,26 @@ export default function ExamReadinessDreamPage({
       });
       const pool = eligibleVoices.length > 0 ? eligibleVoices : availableVoices;
 
-      let targetVoice = null;
-      if (isFemale) {
-        targetVoice = pool.find((v) => {
-          const name = v.name.toLowerCase();
-          return (
-            name.includes("female") ||
-            name.includes("woman") ||
-            name.includes("swara") ||
-            name.includes("kalpana") ||
-            name.includes("zira") ||
-            name.includes("aria") ||
-            name.includes("sangeeta") ||
-            name.includes("samantha") ||
-            name.includes("lekha")
-          );
-        }) || pool[pool.length - 1];
-      } else {
-        targetVoice = pool.find((v) => {
-          const name = v.name.toLowerCase();
-          return (
-            name.includes("male") ||
-            name.includes("man") ||
-            name.includes("david") ||
-            name.includes("rishi") ||
-            name.includes("hemant") ||
-            name.includes("guy") ||
-            name.includes("daniel") ||
-            name.includes("george")
-          );
-        }) || pool[0];
-      }
+      const targetVoice = pool.find((v) => {
+        const name = v.name.toLowerCase();
+        return (
+          name.includes("female") ||
+          name.includes("woman") ||
+          name.includes("swara") ||
+          name.includes("kalpana") ||
+          name.includes("zira") ||
+          name.includes("aria") ||
+          name.includes("sangeeta") ||
+          name.includes("samantha") ||
+          name.includes("lekha")
+        );
+      }) || pool[pool.length - 1];
 
       if (targetVoice && targetVoice.name) {
         try {
           utterance.voice = targetVoice;
           if (targetVoice.lang) utterance.lang = targetVoice.lang;
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -340,7 +460,7 @@ export default function ExamReadinessDreamPage({
       if (activeUtteranceRef.current !== utterance) return;
       setIsSpeaking(true);
       setIsPaused(false);
-      
+
       // Reveal first word immediately on audio start
       let firstSpace = text.indexOf(" ");
       setRevealedChars(firstSpace > 0 ? firstSpace : Math.min(text.length, 4));
@@ -480,7 +600,7 @@ export default function ExamReadinessDreamPage({
     unlockAudioEngine();
     if (syncTimerRef.current) clearInterval(syncTimerRef.current);
     if ("speechSynthesis" in window) {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { window.speechSynthesis.cancel(); } catch (e) { }
     }
     setElapsedSeconds(0);
     // Restart current scene from paragraph 0
@@ -491,7 +611,7 @@ export default function ExamReadinessDreamPage({
     unlockAudioEngine();
     if (syncTimerRef.current) clearInterval(syncTimerRef.current);
     if ("speechSynthesis" in window) {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { window.speechSynthesis.cancel(); } catch (e) { }
     }
 
     if (sceneIdx < story.length - 1) {
@@ -508,7 +628,7 @@ export default function ExamReadinessDreamPage({
     unlockAudioEngine();
     setIsSwitchingVoice(true);
     if ("speechSynthesis" in window) {
-      try { window.speechSynthesis.cancel(); } catch (e) {}
+      try { window.speechSynthesis.cancel(); } catch (e) { }
     }
     setIsSpeaking(false);
     setIsPaused(false);
@@ -528,7 +648,7 @@ export default function ExamReadinessDreamPage({
       setIsSpeaking(true);
       setIsPaused(false);
       if ("speechSynthesis" in window) {
-        try { window.speechSynthesis.cancel(); } catch (e) {}
+        try { window.speechSynthesis.cancel(); } catch (e) { }
       }
       speakCurrentParagraph(sceneIdx, paragraphIdx, newRate, personaMode);
     }
@@ -540,7 +660,7 @@ export default function ExamReadinessDreamPage({
     if (isSpeaking) {
       try {
         window.speechSynthesis.cancel();
-      } catch (e) {}
+      } catch (e) { }
       setIsPaused(true);
       setIsSpeaking(false);
     } else {
@@ -560,7 +680,7 @@ export default function ExamReadinessDreamPage({
     unlockAudioEngine();
     if (sceneIdx > 0) {
       if ("speechSynthesis" in window) {
-        try { window.speechSynthesis.cancel(); } catch(e) {}
+        try { window.speechSynthesis.cancel(); } catch (e) { }
       }
       speakCurrentParagraph(sceneIdx - 1, 0);
     }
@@ -574,11 +694,7 @@ export default function ExamReadinessDreamPage({
     <div className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between overflow-hidden select-none font-sans">
 
       {/* Background Aura */}
-      <div className={`absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] transition-all duration-700 opacity-70 ${
-        personaMode === "female"
-          ? "from-purple-950/40 via-black to-black"
-          : "from-sky-950/40 via-black to-black"
-      }`} />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] transition-all duration-700 opacity-70 from-purple-950/40 via-black to-black" />
 
       {/* Top Header Bar */}
       <div className="relative z-20 shrink-0 px-3 py-2.5 border-b border-white/10 bg-black/80 backdrop-blur-md flex items-center justify-between gap-2">
@@ -605,16 +721,15 @@ export default function ExamReadinessDreamPage({
         {/* Right: Scene Badge & Options Dropdown Toggle */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[11px] font-extrabold text-amber-300 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 whitespace-nowrap">
-            {sceneIdx + 1}/{story.length}
+            {sceneIdx === 0 ? "Intro Session 🚀" : `Scene ${sceneIdx}/${story.length - 1}`}
           </span>
 
           <button
             onClick={() => setShowOptions(!showOptions)}
-            className={`p-1.5 rounded-xl transition-all cursor-pointer border ${
-              showOptions
-                ? "bg-amber-400 text-slate-950 border-amber-300"
-                : "bg-white/10 hover:bg-white/20 text-gray-200 border-white/10"
-            }`}
+            className={`p-1.5 rounded-xl transition-all cursor-pointer border ${showOptions
+              ? "bg-amber-400 text-slate-950 border-amber-300"
+              : "bg-white/10 hover:bg-white/20 text-gray-200 border-white/10"
+              }`}
             title="Audio & Voice Options"
           >
             <Sliders size={16} />
@@ -645,37 +760,6 @@ export default function ExamReadinessDreamPage({
               </button>
             </div>
 
-            {/* Voice Selection */}
-            <div>
-              <label className="text-[10px] font-extrabold uppercase text-gray-400 block mb-1.5 tracking-wider">
-                Voice Persona
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleVoiceSwitch("male")}
-                  disabled={isSwitchingVoice}
-                  className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                    personaMode === "male"
-                      ? "bg-sky-500 text-white shadow-md ring-2 ring-sky-400/30"
-                      : "bg-white/5 text-gray-400 hover:text-white border border-white/10"
-                  }`}
-                >
-                  Male 👦
-                </button>
-                <button
-                  onClick={() => handleVoiceSwitch("female")}
-                  disabled={isSwitchingVoice}
-                  className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                    personaMode === "female"
-                      ? "bg-purple-500 text-white shadow-md ring-2 ring-purple-400/30"
-                      : "bg-white/5 text-gray-400 hover:text-white border border-white/10"
-                  }`}
-                >
-                  Female 👧
-                </button>
-              </div>
-            </div>
-
             {/* Playback Speed */}
             <div>
               <label className="text-[10px] font-extrabold uppercase text-gray-400 block mb-1.5 tracking-wider">
@@ -686,13 +770,10 @@ export default function ExamReadinessDreamPage({
                   <button
                     key={rate}
                     onClick={() => handleRateChange(rate)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
-                      speechRate === rate
-                        ? personaMode === "female"
-                          ? "bg-purple-400 text-slate-950 shadow-md"
-                          : "bg-sky-400 text-slate-950 shadow-md"
-                        : "text-gray-400 hover:text-white"
-                    }`}
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${speechRate === rate
+                      ? "bg-purple-400 text-slate-950 shadow-md"
+                      : "text-gray-400 hover:text-white"
+                      }`}
                   >
                     {rate}x
                   </button>
@@ -710,78 +791,121 @@ export default function ExamReadinessDreamPage({
         </h2>
       </div>
 
+      {/* Intro Companion Modal Overlay */}
+      <AnimatePresence>
+        {showIntro && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
+          >
+            <div className="relative w-full max-w-lg p-6 sm:p-8 rounded-3xl bg-zinc-900/95 border border-amber-500/30 shadow-2xl space-y-6 text-center overflow-hidden">
+              {/* Background Glow */}
+              <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-30 bg-purple-500" />
+
+              {/* Companion Avatar Icon */}
+              <div className="relative mx-auto w-24 h-24 rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 p-1 shadow-2xl flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-4xl shadow-inner">
+                  👧
+                </div>
+              </div>
+
+              {/* Title & Narrative Vision Description */}
+              <div className="space-y-2">
+                <span className="text-[11px] font-black uppercase tracking-widest text-amber-400 px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                  DakshAI Voice Companion
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide pt-1">
+                  {subjectName}
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-300 max-w-md mx-auto font-medium leading-relaxed pt-1">
+                  Namaste! Main aapka AI Engineering learning companion hoon. Standard textbook lectures ke bajaye, hum continuous real-world situations, problem intuition, aur direct engineering reveals ke through sikhate hain.
+                </p>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={() => {
+                  setShowIntro(false);
+                  unlockAudioEngine();
+                  speakCurrentParagraph(sceneIdx, 0);
+                }}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-sm shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 ring-4 ring-amber-400/20"
+              >
+                <Play size={18} className="fill-current ml-0.5" />
+                <span>Start Audio Journey 🎧</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main Spoken Text & Soundwave Stage */}
       <div className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-8 py-4 flex flex-col items-center justify-between max-w-3xl mx-auto w-full my-auto">
-        
+
         {/* Spoken Text Reveal */}
         <AnimatePresence mode="wait">
-          {isSwitchingVoice ? (
-            <div key="loader" className="flex items-center gap-2 text-xs font-bold text-amber-400 py-6 my-auto">
-              <RefreshCw size={18} className="animate-spin" />
-              <span>Switching Voice Engine...</span>
-            </div>
-          ) : (
-            <motion.div
-              key={`${sceneIdx}-${paragraphIdx}`}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="text-center space-y-3 max-h-[240px] overflow-y-auto w-full px-2 py-2 my-auto"
-            >
-              {/* Dynamic Section Badge Header */}
-              {activeText.includes("पिछले सीन में") ? (
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs">
-                  <span>🔄 Previous Scene Recap</span>
-                </div>
-              ) : activeText.includes("ज़रूरत क्यों है") ? (
+          <motion.div
+            key={`${sceneIdx}-${paragraphIdx}`}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.2 }}
+            className="text-center space-y-3 max-h-[240px] overflow-y-auto w-full px-2 py-2 my-auto"
+          >
+              {/* Contextual Narrative Badge Header */}
+              {activeText.includes("लर्निंग कंपैनियन") || activeText.includes("सफ़र") ? (
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
-                  <span>🎯 Necessity & Purpose</span>
+                  <span>🚀 Orientation & Master Roadmap</span>
                 </div>
-              ) : activeText.includes("रीयल-लाइफ़ कहानी") ? (
+              ) : activeText.includes("सबसे पहले सीन") || activeText.includes("सीन में हम समझे") || activeText.includes("शुरुआत करते हैं") || activeText.includes("अगला बड़ा सवाल") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-xs">
+                  <span>🎯 Topic Context</span>
+                </div>
+              ) : activeText.includes("पिछली बार") || activeText.includes("लास्ट सीन") || activeText.includes("पिछली गुत्थी") || activeText.includes("अभी तक की कहानी") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-xs">
+                  <span>🔄 Memory Bridge</span>
+                </div>
+              ) : activeText.includes("ज़रूरत") || activeText.includes("परेशानी") || activeText.includes("कमी थी") || activeText.includes("असली मुद्दा") || activeText.includes("असली चुनौती") || activeText.includes("नौबत") || activeText.includes("पुरानी सिस्टम") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
+                  <span>💡 Necessity & Intent</span>
+                </div>
+              ) : activeText.includes("मिसाल") || activeText.includes("कहानी") || activeText.includes("सिचुएशन") || activeText.includes("सिनेरियो") || activeText.includes("इमेजिन") ? (
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-xs">
-                  <span>📖 Intuitive Story Analogy</span>
+                  <span>📖 Intuitive Analogy</span>
                 </div>
-              ) : activeText.includes("कोर कांसेप्ट्स") ? (
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-xs">
-                  <span>💡 Core Concept Explanation</span>
-                </div>
-              ) : activeText.includes("एग्जाम में सवाल") ? (
+              ) : activeText.includes("इंटरव्यू") || activeText.includes("सवाल") || activeText.includes("एग्ज़ामिनर") || activeText.includes("ट्रिकी") ? (
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-xs">
                   <span>❓ Direct Exam Question</span>
                 </div>
-              ) : activeText.includes("key fact") || activeText.includes("direct answer") ? (
+              ) : activeText.includes("direct answer") || activeText.includes("क्रिस्टल-क्लियर") || activeText.includes("बाज़ी") || activeText.includes("टेकअवे") || activeText.includes("सटीक जवाब") || activeText.includes("चाबी") ? (
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-xs">
                   <span>⚡ High-Yield Key Fact</span>
                 </div>
-              ) : activeText.includes("समझ में आया") ? (
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
-                  <span>❓ Scene Check-In</span>
+              ) : activeText.includes("क्लियर है") || activeText.includes("तैयार हैं") || activeText.includes("सेट हो गया") ? (
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-xs">
+                  <span>💬 Companion Check-In</span>
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest px-3 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10">
-                  <span>🎙️ Voice Companion</span>
+                  <span>🧠 Concept Reveal</span>
                 </div>
               )}
 
-              <p className={`text-base sm:text-lg font-medium leading-relaxed tracking-wide select-text mt-2 ${
-                activeText.includes("पिछले सीन में")
-                  ? "text-indigo-200 font-medium text-sm sm:text-base"
-                  : activeText.includes("अरे वाह!")
-                  ? "text-amber-300 font-bold"
-                  : activeText.includes("समझ में आया")
+              <p className={`text-base sm:text-lg font-medium leading-relaxed tracking-wide select-text mt-2 ${activeText.includes("पिछली बार")
+                ? "text-indigo-200 font-medium text-sm sm:text-base"
+                : activeText.includes("क्लियर है")
                   ? "text-amber-200 font-bold text-base sm:text-lg"
                   : "text-gray-100"
-              }`}>
+                }`}>
                 {activeText.slice(0, revealedChars)}
                 {revealedChars < activeText.length && (
-                  <span className={`inline-block w-1.5 h-4 ml-1 animate-pulse align-middle ${
-                    personaMode === "female" ? "bg-purple-400" : "bg-sky-400"
-                  }`} />
+                  <span className="inline-block w-1.5 h-4 ml-1 animate-pulse align-middle bg-purple-400" />
                 )}
               </p>
             </motion.div>
-          )}
         </AnimatePresence>
 
         {/* Dynamic Soundwave Equalizer */}
@@ -789,11 +913,7 @@ export default function ExamReadinessDreamPage({
           {[40, 75, 100, 65, 95, 50, 85, 60, 90, 45, 70].map((h, i) => (
             <motion.div
               key={i}
-              className={`w-1 rounded-full ${
-                personaMode === "female"
-                  ? "bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.6)]"
-                  : "bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.6)]"
-              }`}
+              className="w-1 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.6)]"
               animate={{
                 height: isSpeaking && !isPaused ? [`${h * 0.25}%`, `${h}%`, `${h * 0.35}%`] : "6px",
               }}
@@ -807,7 +927,7 @@ export default function ExamReadinessDreamPage({
           ))}
         </div>
 
-        {/* End of Scene Check-In Modal */}
+        {/* Natural Companion Check-In Modal */}
         <AnimatePresence>
           {isFinalParagraph && !isSpeaking && !isPaused && (
             <motion.div
@@ -817,36 +937,29 @@ export default function ExamReadinessDreamPage({
               className="mt-3 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-zinc-900 to-slate-900 border border-amber-500/40 shadow-2xl text-center space-y-3 w-full max-w-md mx-auto shrink-0"
             >
               <div className="flex items-center justify-center gap-2 text-amber-300 font-black text-xs sm:text-base">
-                <span>❓ Kya tumko ye scene samajh aaya?</span>
+                <span>💬 Yahan tak clear hai, दोस्त?</span>
               </div>
-              <p className="text-[11px] text-gray-300 font-medium">
-                Apna response chunen:
-              </p>
 
-              {/* Yes & No Options Grid */}
+              {/* Conversational Action Buttons */}
               <div className="grid grid-cols-2 gap-2.5 pt-1">
-                {/* NO Option */}
+                {/* Replay Scene */}
                 <button
                   onClick={handleNoResponse}
                   className="py-2.5 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-105"
-                  title="Nahi, phir se samjhao"
+                  title="Ruko, phir se batao"
                 >
-                  <ThumbsDown size={14} />
-                  <span>Nahi, Phir Se Samjhao ↺</span>
+                  <RotateCcw size={14} />
+                  <span>Ruko, Phir Se Batao ↺</span>
                 </button>
 
-                {/* YES Option */}
+                {/* Advance to Next Scene */}
                 <button
                   onClick={handleYesResponse}
-                  className={`py-2.5 px-3 rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5 hover:scale-105 ${
-                    personaMode === "female"
-                      ? "bg-purple-500 hover:bg-purple-400 text-white"
-                      : "bg-sky-500 hover:bg-sky-400 text-slate-950"
-                  }`}
-                  title="Haan, samajh aaya"
+                  className="py-2.5 px-3 rounded-xl font-black text-xs transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5 hover:scale-105 bg-purple-500 hover:bg-purple-400 text-white"
+                  title="Haan, chalo aage"
                 >
                   <ThumbsUp size={14} />
-                  <span>Haan, Samajh Aaya! →</span>
+                  <span>Haan, Chalo Aage! →</span>
                 </button>
               </div>
             </motion.div>
@@ -856,25 +969,21 @@ export default function ExamReadinessDreamPage({
 
       {/* Bottom Control Bar with Audio Progress Time Bar */}
       <div className="relative z-10 shrink-0 px-4 py-3 bg-black/95 backdrop-blur-xl border-t border-white/10 flex flex-col items-center gap-2 max-w-3xl mx-auto w-full rounded-t-2xl shadow-2xl">
-        
-          {/* Visual Audio Time Progress Bar */}
-          <div className="w-full">
-            <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 mb-1">
-              <span className="flex items-center gap-1">
-                <Clock size={10} className={isSpeaking && !isPaused ? "animate-spin text-amber-400" : "text-amber-400"} />
-                {formatTime(elapsedSeconds)}
-              </span>
-              <span className="text-amber-300/80 font-bold">{formatTime(totalSeconds)}</span>
-            </div>
+
+        {/* Visual Audio Time Progress Bar */}
+        <div className="w-full">
+          <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 mb-1">
+            <span className="flex items-center gap-1">
+              <Clock size={10} className={isSpeaking && !isPaused ? "animate-spin text-amber-400" : "text-amber-400"} />
+              {formatTime(elapsedSeconds)}
+            </span>
+            <span className="text-amber-300/80 font-bold">{formatTime(totalSeconds)}</span>
+          </div>
+          <div
+            className="relative w-full h-2 rounded-full bg-white/15 overflow-hidden"
+          >
             <div
-              className="relative w-full h-2 rounded-full bg-white/15 overflow-hidden"
-            >
-            <div
-              className={`h-full transition-all duration-200 ${
-                personaMode === "female"
-                  ? "bg-gradient-to-r from-purple-500 via-pink-400 to-amber-300 shadow-[0_0_8px_rgba(232,121,249,0.8)]"
-                  : "bg-gradient-to-r from-sky-500 via-cyan-400 to-amber-300 shadow-[0_0_8px_rgba(56,189,248,0.8)]"
-              }`}
+              className="h-full transition-all duration-200 bg-gradient-to-r from-purple-500 via-pink-400 to-amber-300 shadow-[0_0_8px_rgba(232,121,249,0.8)]"
               style={{ width: `${sceneProgressPct}%` }}
             />
           </div>
@@ -895,15 +1004,12 @@ export default function ExamReadinessDreamPage({
           {/* Main Play / Pause Button */}
           <button
             onClick={handlePlayPause}
-            className={`px-6 py-2.5 rounded-2xl text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all hover:scale-105 cursor-pointer min-w-[140px] justify-center ${
-              isSpeaking
-                ? personaMode === "female"
-                  ? "bg-purple-400 hover:bg-purple-300"
-                  : "bg-sky-400 hover:bg-sky-300"
-                : isPaused
+            className={`px-6 py-2.5 rounded-2xl text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all hover:scale-105 cursor-pointer min-w-[140px] justify-center ${isSpeaking
+              ? "bg-purple-400 hover:bg-purple-300"
+              : isPaused
                 ? "bg-amber-400 hover:bg-amber-300"
                 : "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:scale-105 ring-4 ring-amber-400/30 animate-pulse"
-            }`}
+              }`}
           >
             {isSpeaking ? (
               <>

@@ -6,8 +6,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import quizApi from "../../api/quizApi";
 import socialApi from "../../api/socialApi";
 import syllabusApi from "../../api/syllabusApi";
+import QuizShareModal from "./QuizShareModal";
 import { useMindModel } from "../../context/MindModelContext";
-import { ArrowLeft, RefreshCw, ArrowRight, CheckCircle2, HelpCircle, XCircle, Award, Check, X } from "lucide-react";
+import { ArrowLeft, RefreshCw, ArrowRight, CheckCircle2, HelpCircle, XCircle, Award, Check, X, Share2, Sparkles } from "lucide-react";
 
 const OPTIONS = ["A", "B", "C", "D"];
 const MAIN = "__main__";
@@ -110,27 +111,8 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
     }
   };
 
-  const [strategyNote, setStrategyNote] = useState("");
   const [sharedStrategy, setSharedStrategy] = useState(false);
-
-  const handleShareStrategy = async () => {
-    if (!strategyNote.trim() || sharedStrategy) return;
-    try {
-      await socialApi.createPost({
-        content: strategyNote.trim(),
-        concept: conceptId,
-        source: "quiz",
-        content_type: "strategy",
-        post_metadata: {
-          score: `${correctCount} / ${totalCount}`,
-          concept_name: conceptDetail?.name || "Concept Quiz",
-        },
-      });
-      setSharedStrategy(true);
-    } catch (err) {
-      console.error("Failed to share strategy:", err);
-    }
-  };
+  const [showShareModal, setShowShareModal] = useState(false);
 
   /* ═══ RESULT & QUESTION REVIEW SCREEN ═══ */
   if (result) {
@@ -168,28 +150,34 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
               </div>
             </div>
 
-            {/* Optional Non-Intrusive Strategy Reflection */}
-            <div className="p-4 rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-2 text-left">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[var(--color-text-primary)]">What did this attempt teach you?</span>
-                <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold">Optional Strategy Note</span>
+            {/* Share Learning & Strategy Hero Card */}
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-gold)]/30 hover:border-[var(--color-gold)]/60 transition-all shadow-xs">
+              <div className="flex items-center gap-3 text-left min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--color-gold-pale)] to-[var(--color-gold)]/20 text-[var(--color-gold-dark)] flex items-center justify-center font-bold shrink-0 border border-[var(--color-gold)]/30 shadow-xs">
+                  <Sparkles size={18} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-black text-[var(--color-text-primary)] block truncate">
+                    Share Learning & Strategy
+                  </span>
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium block truncate">
+                    Post your score ({correctCount}/{totalCount}) & takeaways to World feed
+                  </span>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. Next time I will draw FBD before solving force pairs..."
-                  value={strategyNote}
-                  onChange={(e) => setStrategyNote(e.target.value)}
-                  className="input-field py-1.5 text-xs flex-1"
-                />
+              {sharedStrategy ? (
+                <span className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-xs">
+                  <Check size={14} className="stroke-[3]" /> Shared ✓
+                </span>
+              ) : (
                 <button
-                  onClick={handleShareStrategy}
-                  disabled={!strategyNote.trim() || sharedStrategy}
-                  className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 cursor-pointer disabled:opacity-40"
+                  onClick={() => setShowShareModal(true)}
+                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shrink-0 cursor-pointer shadow-xs hover:brightness-105 active:scale-[0.98] transition-all"
                 >
-                  {sharedStrategy ? "Shared ✓" : "Share Strategy"}
+                  <Share2 size={13} />
+                  <span>Share Strategy</span>
                 </button>
-              </div>
+              )}
             </div>
 
             {/* Action Buttons Header */}
@@ -313,6 +301,18 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
               );
             })}
           </div>
+
+        {/* Tailored Quiz Attempt Share Modal */}
+        <QuizShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          conceptId={conceptId || conceptDetail?.id}
+          conceptName={conceptDetail?.name || result?.concept_name || "Concept Quiz"}
+          correctCount={correctCount}
+          totalCount={totalCount}
+          answersList={answersList}
+          onPostCreated={() => setSharedStrategy(true)}
+        />
 
         </div>
       </div>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import socialApi from "../../api/socialApi";
 import Modal from "../ui/Modal";
 import { Send, Loader2, MessageSquare } from "lucide-react";
 
 export default function Comments({ postId, post, isOpen, onClose, initialComments = [], isInline = false }) {
+  const navigate = useNavigate();
   const [comments, setComments] = useState(initialComments);
   const [txt, setTxt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,12 +57,20 @@ export default function Comments({ postId, post, isOpen, onClose, initialComment
         ) : (
           comments.map((c) => (
             <div key={c.id || Math.random()} className="flex gap-3 items-start text-xs">
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm">
+              <div
+                onClick={() => c.user?.id && navigate(`/user/${c.user.id}`)}
+                className="w-7 h-7 rounded-full bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30 flex items-center justify-center font-bold text-[10px] shrink-0 cursor-pointer"
+              >
                 {c.user?.username?.charAt(0).toUpperCase() || "P"}
               </div>
-              <div className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl p-3 shadow-inner">
+              <div className="flex-1 bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded-xl p-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-amber-400">{c.user?.username || "Peer"}</span>
+                  <span
+                    onClick={() => c.user?.id && navigate(`/user/${c.user.id}`)}
+                    className="font-bold text-[var(--color-text-primary)] hover:text-[var(--color-gold-dark)] transition-colors cursor-pointer"
+                  >
+                    {c.user?.username || "Peer"}
+                  </span>
                   <span className="text-[9px] text-slate-500">
                     {c.created_at ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
                   </span>

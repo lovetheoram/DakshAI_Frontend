@@ -9,18 +9,21 @@ export default function FollowButton({ userId, isFollowing }) {
     setFollow(isFollowing);
   }, [isFollowing]);
 
-  const toggle = async () => {
-    if (loading) return;
+  const toggle = async (e) => {
+    if (e) e.stopPropagation();
+    if (loading || !userId) return;
     setLoading(true);
+    const previousState = follow;
+    setFollow(!previousState);
     try {
-      if (follow) {
+      if (previousState) {
         await socialApi.unfollowUser(userId);
       } else {
         await socialApi.followUser(userId);
       }
-      setFollow(!follow);
     } catch (err) {
       console.error("Failed to toggle follow status:", err);
+      setFollow(previousState);
     } finally {
       setLoading(false);
     }

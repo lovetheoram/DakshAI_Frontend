@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MessageSquare, Heart, Bookmark, Award, Sparkles, ArrowLeft, Loader2, UserCheck } from "lucide-react";
+import { MessageSquare, ArrowLeft, Loader2, UserCheck, UserPlus, Lock, Clock, Check, X } from "lucide-react";
 import socialApi from "../../api/socialApi";
-import FollowButton from "./FollowButton";
 import PostCard from "./PostCard";
 
 export default function ProfilePage() {
@@ -11,6 +10,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState("none"); // "none" | "pending" | "incoming_pending" | "accepted" | "rejected"
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -27,16 +28,16 @@ export default function ProfilePage() {
 
         const id = raw.user?.id || raw.id || rawData.user?.id || rawData.id;
         const username = raw.user?.username || raw.username || rawData.user?.username || rawData.username;
-        const is_following = raw.is_following ?? raw.user?.is_following ?? rawData.is_following ?? rawData.user?.is_following;
-        const is_self = raw.is_self ?? raw.user?.is_self ?? rawData.is_self ?? rawData.user?.is_self;
+        const status = raw.connection_status || (raw.user?.is_following ? "accepted" : "none");
+        const is_self = raw.is_self ?? raw.user?.is_self ?? rawData.is_self ?? rawData.user?.is_self ?? false;
 
         setProfile({
           ...raw,
           id,
           username,
-          is_following,
           is_self,
         });
+        setConnectionStatus(status);
       })
       .catch((err) => {
         console.error("Error loading user profile:", err);
@@ -54,22 +55,61 @@ export default function ProfilePage() {
       });
   }, [userId]);
 
+  const handleSendConnect = async () => {
+    if (actionLoading || !profile?.id) return;
+    setActionLoading(true);
+    try {
+      const res = await socialApi.followUser(profile.id);
+      setConnectionStatus(res.data?.connection_status || "pending");
+    } catch (err) {
+      console.error("Connection request failed:", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAcceptConnection = async () => {
+    if (actionLoading || !profile?.id) return;
+    setActionLoading(true);
+    try {
+      const res = await socialApi.acceptConnection(profile.id, "accept");
+      setConnectionStatus(res.data?.connection_status || "accepted");
+    } catch (err) {
+      console.error("Accept connection failed:", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectOrDisconnect = async () => {
+    if (actionLoading || !profile?.id) return;
+    setActionLoading(true);
+    try {
+      const res = await socialApi.acceptConnection(profile.id, "reject");
+      setConnectionStatus(res.data?.connection_status || "rejected");
+    } catch (err) {
+      console.error("Reject connection failed:", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3">
-        <Loader2 size={24} className="animate-spin text-amber-500" />
-        <p className="text-xs text-slate-400 font-medium">Loading user profile...</p>
+        <Loader2 size={24} className="animate-spin text-[var(--color-gold)]" />
+        <p className="text-xs text-[var(--color-text-secondary)] font-medium">Loading learner profile...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="max-w-2xl mx-auto p-8 text-center bg-slate-900/60 rounded-3xl border border-slate-800 shadow-xl">
-        <h2 className="text-xl font-bold text-slate-200">User not found</h2>
+      <div className="max-w-2xl mx-auto p-8 text-center daksh-card space-y-4">
+        <h2 className="text-lg font-bold text-[var(--color-text-primary)]">User not found</h2>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-2 rounded-xl text-xs font-bold hover:shadow-lg transition cursor-pointer"
+          className="btn-gold px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
         >
           Go Back
         </button>
@@ -77,97 +117,168 @@ export default function ProfilePage() {
     );
   }
 
+  const isAccepted = connectionStatus === "accepted";
+  const isPending = connectionStatus === "pending";
+  const isIncomingPending = connectionStatus === "incoming_pending";
+
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 min-h-screen bg-slate-950 text-slate-100 space-y-6">
+    <div className="max-w-3xl mx-auto p-4 sm:p-6 min-h-screen space-y-6 select-none">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-slate-400 hover:text-amber-400 text-xs font-semibold transition cursor-pointer"
+        className="flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-xs font-semibold transition cursor-pointer"
       >
         <ArrowLeft size={16} />
-        Back to Social
+        <span>Back</span>
       </button>
 
       {/* Header Profile Card */}
-      <div className="bg-slate-900/80 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6">
+      <div className="daksh-card p-6 sm:p-8 rounded-2xl border border-[var(--color-border)] relative overflow-hidden space-y-6">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="w-24 h-24 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-lg border border-amber-400/30">
+            <div className="w-20 h-20 rounded-full bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/40 flex items-center justify-center font-bold text-2xl shadow-xs">
               {profile.username?.charAt(0).toUpperCase() || "U"}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-slate-900" title="Active learner"></div>
           </div>
 
           {/* Details */}
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-100 flex items-center justify-center md:justify-start gap-2.5">
-              {profile.username}
+          <div className="flex-1 text-center md:text-left space-y-2">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
+                {profile.username}
+              </h1>
               {profile.is_self && (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                <span className="text-[10px] bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
                   You
                 </span>
               )}
-            </h1>
-            <p className="text-xs text-slate-400 font-medium mt-1">DakshAI Peer Explorer</p>
-            <p className="text-slate-300 text-xs mt-3 max-w-xl mx-auto md:mx-0 leading-relaxed">
-              {profile.bio || "No bio set yet. Dedicated student pushing limits in concept mastery."}
+              {profile.exam_name && (
+                <span className="text-[10px] bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] border border-[var(--color-border)] px-2.5 py-0.5 rounded-full font-semibold">
+                  {profile.exam_name}
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed max-w-xl mx-auto md:mx-0 font-normal">
+              {profile.bio || "Learner pushing boundaries in concept understanding."}
             </p>
 
             {/* Stats */}
-            <div className="flex justify-center md:justify-start gap-8 mt-6 border-t border-slate-800 pt-5">
-              <div className="text-center">
-                <span className="block text-lg font-black text-amber-400">{posts.length}</span>
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Posts</span>
+            <div className="flex justify-center md:justify-start gap-8 pt-4 border-t border-[var(--color-border)]">
+              <div className="text-center md:text-left">
+                <span className="block text-base font-bold text-[var(--color-text-primary)]">{posts.length}</span>
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase font-semibold">Posts</span>
               </div>
-              <div className="text-center">
-                <span className="block text-lg font-black text-amber-400">{profile.followers_count || 0}</span>
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Followers</span>
-              </div>
-              <div className="text-center">
-                <span className="block text-lg font-black text-amber-400">{profile.following_count || 0}</span>
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Following</span>
+              <div className="text-center md:text-left">
+                <span className="block text-base font-bold text-[var(--color-text-primary)]">
+                  {profile.followers_count || 0}
+                </span>
+                <span className="text-[10px] text-[var(--color-text-secondary)] uppercase font-semibold">Connections</span>
               </div>
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Connect & Message Actions */}
           {!profile.is_self && (
-            <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto mt-4 md:mt-0 shrink-0">
-              <FollowButton userId={profile.id} isFollowing={profile.is_following} />
-              
-              <button
-                onClick={() => navigate(`/messages/${profile.id}`)}
-                className="flex-1 md:flex-initial flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 px-5 py-2.5 rounded-xl transition text-xs font-bold cursor-pointer"
-              >
-                <MessageSquare size={15} className="text-amber-400" />
-                Message
-              </button>
+            <div className="flex flex-col gap-2.5 w-full md:w-auto mt-4 md:mt-0 shrink-0">
+              {/* Connection Action Button */}
+              {isAccepted ? (
+                <button
+                  onClick={handleRejectOrDisconnect}
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:text-[var(--color-danger)] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Click to disconnect"
+                >
+                  <UserCheck size={14} className="text-[var(--color-gold-dark)]" />
+                  <span>Connected</span>
+                </button>
+              ) : isPending ? (
+                <button
+                  onClick={handleRejectOrDisconnect}
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--color-bg-primary)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Click to cancel connection request"
+                >
+                  <Clock size={13} className="animate-pulse" />
+                  <span>Request Pending</span>
+                </button>
+              ) : isIncomingPending ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleAcceptConnection}
+                    disabled={actionLoading}
+                    className="btn-gold px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Check size={14} />
+                    <span>Accept</span>
+                  </button>
+                  <button
+                    onClick={handleRejectOrDisconnect}
+                    disabled={actionLoading}
+                    className="px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:text-[var(--color-danger)] cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleSendConnect}
+                  disabled={actionLoading}
+                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {actionLoading ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <>
+                      <UserPlus size={14} />
+                      <span>Connect</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Message Button (Enabled only when Accepted) */}
+              {isAccepted ? (
+                <button
+                  onClick={() => navigate(`/messages/${profile.id}`)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <MessageSquare size={14} />
+                  <span>Message</span>
+                </button>
+              ) : (
+                <div
+                  className="px-4 py-2 rounded-xl text-[11px] font-semibold bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] border border-[var(--color-border)] opacity-75 flex items-center justify-center gap-1.5"
+                  title="Connection must be accepted before direct messaging is unlocked"
+                >
+                  <Lock size={12} />
+                  <span>{isPending ? "Pending approval" : "Connect to message"}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* User's Posts */}
-      <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
-        <Sparkles className="text-amber-400" size={18} />
-        Recent Posts
-      </h2>
-      
-      {posts.length === 0 ? (
-        <div className="bg-slate-900/60 rounded-3xl p-8 text-center border border-slate-800">
-          <p className="text-slate-400 text-xs font-medium">No updates or posts shared yet by this peer.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-      )}
+      {/* User's Posts Stream */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-bold text-[var(--color-text-primary)]">
+          Activity & Reflections
+        </h2>
+
+        {posts.length === 0 ? (
+          <div className="py-8 text-center border border-[var(--color-border)] rounded-2xl">
+            <p className="text-xs text-[var(--color-text-secondary)]">No posts shared yet by this peer.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[var(--color-border)]">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

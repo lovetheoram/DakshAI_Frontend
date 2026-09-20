@@ -6,16 +6,10 @@ const socialApi = {
   // ======================================================
   // POSTS
   // ======================================================
-
-  // Feed (optional concept filter)
-  // getPosts: (conceptId = null) =>
-  //   axiosClient.get(`${BASE}/posts/`, {
-  //     params: conceptId ? { concept_id: conceptId } : {},
-  //   }),
   getPosts: (filters = {}) =>
-  axiosClient.get(`${BASE}/posts/`, {
-    params: filters,
-  }),
+    axiosClient.get(`${BASE}/posts/`, {
+      params: filters,
+    }),
 
   getPost: (postId) => axiosClient.get(`${BASE}/posts/${postId}/`),
 
@@ -41,10 +35,16 @@ const socialApi = {
     axiosClient.get(`${BASE}/posts/${postId}/comments/list/`),
 
   // ======================================================
-  // FOLLOW
+  // FOLLOW & CONNECTIONS
   // ======================================================
   followUser: (userId) =>
     axiosClient.post(`${BASE}/users/${userId}/follow/`),
+
+  acceptConnection: (userId, action = "accept") =>
+    axiosClient.post(`${BASE}/users/${userId}/accept-connection/`, { action }),
+
+  getConnections: () =>
+    axiosClient.get(`${BASE}/connections/`),
 
   unfollowUser: (userId) =>
     axiosClient.delete(`${BASE}/users/${userId}/follow/`),
@@ -72,8 +72,6 @@ const socialApi = {
   sendMessage: (userId, text) =>
     axiosClient.post(`${BASE}/messages/${userId}/send/`, { text }),
 
- 
-
   getMessages: (userId) =>
     axiosClient.get(`${BASE}/messages/${userId}/`),
 
@@ -90,7 +88,7 @@ const socialApi = {
     axiosClient.get(`${BASE}/users/suggested/`),
 
   // ======================================================
-  // MULTIPLAYER LEARNING WORLD (DakshAI Social v4)
+  // MULTIPLAYER LEARNING WORLD
   // ======================================================
   getLobby: () =>
     axiosClient.get(`${BASE}/lobby/`),
@@ -107,21 +105,8 @@ const socialApi = {
   performTicketAction: (ticketId, action) =>
     axiosClient.post(`${BASE}/exchange/tickets/${ticketId}/action/`, { action }),
 
-  getMentorshipTickets: () =>
-    axiosClient.get(`${BASE}/exchange/tickets/`),
-
-  createMentorshipTicket: (conceptId, topicTitle, problemDescription) =>
-    axiosClient.post(`${BASE}/exchange/tickets/`, {
-      concept_id: conceptId,
-      topic_title: topicTitle,
-      problem_description: problemDescription,
-    }),
-
-  takeMentorshipAction: (ticketId, action) =>
-    axiosClient.post(`${BASE}/exchange/tickets/${ticketId}/action/`, { action }),
-
   // ======================================================
-  // CONCEPT SPARKS & DETERMINISTIC INSIGHTS
+  // CONCEPT SPARKS & INSIGHTS
   // ======================================================
   getConceptSparks: (conceptId) =>
     axiosClient.get(`${BASE}/concept-sparks/${conceptId}/`),

@@ -20,7 +20,7 @@ export default function BeyondConceptSection({ conceptId, conceptName }) {
         setLoadingPosts(true);
         let res = conceptId ? await socialApi.getPosts({ concept_id: conceptId, page_size: 4 }) : null;
         let posts = res?.data?.posts || [];
-        
+
         // Fallback: if no posts tagged specifically to this concept ID, load recent community posts
         if (posts.length === 0) {
           const fallbackRes = await socialApi.getPosts({ page_size: 3 });
@@ -39,7 +39,7 @@ export default function BeyondConceptSection({ conceptId, conceptName }) {
 
   return (
     <div className="pt-6 border-t border-[var(--color-border)] select-none">
-      
+
       {/* ── WHAT OTHER LEARNERS FOUND (Organic Bridge to World) ── */}
       <div className="space-y-3 daksh-card p-5 border-l-2 border-l-[var(--color-gold)]">
         <div className="flex items-center justify-between">
@@ -73,7 +73,12 @@ export default function BeyondConceptSection({ conceptId, conceptName }) {
             {learnerPosts.slice(0, 3).map((post) => (
               <div key={post.id} className="p-3 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-[var(--color-text-primary)]">{post.user?.username || "Learner"}</span>
+                  <span
+                    onClick={() => post.user?.id && navigate(`/user/${post.user.id}`)}
+                    className="font-bold text-[var(--color-text-primary)] hover:text-[var(--color-gold-dark)] transition-colors cursor-pointer"
+                  >
+                    {post.user?.username || "Learner"}
+                  </span>
                   <span className="text-[9px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2 py-0.5 rounded-md uppercase">
                     {post.content_type === "strategy" ? "Strategy" : "Learning"}
                   </span>

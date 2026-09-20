@@ -1,13 +1,13 @@
 // src/components/social/FeedPage.jsx
-// World Activity Stream — 2-Scope Text Switcher, Concept Filter & Progressive Editorial Feed.
+// World Activity Stream — Lightweight Human Editorial Feed & Quiet Concept Filtering.
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import socialApi from "../../api/socialApi";
 import PostCard from "./PostCard";
 import CreatePost from "./CreatePost";
 import Modal from "../ui/Modal";
-import { Loader2, PenSquare, X } from "lucide-react";
+import { Loader2, PenSquare } from "lucide-react";
 
 export default function FeedPage({ initialScope = "my_world" }) {
   const navigate = useNavigate();
@@ -23,9 +23,22 @@ export default function FeedPage({ initialScope = "my_world" }) {
   const [hasMore, setHasMore] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // In-memory feed cache by scope key to make scope switching immediate
+  const feedCache = useRef({});
+
   const fetchFeed = useCallback(async (targetScope, pageNum = 1, append = false) => {
-    if (pageNum === 1) setLoading(true);
-    else setFetchingMore(true);
+    const cacheKey = `${targetScope}_${conceptId || "all"}`;
+    
+    // If initial fetch and we have cached posts, use them immediately for instantaneous switch
+    if (pageNum === 1 && !append && feedCache.current[cacheKey]) {
+      setPosts(feedCache.current[cacheKey].posts);
+      setHasMore(feedCache.current[cacheKey].hasMore);
+      setLoading(false);
+    } else if (pageNum === 1) {
+      setLoading(true);
+    } else {
+      setFetchingMore(true);
+    }
 
     try {
       const params = {
@@ -43,14 +56,19 @@ export default function FeedPage({ initialScope = "my_world" }) {
       const more = data.has_more ?? false;
 
       if (append) {
-        setPosts((prev) => [...prev, ...newPosts]);
+        setPosts((prev) => {
+          const updated = [...prev, ...newPosts];
+          feedCache.current[cacheKey] = { posts: updated, hasMore: more };
+          return updated;
+        });
       } else {
         setPosts(newPosts);
+        feedCache.current[cacheKey] = { posts: newPosts, hasMore: more };
       }
       setHasMore(more);
     } catch (err) {
       console.error("Error fetching feed:", err);
-      if (!append) setPosts([]);
+      if (!append && !feedCache.current[cacheKey]) setPosts([]);
     } finally {
       setLoading(false);
       setFetchingMore(false);
@@ -82,8 +100,8 @@ export default function FeedPage({ initialScope = "my_world" }) {
 
   return (
     <div className="space-y-4 select-none">
-      {/* 1. Context Switcher & Top Action */}
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2.5">
+      {/* 1. Scope Switcher & Top Action */}
+      <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-2">
         <div className="flex items-center gap-6">
           <button
             onClick={() => setScope("my_world")}
@@ -114,34 +132,32 @@ export default function FeedPage({ initialScope = "my_world" }) {
           </button>
         </div>
 
-        {/* Share Button */}
+        {/* Share Action */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+          className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
         >
           <PenSquare size={13} />
           <span>Share</span>
         </button>
       </div>
 
-      {/* 2. Active Concept Filter Bar (if filtered from Concept Page) */}
+      {/* 2. Quiet Active Concept Filter Header (Section 11) */}
       {conceptId && (
-        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--color-gold-pale)]/60 border border-[var(--color-gold)]/30 text-xs">
-          <span className="font-bold text-[var(--color-text-primary)] flex items-center gap-1.5">
-            <span>Filtered by concept:</span>
-            <span className="text-[var(--color-gold-dark)]">{conceptName || "Concept"}</span>
+        <div className="flex items-center justify-between py-2 border-b border-[var(--color-border)] text-xs">
+          <span className="font-semibold text-[var(--color-text-primary)]">
+            {conceptName || "Concept"}
           </span>
           <button
             onClick={clearConceptFilter}
-            className="p-1 rounded-lg text-[var(--color-gold-dark)] hover:bg-[var(--color-gold)]/20 transition-all cursor-pointer"
-            title="Clear concept filter"
+            className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] cursor-pointer font-medium"
           >
-            <X size={14} />
+            × Clear filter
           </button>
         </div>
       )}
 
-      {/* 3. Create Post Modal Drawer */}
+      {/* Create Post Modal Drawer */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Share Learner Experience">
         <CreatePost
           onPostCreated={(newPost) => {
@@ -151,18 +167,18 @@ export default function FeedPage({ initialScope = "my_world" }) {
         />
       </Modal>
 
-      {/* 4. Feed Activity Stream */}
+      {/* 3. Feed Stream */}
       <div className="min-h-[250px]">
-        {loading ? (
+        {loading && posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-2">
             <Loader2 size={18} className="animate-spin text-[var(--color-gold)]" />
             <p className="text-xs text-[var(--color-mid-gray)]">Gathering learner experiences...</p>
           </div>
         ) : posts.length === 0 ? (
-          <div className="py-12 px-4 text-center space-y-3 daksh-card p-6">
+          <div className="py-12 text-center space-y-2">
             {conceptId ? (
               <>
-                <p className="text-xs text-[var(--color-text-primary)] font-bold">
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
                   No notes shared yet for {conceptName || "this concept"}.
                 </p>
                 <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
@@ -177,34 +193,38 @@ export default function FeedPage({ initialScope = "my_world" }) {
               </>
             ) : scope === "my_world" ? (
               <>
-                <p className="text-xs text-[var(--color-text-primary)] font-bold">Your learning world is quiet.</p>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Your learning world is still quiet.
+                </p>
                 <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
-                  Start studying concepts or following peers to see updates from your immediate learning circle.
+                  Follow people you find useful, or keep learning and your world will grow with you.
                 </p>
                 <button
                   onClick={() => navigate("/learn")}
-                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer mt-2"
+                  className="text-xs font-bold text-[var(--color-gold-dark)] hover:underline inline-flex items-center gap-1 cursor-pointer mt-3"
                 >
-                  <span>Continue learning</span>
+                  <span>Continue learning →</span>
                 </button>
               </>
             ) : (
               <>
-                <p className="text-xs text-[var(--color-text-primary)] font-bold">No public updates found.</p>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  There's more to discover.
+                </p>
                 <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto">
-                  Check back later or share your own experience with the community.
+                  Explore what other learners are building, learning, and figuring out.
                 </p>
               </>
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div>
             {posts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
 
             {hasMore && (
-              <div className="pt-4 text-center">
+              <div className="py-6 text-center">
                 <button
                   onClick={handleLoadMore}
                   disabled={fetchingMore}

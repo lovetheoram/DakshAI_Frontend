@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthContext } from "../../context/AuthContext";
 import progressApi from "../../api/progressApi";
@@ -16,24 +16,31 @@ import {
   Clock,
   Check,
   X,
+  Flame,
+  Award,
+  BarChart2,
+  Calendar,
+  Activity,
 } from "lucide-react";
 
-// Core Navigation Rooms: Home, Learn, World, Profile (Map POC is in top header)
+// Core Navigation Rooms: Home, Learn, World, Map
 const NAV_ITEMS = [
-  { to: "/",        icon: Home,     label: "Home" },
-  { to: "/learn",   icon: BookOpen, label: "Learn" },
-  { to: "/world",   icon: Globe,    label: "World" },
-  { to: "/profile", icon: User,     label: "Profile" },
+  { to: "/", icon: Home, label: "Home" },
+  { to: "/learn", icon: BookOpen, label: "Learn" },
+  { to: "/world", icon: Globe, label: "World" },
+  { to: "/map", icon: Map, label: "Map" },
 ];
 
 export default function AppShell({ children }) {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Daily Effort Modal State
-  const [effortModalOpen, setEffortModalOpen] = useState(false);
+  // Multi-Streak Modal & Telemetry State
+  const [streakModalOpen, setStreakModalOpen] = useState(false);
+  const [streakData, setStreakData] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [diaryEntries, setDiaryEntries] = useState([]);
   const [customMins, setCustomMins] = useState("");
@@ -44,12 +51,14 @@ export default function AppShell({ children }) {
   const fetchTelemetry = async () => {
     if (!user) return;
     try {
-      const [dash, diary] = await Promise.all([
+      const [dash, diary, strk] = await Promise.all([
         progressApi.getDashboard().catch(() => null),
         progressApi.getDiary().catch(() => []),
+        progressApi.getStreakStats().catch(() => null),
       ]);
       if (dash) setDashboard(dash);
       if (Array.isArray(diary)) setDiaryEntries(diary);
+      if (strk) setStreakData(strk);
     } catch (err) {
       console.error("Failed to fetch telemetry in shell:", err);
     }
@@ -64,6 +73,14 @@ export default function AppShell({ children }) {
   }
 
   const showNav = !!user;
+
+  // Streak & Consistency (Multi-dimensional from backend)
+  const streakStats = dashboard?.streak_stats || streakData || {};
+  const practiceStreak = streakStats?.practice_streak ?? streakStats?.current_streak ?? streakStats?.growth_streak ?? 0;
+  const visitStreak = streakStats?.visit_streak ?? dashboard?.visit_streak ?? 0;
+  const totalActiveDays = streakStats?.total_active_days ?? dashboard?.active_days_count ?? 0;
+  const activeDaysThisWeek = dashboard?.active_days_this_week ?? streakStats?.active_days_this_week ?? 0;
+  const streakDays = practiceStreak > 0 ? practiceStreak : (visitStreak > 0 ? visitStreak : totalActiveDays);
 
   // Target & Checkin telemetry
   const targetData = dashboard?.target || {};
@@ -90,7 +107,7 @@ export default function AppShell({ children }) {
       await fetchTelemetry();
       setTimeout(() => {
         setLoggingStatus("");
-        setEffortModalOpen(false);
+        setStreakModalOpen(false);
       }, 1200);
     } catch (err) {
       console.error(err);
@@ -123,10 +140,9 @@ export default function AppShell({ children }) {
                 to={to}
                 end={to === "/"}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                    isActive || (to === "/map" && location.pathname === "/growth")
-                      ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/20"
-                      : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
+                  `flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${isActive || (to === "/map" && location.pathname === "/growth")
+                    ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/20"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
                   }`
                 }
               >
@@ -138,42 +154,21 @@ export default function AppShell({ children }) {
 
           {/* Right section */}
           <div className="flex items-center gap-2">
-            {/* Map POC Direct Shortcut */}
-            <NavLink
-              to="/map"
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[var(--color-gold)] text-white border-[var(--color-gold)] shadow-xs"
-                    : "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/30 hover:bg-[var(--color-gold)] hover:text-white"
-                }`
-              }
-              title="Map POC - Truth Trajectory"
-            >
-              <Map size={15} />
-              <span>Map</span>
-            </NavLink>
-
-            {/* Daily Target Check-in Header Button */}
+            {/* Streak Header Button */}
             <button
-              onClick={() => setEffortModalOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                checkedInToday
-                  ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
-                  : "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border-[var(--color-gold)]/40 hover:bg-[var(--color-gold)] hover:text-white"
-              }`}
-              title="Daily 50/50 Target Check-in Status"
+              onClick={() => setStreakModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all hover:scale-105 cursor-pointer shadow-xs"
+              title="Click to view all streak types & stats"
             >
-              <Clock size={15} className={checkedInToday ? "text-emerald-600" : "text-[var(--color-gold)]"} />
-              <span>{checkedInToday ? "Checked In (+50%)" : "Check-in (+50%)"}</span>
+              <Flame size={15} className="text-amber-500 animate-pulse" />
+              <span>{streakDays}d Streak</span>
             </button>
 
             {/* Notification Bell */}
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
-                `w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
-                  isActive ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)]" : "text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
+                `w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${isActive ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)]" : "text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
                 }`
               }
             >
@@ -201,6 +196,15 @@ export default function AppShell({ children }) {
                       <p className="text-xs font-bold text-[var(--color-text-primary)] truncate">{user?.username}</p>
                       <p className="text-[10px] text-[var(--color-text-secondary)] truncate">{user?.email}</p>
                     </div>
+
+                    <NavLink
+                      to="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+                    >
+                      <User size={14} />
+                      My Profile
+                    </NavLink>
 
                     <NavLink
                       to="/settings"
@@ -239,40 +243,20 @@ export default function AppShell({ children }) {
           </NavLink>
 
           <div className="flex items-center gap-1.5">
-            {/* Map POC Icon Mobile */}
-            <NavLink
-              to="/map"
-              className={({ isActive }) =>
-                `px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
-                  isActive
-                    ? "bg-[var(--color-gold)] text-white border-[var(--color-gold)]"
-                    : "bg-[var(--color-gold-pale)] border-[var(--color-gold)]/30 text-[var(--color-gold-dark)]"
-                }`
-              }
-              title="Map POC"
-            >
-              <Map size={14} />
-              <span>Map</span>
-            </NavLink>
-
-            {/* Daily Target Check-in Mobile Button */}
+            {/* Streak Mobile Button */}
             <button
-              onClick={() => setEffortModalOpen(true)}
-              className={`px-2.5 py-1 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
-                checkedInToday
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
-                  : "bg-[var(--color-gold-pale)] border-[var(--color-gold)]/40 text-[var(--color-gold-dark)]"
-              }`}
+              onClick={() => setStreakModalOpen(true)}
+              className="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all hover:scale-105 shadow-xs"
+              title="Click to view all streak types & stats"
             >
-              <Clock size={14} className={checkedInToday ? "text-emerald-600" : "text-[var(--color-gold)]"} />
-              <span>{checkedInToday ? "✓ 50%" : "Check-in"}</span>
+              <Flame size={13} className="text-amber-500 animate-pulse" />
+              <span>{streakDays}d</span>
             </button>
 
             <NavLink
               to="/notifications"
               className={({ isActive }) =>
-                `w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${
-                  isActive ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)]" : "text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)]"
+                `w-8 h-8 flex items-center justify-center rounded-xl transition-colors ${isActive ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)]" : "text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)]"
                 }`
               }
             >
@@ -302,7 +286,7 @@ export default function AppShell({ children }) {
                       className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
                     >
                       <User size={14} />
-                      Profile
+                      My Profile
                     </NavLink>
                     <NavLink
                       to="/settings"
@@ -331,124 +315,164 @@ export default function AppShell({ children }) {
         </header>
       )}
 
-      {/* ============= DAILY TARGET & STUDY CHECK-IN MODAL (50/50 Structure) ============= */}
+      {/* ============= MULTI-STREAK MODAL ============= */}
       <AnimatePresence>
-        {effortModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        {streakModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <div
+              className="fixed inset-0"
+              onClick={() => setStreakModalOpen(false)}
+            />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
               transition={{ duration: 0.18 }}
-              className="max-w-md w-full daksh-card p-6 space-y-5 shadow-2xl border-t-3 border-t-[var(--color-gold)] select-none"
+              className="relative max-w-lg w-full daksh-card p-6 space-y-5 shadow-2xl border-t-4 border-t-amber-500 select-none z-10 max-h-[90vh] overflow-y-auto"
             >
-              {/* Modal Header */}
+              {/* Header */}
               <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center font-bold">
-                    <Clock size={18} />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+                    <Flame size={20} className="animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-[var(--color-text-primary)]">50 / 50 Daily Target Status</h3>
-                    <p className="text-[10px] text-[var(--color-text-secondary)]">Check-in (+50%) + Practice Questions (+50%)</p>
+                    <h3 className="text-sm font-bold text-[var(--color-text-primary)]">Consistency & Streaks</h3>
+                    <p className="text-[11px] text-[var(--color-text-secondary)]">Your active learning habits and consistency</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setEffortModalOpen(false)}
+                  onClick={() => setStreakModalOpen(false)}
                   className="w-8 h-8 rounded-xl border border-[var(--color-border)] flex items-center justify-center text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] cursor-pointer"
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              {/* Overall Combined Target Card */}
-              <div className="p-4 rounded-xl bg-slate-900 text-white space-y-2.5 shadow-md">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-gray-300">Total 50/50 Daily Target:</span>
-                  <strong className="text-amber-400 font-extrabold text-sm">{Math.min(100, Math.round(dashboard?.target?.completed_growth ?? ( (checkedInToday ? 50 : 0) + (dashboard?.target?.questions_growth || 0) )))}% / 100%</strong>
-                </div>
-                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-amber-400 via-emerald-400 to-teal-400 transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.round(dashboard?.target?.completed_growth ?? ( (checkedInToday ? 50 : 0) + (dashboard?.target?.questions_growth || 0) )))}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Track A: 1-Tap Daily Check-in (+50%) */}
-              <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--color-text-primary)]">
-                    <Check size={14} className="text-emerald-600" />
-                    <span>Track A (50%) — Daily 1-Tap Check-in</span>
-                  </div>
-                  <span className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${checkedInToday ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}`}>
-                    {checkedInToday ? "+50% Earned" : "0 / 50%"}
+              {/* Main Banner / Headline Streak */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                    Current Streak
                   </span>
-                </div>
-
-                {checkedInToday ? (
-                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 text-xs font-bold flex items-center justify-between">
-                    <span>✓ Checked In Today (+50% Growth)</span>
-                    <span className="text-[10px] text-emerald-600 font-medium">Recorded</span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-black text-[var(--color-text-primary)]">{streakDays}</span>
+                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">Active Days</span>
                   </div>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      try {
-                        setLoggingStatus("Checking in...");
-                        await progressApi.checkin();
-                        setLoggingStatus("Checked in (+50%)!");
-                        await fetchTelemetry();
-                        setTimeout(() => setLoggingStatus(""), 1200);
-                      } catch (err) {
-                        setLoggingStatus("Checkin failed");
-                      }
-                    }}
-                    className="w-full btn-gold py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                  >
-                    <Check size={14} />
-                    <span>{loggingStatus || "Complete 1-Tap Daily Check-in (+50%)"}</span>
-                  </button>
-                )}
+                  <p className="text-[11px] text-[var(--color-text-secondary)]">
+                    {practiceStreak > 0
+                      ? `${practiceStreak} consecutive days solving practice questions!`
+                      : "Solve a quiz today to extend your practice streak!"}
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-3xl shadow-xs">
+                  🔥
+                </div>
               </div>
 
-              {/* Track B: Daily Practice Questions (+50%) */}
-              <div className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[var(--color-text-primary)]">Track B (50%) — Practice Questions</span>
-                  <span className="font-extrabold text-[var(--color-gold-dark)]">
-                    +{dashboard?.target?.questions_growth ?? Math.min(50, Math.round(((dashboard?.target?.completed_correct_questions || 0) / (dashboard?.target?.target_correct_questions || 20)) * 50))}% / 50%
-                  </span>
+              {/* Grid of the Different Streak Types (Matching Profile Page stats) */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider block">
+                  Streak & Consistency Dimensions
+                </span>
+                <div className="grid grid-cols-2 gap-2.5 text-left">
+                  {/* 1. Practice Streak */}
+                  <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider">Practice Streak</span>
+                      <Flame size={14} className="text-amber-500" />
+                    </div>
+                    <span className="text-2xl font-black text-amber-500 block">{practiceStreak}d</span>
+                    <p className="text-[10px] text-[var(--color-text-secondary)] leading-tight">Consecutive days solving MCQs</p>
+                  </div>
+
+                  {/* 2. Visit / Presence Streak */}
+                  <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider">Presence Streak</span>
+                      <Calendar size={14} className="text-emerald-500" />
+                    </div>
+                    <span className="text-2xl font-black text-emerald-600 block">{visitStreak}d</span>
+                    <p className="text-[10px] text-[var(--color-text-secondary)] leading-tight">Consecutive days on platform</p>
+                  </div>
+
+                  {/* 3. Total Active Days */}
+                  <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider">Total Active Days</span>
+                      <Award size={14} className="text-[var(--color-gold-dark)]" />
+                    </div>
+                    <span className="text-2xl font-black text-[var(--color-text-primary)] block">{totalActiveDays}</span>
+                    <p className="text-[10px] text-[var(--color-text-secondary)] leading-tight">Lifetime verified study days</p>
+                  </div>
+
+                  {/* 4. Active Days This Week */}
+                  <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider">This Week</span>
+                      <Activity size={14} className="text-sky-500" />
+                    </div>
+                    <span className="text-2xl font-black text-sky-500 block">{activeDaysThisWeek}/7</span>
+                    <p className="text-[10px] text-[var(--color-text-secondary)] leading-tight">Weekly momentum consistency</p>
+                  </div>
                 </div>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  Questions Correct Today: <strong>{dashboard?.target?.completed_correct_questions || 0} / {dashboard?.target?.target_correct_questions || 20}</strong>
-                </p>
               </div>
 
-              {/* Optional Manual Time Logger */}
-              <div className="pt-2 border-t border-[var(--color-border)] space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[var(--color-text-secondary)]">Optional: Log Extra Revision Minutes</span>
-                  {loggingStatus && <span className="text-[10px] font-bold text-emerald-600">{loggingStatus}</span>}
+              {/* Earned Badges & Achievements (Matching Profile Page) */}
+              <div className="space-y-2 pt-1 border-t border-[var(--color-border)]">
+                <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                  <Award size={13} className="text-[var(--color-gold-dark)]" />
+                  <span>Streak Badges & Milestones</span>
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  {[
+                    { label: "1-Day Start", emoji: "🌱", req: 1, unlocked: streakDays >= 1 },
+                    { label: "3-Day Sprint", emoji: "⚡", req: 3, unlocked: streakDays >= 3 },
+                    { label: "7-Day Habit", emoji: "🔥", req: 7, unlocked: streakDays >= 7 },
+                    { label: "14-Day Pro", emoji: "🎯", req: 14, unlocked: streakDays >= 14 },
+                    { label: "21-Day Elite", emoji: "👑", req: 21, unlocked: streakDays >= 21 },
+                    { label: "30-Day Master", emoji: "💎", req: 30, unlocked: streakDays >= 30 },
+                  ].map((badge, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        badge.unlocked
+                          ? "bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300 font-bold shadow-xs"
+                          : "bg-[var(--color-bg-primary)] border-[var(--color-border)] text-[var(--color-mid-gray)] opacity-50"
+                      }`}
+                    >
+                      <span className="text-base block mb-0.5">{badge.emoji}</span>
+                      <span className="text-[10px] block font-bold truncate">{badge.label}</span>
+                      <span className="text-[8px] uppercase tracking-wider block text-[var(--color-mid-gray)]">
+                        {badge.unlocked ? "✓ Unlocked" : `${badge.req}d needed`}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="600"
-                    placeholder="Minutes spent revising..."
-                    value={customMins}
-                    onChange={(e) => setCustomMins(e.target.value)}
-                    className="input-field py-2 text-xs flex-1"
-                  />
-                  <button
-                    onClick={() => handleLogMinutes(customMins)}
-                    className="btn-gold px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"
-                  >
-                    Save Time
-                  </button>
-                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="pt-2 border-t border-[var(--color-border)] flex items-center justify-between gap-3">
+                <button
+                  onClick={() => {
+                    setStreakModalOpen(false);
+                    navigate("/profile");
+                  }}
+                  className="text-xs font-bold text-[var(--color-gold-dark)] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <User size={13} />
+                  <span>View Full Profile</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setStreakModalOpen(false);
+                    navigate("/learn");
+                  }}
+                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={13} />
+                  <span>Practice Questions</span>
+                </button>
               </div>
             </motion.div>
           </div>
@@ -481,11 +505,10 @@ export default function AppShell({ children }) {
                   key={to}
                   to={to}
                   end={to === "/"}
-                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[56px] ${
-                    isActive
+                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 min-w-[56px] ${isActive
                       ? "text-[var(--color-gold)]"
                       : "text-[var(--color-mid-gray)] active:text-[var(--color-text-primary)]"
-                  }`}
+                    }`}
                 >
                   <div className="relative">
                     <Icon size={20} strokeWidth={isActive ? 2.3 : 1.8} />

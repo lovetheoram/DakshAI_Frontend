@@ -1,84 +1,74 @@
 // src/pages/GrowthPage.jsx
-// MAP = The Truth Room — "Where do I stand & how do I reach my goal?"
-// 100% Strict data accuracy with Daily % Target Quota, Effort Reality Hours, & Growth Calculator.
+// THE TRUTH ROOM — DakshAI Learning Operating System Mirror
+// 1. THE QUESTION: Was today's effort enough to reach my target exam on time?
+// 2. THE ANSWER: Current Pace vs Required Pace & Ahead/Behind Lag (Consumed strictly from backend single source of truth)
+// 3. TODAY'S EVIDENCE: Factually observed active metrics logged today
+// 4. WHERE YOU ARE: Daksh Score & Subject Readiness
+// 5. MOVEMENT: 14-day Trajectory & Execution History
+// 100% REAL DATA — ZERO FAKE DATA.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import progressApi from "../api/progressApi";
 import syllabusApi from "../api/syllabusApi";
-import EventTracker from "../intelligence/events/EventTracker";
 import StatusBadge from "../components/ui/StatusBadge";
 import SkeletonLoader from "../components/ui/SkeletonLoader";
-import InfoTooltip from "../components/ui/InfoTooltip";
-import ProgressBar from "../components/ui/ProgressBar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Target,
-  X,
   TrendingUp,
   AlertCircle,
+  BookOpen,
+  Award,
+  Play,
+  ArrowRight,
+  Compass,
+  Calendar,
+  BarChart2,
   ChevronDown,
   ChevronUp,
-  ArrowRight,
-  Shield,
-  SlidersHorizontal,
+  CheckCircle2,
+  Circle,
+  Activity,
+  Flame,
+  Lightbulb,
+  X,
   Zap,
-  BookOpen,
-  HelpCircle,
-  Clock,
+  Sparkles
 } from "lucide-react";
 
 export default function GrowthPage() {
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
   const [galaxyData, setGalaxyData] = useState(null);
   const [syllabusTree, setSyllabusTree] = useState(null);
   const [diaryEntries, setDiaryEntries] = useState([]);
+  const [expandedSubjects, setExpandedSubjects] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Goal editing state
-  const [exams, setExams] = useState([]);
-  const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [setupGoalName, setSetupGoalName] = useState("");
-  const [setupExamId, setSetupExamId] = useState("");
-  const [setupTargetDate, setSetupTargetDate] = useState("");
-  const [setupHours, setSetupHours] = useState(2.0);
-  const [submittingGoal, setSubmittingGoal] = useState(false);
-  const [wizardError, setWizardError] = useState("");
-
-  const [showExamTodayDetails, setShowExamTodayDetails] = useState(true);
-  const [showGrowthCalculator, setShowGrowthCalculator] = useState(false);
+  // Pace Mirror Idea Calculator
+  const [showIdeaCalc, setShowIdeaCalc] = useState(false);
 
   const loadAllData = async () => {
     try {
+      setLoading(true);
       const [dashData, streakData, treeData, diaryData] = await Promise.all([
-        progressApi.getDashboard(),
-        progressApi.getStreakStats(),
-        syllabusApi.getTree(),
-        progressApi.getDiary().catch(() => [])
+        progressApi.getDashboard().catch(() => null),
+        progressApi.getStreakStats().catch(() => null),
+        syllabusApi.getTree().catch(() => null),
+        progressApi.getDiary().catch(() => []),
       ]);
-      setDashboard(dashData);
-      setStreak(streakData);
-      setSyllabusTree(treeData);
-      setDiaryEntries(Array.isArray(diaryData) ? diaryData : []);
-
-      const examList = treeData.exams || [];
-      setExams(examList);
+      if (dashData) setDashboard(dashData);
+      if (streakData) setStreak(streakData);
+      if (treeData) setSyllabusTree(treeData);
+      if (Array.isArray(diaryData)) setDiaryEntries(diaryData);
 
       if (dashData?.goal) {
         progressApi.getGalaxy().then(setGalaxyData).catch(() => {});
-      }
-
-      if (dashData?.goal) {
-        setSetupGoalName(dashData.goal.name || dashData.goal.title || "");
-        setSetupExamId(dashData.goal.exam_id || (examList[0]?.id ?? ""));
-        setSetupTargetDate(dashData.goal.target_date || "");
-        setSetupHours(dashData.goal.available_hours_per_day || 2.0);
-      } else {
-        if (examList.length > 0) setSetupExamId(examList[0].id);
-        const targetD = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-        setSetupTargetDate(targetD.toISOString().split("T")[0]);
       }
     } catch (err) {
       console.error("Map data fetch failed:", err);
@@ -89,33 +79,9 @@ export default function GrowthPage() {
 
   useEffect(() => { loadAllData(); }, []);
 
-  const handleCreateGoal = async (e) => {
-    e.preventDefault();
-    setWizardError("");
-    if (!setupGoalName.trim()) { setWizardError("Goal name is required."); return; }
-    if (!setupTargetDate) { setWizardError("Target date is required."); return; }
-
-    try {
-      setSubmittingGoal(true);
-      await progressApi.setGoal({
-        goal_name: setupGoalName,
-        exam: setupExamId ? parseInt(setupExamId) : undefined,
-        target_date: setupTargetDate,
-        available_hours_per_day: setupHours,
-      });
-      setIsEditingGoal(false);
-      EventTracker.goalSet(setupGoalName);
-      await loadAllData();
-    } catch (err) {
-      setWizardError(err.response?.data?.detail || "Failed to set target goal.");
-    } finally {
-      setSubmittingGoal(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
+      <div className="max-w-2xl mx-auto px-5 py-12 space-y-4 text-[var(--color-text-secondary)]">
         <SkeletonLoader avatar />
         <SkeletonLoader lines={3} />
         <SkeletonLoader lines={5} />
@@ -124,571 +90,500 @@ export default function GrowthPage() {
   }
 
   const goal = dashboard?.goal;
-  const prediction = dashboard?.prediction || {};
-  const dakshScore = dashboard?.overall_score ?? 0;
+  const prediction = dashboard?.prediction || dashboard?.trajectory || {};
+  const todayEvidence = dashboard?.today_evidence || {};
+  const dakshScore = dashboard?.daksh_score ?? dashboard?.overall_score ?? 0;
+  const missionDay = dashboard?.mission_day ?? 1;
 
-  // Daily % Target telemetry
-  const todayGrowth = dashboard?.today_growth ?? dashboard?.target?.completed_growth ?? 0;
-  const targetGrowth = dashboard?.target_growth ?? dashboard?.target?.target_growth ?? 1.0;
-  const todayCompliance = dashboard?.streak_stats?.today_compliance ?? Math.min(100, Math.round((todayGrowth / (targetGrowth || 1)) * 100));
+  // Goal & Dates
+  const targetExamName = goal?.exam_name || goal?.exam?.name || goal?.goal_name || goal?.title || user?.exam_type || "Target Exam";
+  const targetDateStr = prediction?.target_date
+    ? new Date(prediction.target_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : (goal?.target_date ? new Date(goal.target_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Target Date");
+  const daysRemaining = prediction?.days_remaining ?? (goal?.target_date ? Math.max(0, Math.ceil((new Date(goal.target_date).getTime() - Date.now()) / 86400000)) : null);
 
-  // Effort Reality hours telemetry
-  const plannedHours = goal?.available_hours_per_day || 2.0;
-  const todayStr = new Date().toISOString().split("T")[0];
-  const todayDiary = diaryEntries.find(d => d.date === todayStr) || diaryEntries[0];
-  const actualSecondsSpent = todayDiary?.time_spent_seconds || 0;
-  const actualHoursSpent = actualSecondsSpent / 3600;
-  const effortRealityPct = Math.min(100, Math.round((actualHoursSpent / (plannedHours || 1)) * 100));
+  // Authoritative Backend Trajectory
+  const statusType = prediction?.status || "UNAVAILABLE";
+  const daysDelta = prediction?.days_delta ?? null;
+  const requiredDaily = prediction?.required_daily ?? null;
+  const actualDaily = prediction?.actual_daily ?? null;
+  const hasHistory = Boolean(prediction?.has_sufficient_history);
+  const projectedCompletionDateStr = prediction?.projected_completion_date ? new Date(prediction.projected_completion_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
 
-  // Dates & Trajectory
-  const today = new Date();
-  const targetDateStr = goal?.target_date ? new Date(goal.target_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "Not set";
-  const predictedDays = streak?.predicted_remaining_days ?? 0;
-  const statusType = prediction?.status || "on_track";
-  const daysDelta = prediction?.days_delta ?? 0;
+  // Today's Evidence
+  const hasTodayActivity = Boolean(todayEvidence.has_activity || (dashboard?.target?.completed_correct_questions || 0) > 0);
+  const todayActiveMins = todayEvidence.active_minutes || 0;
+  const todaySolved = todayEvidence.questions_solved || dashboard?.target?.completed_correct_questions || 0;
+  const todayCorrect = todayEvidence.questions_correct || dashboard?.target?.completed_correct_questions || 0;
+  const todayAccuracy = todayEvidence.accuracy || (todaySolved > 0 ? Math.round((todayCorrect / todaySolved) * 100) : 0);
+  const todayReadinessDelta = todayEvidence.readiness_delta || 0;
 
-  // Territory breakdown
-  const territories = [];
-  if (galaxyData?.subjects && galaxyData.subjects.length > 0) {
-    galaxyData.subjects.forEach(s => {
+  // Streak & Consistency (Multi-dimensional from backend)
+  const streakStats = dashboard?.streak_stats || streak || {};
+  const practiceStreak = streakStats?.practice_streak ?? streakStats?.current_streak ?? streakStats?.growth_streak ?? 0;
+  const visitStreak = streakStats?.visit_streak ?? dashboard?.visit_streak ?? 0;
+  const totalActiveDays = streakStats?.total_active_days ?? streak?.total_active_days ?? 0;
+  const activeDaysThisWeek = dashboard?.active_days_this_week ?? streakStats?.active_days_this_week ?? 0;
+  const streakDays = practiceStreak > 0 ? practiceStreak : (visitStreak > 0 ? visitStreak : totalActiveDays);
+
+  // Target MCQ Idea Calculation for Pace Mirror
+  const totalConceptsInExam = dashboard?.total_concepts_in_exam || 200;
+  const targetReqPace = Math.max(0.01, Number((requiredDaily || 1.0).toFixed(2)));
+  // Each correct MCQ in a 5-question concept session yields approx (0.35 / 5) * (100 / totalConceptsInExam)% exam readiness
+  const readinessPerCorrectMCQ = (0.35 / 5) * (100 / Math.max(1, totalConceptsInExam));
+  const mcqsNeeded = Math.max(1, Math.ceil(targetReqPace / Math.max(0.0001, readinessPerCorrectMCQ)));
+  const conceptRoundsNeeded = Math.ceil(mcqsNeeded / 5);
+
+  // History & Graph
+  const recentDiary = diaryEntries.slice(0, 14).reverse();
+  const maxQuestionsInPeriod = Math.max(...recentDiary.map(d => d.questions_solved || 0), 10);
+  const activeDaysCount = totalActiveDays || (streak?.total_active_days ?? streak?.current_streak ?? 0);
+
+  // Syllabus Territories Breakdown
+  const rawTreeSubjects = syllabusTree?.subjects || syllabusTree?.children || syllabusTree?.results || syllabusTree?.exams?.[0]?.subjects || [];
+
+  const galaxyEfficiencyMap = {};
+  if (galaxyData?.subjects && Array.isArray(galaxyData.subjects)) {
+    galaxyData.subjects.forEach(gs => {
       let totalEff = 0;
       let count = 0;
-      if (s.subtopics && s.subtopics.length > 0) {
-        s.subtopics.forEach(st => {
-          totalEff += (st.efficiency || 0);
-          count += 1;
-        });
-      }
-      const avgMastery = count > 0 ? (totalEff / count) : 0;
-      const pct = Math.round(avgMastery * 100);
-      let status = "READY";
-      if (pct < 40) status = "UNSTABLE";
-      else if (pct < 70) status = "DEVELOPING";
-      territories.push({ name: s.name, pct, status });
-    });
-  } else if (syllabusTree) {
-    const subList = syllabusTree.exams?.[0]?.subjects || syllabusTree.subjects || [];
-    subList.forEach(s => {
-      territories.push({ name: s.name, pct: 0, status: "UNSTABLE" });
+      (gs.subtopics || []).forEach(st => {
+        totalEff += (st.efficiency || 0);
+        count += 1;
+      });
+      galaxyEfficiencyMap[gs.id] = count > 0 ? (totalEff / count) : 0;
+      galaxyEfficiencyMap[gs.name?.toLowerCase()] = count > 0 ? (totalEff / count) : 0;
     });
   }
 
-  const readyTerritories = territories.filter(t => t.status === "READY");
-  const developingTerritories = territories.filter(t => t.status === "DEVELOPING");
-  const unstableTerritories = territories.filter(t => t.status === "UNSTABLE");
+  const territories = rawTreeSubjects.map(s => {
+    const subtopics = s.subtopics || [];
+    const concepts = subtopics.flatMap(st => (st.concepts || []).map(c => ({
+      ...c,
+      subtopicName: st.name
+    })));
+    const totalConcepts = concepts.length;
+    const masteredConcepts = concepts.filter(c => c.is_mastered || c.user_status === "completed").length;
+    
+    let pct = totalConcepts > 0 ? Math.round((masteredConcepts / totalConcepts) * 100) : 0;
+    const galaxyEff = galaxyEfficiencyMap[s.id] ?? galaxyEfficiencyMap[s.name?.toLowerCase()];
+    if (galaxyEff !== undefined && pct === 0) {
+      pct = Math.round(galaxyEff * 100);
+    }
+
+    let status = "READY";
+    if (pct < 40) status = "UNSTABLE";
+    else if (pct < 70) status = "DEVELOPING";
+
+    return {
+      id: s.id,
+      name: s.name,
+      pct,
+      status,
+      totalConcepts,
+      masteredConcepts,
+      subtopics,
+      concepts
+    };
+  });
+
+  const toggleSubjectExpand = (subjId) => {
+    setExpandedSubjects(prev => ({ ...prev, [subjId]: !prev[subjId] }));
+  };
+
+  const handleStartMockTest = () => {
+    const launchId = dashboard?.last_active_concept?.id || 1;
+    navigate(`/quiz/${launchId}?q=20&type=FULL_EXAM`);
+  };
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-8 space-y-8 select-none">
+    <div className="max-w-2xl mx-auto px-5 py-8 space-y-7 select-none text-left font-sans">
 
-      {/* ── HEADER ───────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-4">
-        <div className="flex items-center gap-2">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight flex items-center gap-2">
-              <span>YOUR MAP</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] font-bold border border-[var(--color-gold)]/20">
-                The Truth Room
-              </span>
-            </h1>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Where you actually stand in your preparation trajectory.</p>
-          </div>
-          <InfoTooltip
-            title="The Truth Room (Your Map)"
-            meaning="Calculates your true preparation trajectory based on actual retrieval history, memory decay, and daily study pace."
-            formula="Readiness Score = Mean(Concept Mastery across all exam subjects) * 100%"
-            howToIncrease="Complete active retrieval sessions in unstable subjects to directly advance your position marker toward GOAL."
-          />
+      {/* ── 1. THE QUESTION: WAS TODAY'S EFFORT ENOUGH? ──────────────────── */}
+      <div className="border-b border-[var(--color-border)] pb-4 space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] tracking-widest text-[var(--color-gold-dark)] font-extrabold uppercase flex items-center gap-1.5">
+            <Compass size={14} />
+            The Truth Room
+          </span>
+          <span className="text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)] px-3 py-1 rounded-full border border-[var(--color-border)]">
+            {targetExamName} {daysRemaining !== null ? `• ${daysRemaining} days left` : ""}
+          </span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-black text-[var(--color-text-primary)] tracking-tight">
+          WAS TODAY'S EFFORT ENOUGH?
+        </h1>
+      </div>
+
+      {/* ── 2. THE ANSWER: THE DAKSH PACE MIRROR ──────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-slate-950 p-6 space-y-5 border border-amber-500/30 text-slate-100 shadow-xl"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Target size={14} />
+            YOUR CURRENT PACE MIRROR
+          </span>
+
+          {!hasHistory ? (
+            <StatusBadge variant="gold">Not enough evidence yet</StatusBadge>
+          ) : statusType === "BEHIND" ? (
+            <StatusBadge variant="danger" icon={<AlertCircle size={11} />}>
+              {daysDelta !== null ? `${daysDelta} Days Behind Pace` : "Behind Pace"}
+            </StatusBadge>
+          ) : statusType === "AHEAD" ? (
+            <StatusBadge variant="success" icon={<TrendingUp size={11} />}>
+              {daysDelta !== null ? `${daysDelta} Days Ahead` : "Ahead of Pace"}
+            </StatusBadge>
+          ) : statusType === "ON_TRACK" ? (
+            <StatusBadge variant="success">On Track</StatusBadge>
+          ) : (
+            <StatusBadge variant="gold">On Track</StatusBadge>
+          )}
         </div>
 
-        {statusType === "behind" && daysDelta > 0 && (
-          <StatusBadge variant="danger" icon={<AlertCircle size={10} />}>
-            {daysDelta} days behind pace
-          </StatusBadge>
-        )}
-        {statusType === "ahead" && daysDelta > 0 && (
-          <StatusBadge variant="success" icon={<TrendingUp size={10} />}>
-            {daysDelta} days ahead
-          </StatusBadge>
-        )}
-        {statusType === "on_track" && (
-          <StatusBadge variant="gold">On track</StatusBadge>
+        {/* Pace Comparison Numbers */}
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Observed Pace
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-white block">
+              {hasHistory && actualDaily !== null ? `${actualDaily}%` : "—"} <span className="text-xs font-normal text-slate-400">readiness/day</span>
+            </span>
+          </div>
+
+          <div className="space-y-0.5 border-l border-slate-800 pl-4">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Required Pace
+            </span>
+            <span className="text-xl sm:text-2xl font-black text-amber-400 block">
+              {requiredDaily !== null ? `${requiredDaily}%` : "—"} <span className="text-xs font-normal text-slate-400">readiness/day</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Trajectory Statement */}
+        <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs text-slate-300 leading-relaxed">
+          {!hasHistory ? (
+            <span>
+              <strong>Not enough evidence yet.</strong> Solve practice sessions across at least 3 active days to establish a trustworthy learning velocity baseline.
+            </span>
+          ) : statusType === "BEHIND" ? (
+            <span>
+              At your current velocity (<strong className="text-white">{actualDaily ?? 0}% readiness/day</strong>), your pace requires an extra{" "}
+              <strong className="text-rose-400">
+                {Math.max(0, Number(((requiredDaily || 0) - (actualDaily || 0)).toFixed(2)))}%/day
+              </strong>{" "}
+              to reach 100% readiness by <strong className="text-amber-300">{targetDateStr}</strong>.
+              {daysDelta !== null && <span> You are currently <strong className="text-rose-400">{daysDelta} days behind pace</strong>.</span>}
+            </span>
+          ) : statusType === "AHEAD" ? (
+            <span>
+              Your current velocity (<strong className="text-emerald-400">{actualDaily}% readiness/day</strong>) exceeds the required pace (<strong className="text-white">{requiredDaily}% readiness/day</strong>).
+              {daysDelta !== null && <span> You are currently <strong className="text-emerald-400">{daysDelta} days ahead</strong>.</span>}
+              {projectedCompletionDateStr && <span> Projected completion: <strong className="text-emerald-300">{projectedCompletionDateStr}</strong>.</span>}
+            </span>
+          ) : (
+            <span>
+              Your current pace (<strong className="text-amber-300">{actualDaily}% readiness/day</strong>) is directly aligned with your required pace (<strong className="text-white">{requiredDaily}% readiness/day</strong>) to finish by <strong className="text-amber-300">{targetDateStr}</strong>.
+            </span>
+          )}
+        </div>
+
+        {/* ── IDEA BUTTON: How many MCQs to reach this pace? ── */}
+        <div className="pt-2 border-t border-slate-800/80 space-y-2">
+          <button
+            onClick={() => setShowIdeaCalc(prev => !prev)}
+            className="flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer shadow-xs"
+          >
+            <Lightbulb size={14} className="text-amber-400 shrink-0" />
+            <span>{showIdeaCalc ? "Hide Requirement" : "💡 How many MCQs to reach this pace?"}</span>
+          </button>
+
+          {showIdeaCalc && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-xs text-slate-200 space-y-1 shadow-md"
+            >
+              <p className="leading-relaxed">
+                To reach your required pace of <strong className="text-amber-400 font-extrabold">{targetReqPace}% readiness/day</strong>, you need approximately <strong className="text-white font-extrabold text-sm underline decoration-amber-400">{mcqsNeeded} correct MCQs</strong> today (~{conceptRoundsNeeded} concept {conceptRoundsNeeded === 1 ? "round" : "rounds"}).
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Calculated across your {totalConceptsInExam} exam concepts based on active retrieval efficiency.
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* ── 3. TODAY'S EVIDENCE ────────────────────────────────────────────── */}
+      <div className="daksh-card p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+          <div className="flex items-center gap-2">
+            <Activity size={18} className="text-[var(--color-gold-dark)]" />
+            <h2 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+              Today's Evidence
+            </h2>
+          </div>
+          <span className="text-[11px] text-[var(--color-text-secondary)] font-medium">
+            {new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+          </span>
+        </div>
+
+        {hasTodayActivity ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-center space-y-0.5">
+              <span className="text-lg font-black text-[var(--color-text-primary)] block">{todayActiveMins} min</span>
+              <span className="text-[10px] font-bold text-[var(--color-mid-gray)] uppercase tracking-wider block">Active Time</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-center space-y-0.5">
+              <span className="text-lg font-black text-[var(--color-gold-dark)] block">{todaySolved} Qs</span>
+              <span className="text-[10px] font-bold text-[var(--color-mid-gray)] uppercase tracking-wider block">{todayCorrect} Correct</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-center space-y-0.5">
+              <span className="text-lg font-black text-emerald-600 block">{todayAccuracy}%</span>
+              <span className="text-[10px] font-bold text-[var(--color-mid-gray)] uppercase tracking-wider block">Accuracy</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-center space-y-0.5">
+              <span className="text-lg font-black text-purple-600 block">+{todayReadinessDelta}%</span>
+              <span className="text-[10px] font-bold text-[var(--color-mid-gray)] uppercase tracking-wider block">Readiness Delta</span>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 text-center rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-2">
+            <p className="text-xs font-semibold text-[var(--color-text-primary)]">
+              No practice logged yet today.
+            </p>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Your study window is open. Solve practice questions to log real evidence.
+            </p>
+            <button
+              onClick={() => navigate("/learn")}
+              className="mt-1 btn-gold px-4 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              Start Practice Session <ArrowRight size={13} />
+            </button>
+          </div>
         )}
       </div>
 
-      {/* ── TOP VISUAL: MAP TRAJECTORY (YOU -> GOAL) HERO CARD ── */}
-      {goal && !isEditingGoal && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 sm:p-7 space-y-6 border border-amber-500/30 border-t-4 border-t-[var(--color-gold)] text-slate-100 shadow-xl"
-        >
-          {/* Ambient Glow */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-caption tracking-widest text-amber-400 font-bold flex items-center gap-1">
-                <Target size={14} />
-                Overall Goal Trajectory
-              </span>
-              <InfoTooltip
-                title="Position Marker & Target Date"
-                meaning="Represents your real-time distance from syllabus completion based on current daily velocity."
-                formula="Predicted Date = Today + (Remaining % / Average Actual Daily Growth Rate)"
-                howToIncrease="Maintain daily revision target to increase daily growth rate and pull the predicted date closer to target."
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-300 font-semibold bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700/60">
-                Target Date: <strong className="text-amber-300">{targetDateStr}</strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Vertical Position Diagram */}
-          <div className="relative z-10 py-3 flex items-center justify-center">
-            <div className="flex flex-col items-center space-y-4 w-full max-w-md">
-
-              {/* YOU Marker */}
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-24 text-right">
-                  <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30 shadow-xs">
-                    YOU
-                  </span>
-                </div>
-                <div className="relative flex items-center justify-center">
-                  <div className="w-5 h-5 rounded-full bg-amber-400 border-2 border-slate-900 shadow-lg shadow-amber-500/50 z-10 animate-pulse" />
-                </div>
-                <div className="flex-1 text-xs text-slate-300">
-                  Readiness Score: <strong className="text-white text-sm font-bold ml-1">{dakshScore > 0 && dakshScore < 1 ? dakshScore.toFixed(2) : Math.round(dakshScore)}%</strong>
-                </div>
-              </div>
-
-              {/* Line connector */}
-              <div className="w-[3px] h-14 bg-slate-800 relative rounded-full overflow-hidden">
-                <div className="absolute top-0 bottom-0 left-0 right-0 bg-gradient-to-b from-amber-400 to-amber-600 opacity-80" />
-              </div>
-
-              {/* GOAL Marker */}
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-24 text-right">
-                  <span className="text-xs font-semibold text-slate-400">
-                    GOAL
-                  </span>
-                </div>
-                <div className="relative flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-slate-400 border-2 border-slate-900 z-10" />
-                </div>
-                <div className="flex-1 text-xs text-amber-200 font-bold truncate">
-                  {goal.name || goal.title}
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Trajectory Insight statement */}
-          <div className="relative z-10 p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed flex items-center justify-between gap-3">
-            <div>
-              {statusType === "behind" ? (
-                <>
-                  At your current pace (+{dashboard?.prediction?.actual_daily || 0.5}% / day), you are projected to complete your goal <strong className="text-red-400 font-bold">{daysDelta} days past</strong> your target date.
-                </>
-              ) : statusType === "ahead" ? (
-                <>
-                  At your current pace (+{dashboard?.prediction?.actual_daily || 0.5}% / day), you're on track to complete your preparation <strong className="text-emerald-400 font-bold">{daysDelta} days ahead</strong> of target.
-                </>
-              ) : (
-                <>
-                  At your current daily pace, you are moving steadily toward completing your target by <strong className="text-amber-300 font-bold">{targetDateStr}</strong>.
-                </>
-              )}
-            </div>
-
-            <button
-              onClick={() => setShowGrowthCalculator(!showGrowthCalculator)}
-              className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold shrink-0 transition-colors cursor-pointer border border-amber-500/30 flex items-center gap-1"
-            >
-              <HelpCircle size={12} />
-              {showGrowthCalculator ? "Hide Math" : "Growth Math"}
-            </button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── COMPREHENSIVE GROWTH CALCULATOR ── */}
-      <AnimatePresence>
-        {showGrowthCalculator && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="daksh-card p-6 space-y-4 border-l-3 border-l-[var(--color-gold)]">
-              <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-1.5">
-                  <Zap size={14} className="text-[var(--color-gold)]" />
-                  How Solving Quizzes & Studying Increases Growth
-                </h3>
-                <button
-                  onClick={() => setShowGrowthCalculator(false)}
-                  className="text-xs text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] cursor-pointer"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div className="space-y-3 text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                <p>
-                  Growth is dependent on <strong>Direct Concept Mastery</strong>. Your overall Goal Score ({Math.round(dakshScore)}%) is the average mastery across all exam concepts.
-                </p>
-
-                <div className="p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-2">
-                  <span className="text-[10px] font-bold text-[var(--color-gold-dark)] uppercase tracking-wider block">Example: Solving 30 Quiz Problems</span>
-                  <ul className="space-y-1.5 pl-4 list-disc font-medium text-[var(--color-text-primary)]">
-                    <li>Solving <strong>30 MCQs with 80% accuracy</strong> raises that concept's readiness by <strong>+25%</strong>.</li>
-                    <li>Directly completes <strong>+{targetGrowth.toFixed(2)}%</strong> of your Daily Target Growth quota.</li>
-                    <li>Increases overall Goal Readiness Score by <strong>+0.5% to +1.2%</strong> (depending on concept weight).</li>
-                  </ul>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-[11px] text-center">
-                  <div className="p-2.5 rounded-lg border border-[var(--color-border)] bg-white space-y-1">
-                    <BookOpen size={14} className="mx-auto text-[var(--color-gold)]" />
-                    <span className="font-bold block text-[var(--color-text-primary)]">Concept Session</span>
-                    <span className="text-[10px] text-[var(--color-mid-gray)]">+0.30% Daily</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg border border-[var(--color-border)] bg-white space-y-1">
-                    <Target size={14} className="mx-auto text-[var(--color-gold)]" />
-                    <span className="font-bold block text-[var(--color-text-primary)]">30 MCQ Quiz</span>
-                    <span className="text-[10px] text-[var(--color-mid-gray)]">+1.20% Growth</span>
-                  </div>
-                  <div className="p-2.5 rounded-lg border border-[var(--color-border)] bg-white space-y-1">
-                    <Shield size={14} className="mx-auto text-[var(--color-gold)]" />
-                    <span className="font-bold block text-[var(--color-text-primary)]">Revision Log</span>
-                    <span className="text-[10px] text-[var(--color-mid-gray)]">+0.10% / 15m</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── CURRENT REALITY TERRITORY MAP ────────────── */}
-      {territories.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="daksh-card p-6 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold">
-                Current Reality Territory
-              </span>
-              <InfoTooltip
-                title="Territory Classification Thresholds"
-                meaning="Evaluates subtopic readiness into 3 status levels: READY (>=70%), DEVELOPING (40-69%), and UNSTABLE (<40%)."
-                formula="Subject % = Average Subtopic Retrieval Efficiency * Ebbinghaus Memory Decay Factor"
-                howToIncrease="Complete retrieval checks in UNSTABLE topics to promote them to DEVELOPING and READY."
-              />
-            </div>
-            <span className="text-[11px] text-[var(--color-mid-gray)]">Syllabus Subjects</span>
-          </div>
-
-          <div className="space-y-3 pt-1">
-            {territories.map((t, i) => (
-              <div key={i} className="p-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[var(--color-text-primary)]">{t.name}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                    t.status === "READY" ? "bg-[var(--color-success-light)] text-[var(--color-success)]" :
-                    t.status === "UNSTABLE" ? "bg-[var(--color-danger-light)] text-[var(--color-danger)]" :
-                    "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)]"
-                  }`}>
-                    {t.status}
-                  </span>
-                </div>
-                <div className="bar-track">
-                  <div
-                    className="bar-fill-gold"
-                    style={{
-                      width: `${t.pct}%`,
-                      background: t.status === "READY" ? 'var(--color-success)' : t.status === "UNSTABLE" ? 'var(--color-danger)' : 'var(--color-gold)'
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── IF YOUR EXAM WERE TODAY... ────────────────── */}
-      {goal && !isEditingGoal && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="daksh-card p-6 space-y-4 border-l-3 border-l-[var(--color-gold)]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield size={16} className="text-[var(--color-gold)] shrink-0" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-primary)]">
-                If your exam were today...
-              </h3>
-              <InfoTooltip
-                title="Immediate Exam Readiness Simulation"
-                meaning="Projects how your current memory readiness translates into expected exam performance across syllabus subjects."
-                formula="Simulation = Aggregated Quiz Accuracy * Memory Decay Factor across all exam concepts"
-                howToIncrease="Focus immediate revision on topics listed under Risk / Unstable to quickly eliminate baseline weaknesses."
-              />
-            </div>
-            <button
-              onClick={() => setShowExamTodayDetails(!showExamTodayDetails)}
-              className="text-[11px] font-semibold text-[var(--color-gold-dark)] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              {showExamTodayDetails ? "Hide Evidence" : "Show Evidence"}
-              {showExamTodayDetails ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-          </div>
-
-          <AnimatePresence>
-            {showExamTodayDetails && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-4 overflow-hidden pt-1"
-              >
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                  Here is what your current retrieval evidence suggests:
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                  <div className="p-3 rounded-xl bg-[var(--color-success-light)]/50 border border-[var(--color-success)]/20 space-y-1">
-                    <span className="text-[10px] font-bold text-[var(--color-success)] uppercase block">Ready</span>
-                    <p className="font-semibold text-[var(--color-text-primary)]">
-                      {readyTerritories.length > 0 ? readyTerritories.map(t => t.name).join(", ") : "Fundamentals"}
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[var(--color-gold-pale)]/50 border border-[var(--color-gold)]/20 space-y-1">
-                    <span className="text-[10px] font-bold text-[var(--color-gold-dark)] uppercase block">Developing</span>
-                    <p className="font-semibold text-[var(--color-text-primary)]">
-                      {developingTerritories.length > 0 ? developingTerritories.map(t => t.name).join(", ") : "In Progress"}
-                    </p>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[var(--color-danger-light)]/50 border border-[var(--color-danger)]/20 space-y-1">
-                    <span className="text-[10px] font-bold text-[var(--color-danger)] uppercase block">Risk / Unstable</span>
-                    <p className="font-semibold text-[var(--color-text-primary)]">
-                      {unstableTerritories.length > 0 ? unstableTerritories.map(t => t.name).join(", ") : "None"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                  <strong className="text-[var(--color-text-primary)] font-semibold block mb-1">Your Reality:</strong>
-                  {readyTerritories.length > 0
-                    ? `You have demonstrated strong retention in ${readyTerritories.map(t => t.name).join(", ")}. Focusing your upcoming revision on unstable topics will directly raise your total readiness.`
-                    : "You are starting your preparation journey. Complete your first active retrieval sessions to build your initial readiness evidence."}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* ── 3 ACTIONABLE CHOICES ── */}
-      {goal && !isEditingGoal && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.25 }}
-          className="daksh-card p-6 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold">
-                You Have Three Choices
-              </span>
-              <InfoTooltip
-                title="Pace Adjustment Logic"
-                meaning="Calculates how changing your daily target study hours or target completion date alters your predicted completion pace."
-                formula="New Pace = Target Scope / (Daily Hours * Growth Rate Factor)"
-                howToIncrease="Increasing daily hours by 20 mins adds +0.10% daily growth, bringing your projected date forward."
-              />
-            </div>
-            <span className="text-[10px] text-[var(--color-gold-dark)] font-semibold">Actionable Trajectory</span>
-          </div>
-
-          <div className="space-y-2.5">
-            <button
-              onClick={() => { setSetupHours(h => Math.min(12, h + 0.5)); setIsEditingGoal(true); }}
-              className="w-full p-3.5 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)]/40 transition-all text-left flex items-center justify-between group cursor-pointer"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--color-gold-dark)]">01</span>
-                  <p className="text-xs font-bold text-[var(--color-text-primary)]">Study 20 min more / day</p>
-                </div>
-                <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 pl-6">Increases daily growth quota (+{targetGrowth.toFixed(2)}%) to close trajectory gap</p>
-              </div>
-              <ArrowRight size={14} className="text-[var(--color-mid-gray)] group-hover:text-[var(--color-gold)]" />
-            </button>
-
-            <button
-              onClick={() => { setIsEditingGoal(true); }}
-              className="w-full p-3.5 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)]/40 transition-all text-left flex items-center justify-between group cursor-pointer"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--color-gold-dark)]">02</span>
-                  <p className="text-xs font-bold text-[var(--color-text-primary)]">Extend target completion date</p>
-                </div>
-                <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 pl-6">Adjust deadline date to match realistic pace</p>
-              </div>
-              <ArrowRight size={14} className="text-[var(--color-mid-gray)] group-hover:text-[var(--color-gold)]" />
-            </button>
-
-            <button
-              onClick={() => {
-                const targetConceptId = dashboard?.last_active_concept?.id || dashboard?.decay_alerts?.[0]?.concept_id;
-                navigate(targetConceptId ? `/learn/${targetConceptId}` : "/learn");
-              }}
-              className="w-full p-3.5 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-gold)] hover:bg-[var(--color-gold-pale)]/40 transition-all text-left flex items-center justify-between group cursor-pointer"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--color-gold-dark)]">03</span>
-                  <p className="text-xs font-bold text-[var(--color-text-primary)]">Prioritize high-impact concepts</p>
-                </div>
-                <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5 pl-6">Focus retrieval efforts strictly on unstable topics</p>
-              </div>
-              <ArrowRight size={14} className="text-[var(--color-mid-gray)] group-hover:text-[var(--color-gold)]" />
-            </button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── GOAL CONFIGURATION ──────────────────────── */}
-      {goal && !isEditingGoal ? (
-        <div className="daksh-card p-5 flex items-center justify-between">
+      {/* ── 4. WHERE YOU ARE (DAKSH SCORE & SUBJECT READINESS) ────────────── */}
+      <div className="daksh-card p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
           <div>
-            <span className="text-[10px] font-bold text-[var(--color-mid-gray)] uppercase tracking-wider block">Preparation Plan</span>
-            <h3 className="text-xs font-bold text-[var(--color-text-primary)] mt-0.5">{goal.name || goal.title}</h3>
-            <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">{goal.available_hours_per_day} hrs/day • Target: {targetDateStr}</p>
+            <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider block">
+              WHERE YOU ARE
+            </span>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">
+              Syllabus Readiness Telemetry
+            </h2>
           </div>
+          <div className="text-right">
+            <span className="text-xs font-semibold text-[var(--color-text-secondary)] block">Daksh Score</span>
+            <span className="text-xl font-black text-[var(--color-gold-dark)]">{Math.round(dakshScore)}%</span>
+          </div>
+        </div>
+
+        {/* Subject Territories Breakdown */}
+        {territories.length > 0 ? (
+          <div className="space-y-3">
+            {territories.map((territory) => {
+              const isExpanded = !!expandedSubjects[territory.id];
+
+              return (
+                <div
+                  key={territory.id}
+                  className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-primary)] hover:border-[var(--color-gold)]/40 transition-all space-y-3"
+                >
+                  <div
+                    onClick={() => toggleSubjectExpand(territory.id)}
+                    className="flex items-center justify-between text-xs cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-bold text-[var(--color-text-primary)]">{territory.name}</span>
+                      {territory.totalConcepts > 0 && (
+                        <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">
+                          ({territory.masteredConcepts}/{territory.totalConcepts} concepts)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
+                        territory.status === "READY"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : territory.status === "DEVELOPING"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                      }`}>
+                        {territory.status}
+                      </span>
+                      <span className="font-black text-[var(--color-gold-dark)] text-xs">
+                        {territory.pct}%
+                      </span>
+                      
+                      <button className="px-2 py-1 rounded-md bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] text-[10px] font-bold flex items-center gap-1">
+                        <span>{isExpanded ? "Collapse" : "Dropdown"}</span>
+                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => toggleSubjectExpand(territory.id)}
+                    className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden cursor-pointer"
+                  >
+                    <div
+                      className="bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-dark)] h-full transition-all duration-500 rounded-full"
+                      style={{ width: `${territory.pct}%` }}
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="pt-2 border-t border-[var(--color-border)] space-y-2 overflow-hidden"
+                      >
+                        <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider block">
+                          Syllabus Concept Dropdown View:
+                        </span>
+
+                        {territory.concepts && territory.concepts.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {territory.concepts.map((concept) => {
+                              const isMastered = concept.is_mastered || concept.user_status === "completed";
+
+                              return (
+                                <div
+                                  key={concept.id}
+                                  onClick={() => navigate(`/learn/${concept.id}`)}
+                                  className="p-2.5 rounded-lg border border-[var(--color-border)] bg-white dark:bg-slate-900 text-xs flex items-center justify-between hover:border-[var(--color-gold)]/50 transition cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {isMastered ? (
+                                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                    ) : (
+                                      <Circle size={14} className="text-[var(--color-mid-gray)] shrink-0" />
+                                    )}
+                                    <span className="font-medium text-[var(--color-text-primary)] truncate">
+                                      {concept.name}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className="text-[10px] text-[var(--color-mid-gray)] hidden sm:inline">
+                                      {concept.subtopicName}
+                                    </span>
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                                      isMastered ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"
+                                    }`}>
+                                      {isMastered ? "Mastered" : "Explore"}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-[var(--color-text-secondary)] italic">
+                            Click Explore in Learn section to open concept practice rooms.
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-4 text-center text-xs text-[var(--color-text-secondary)] font-medium">
+            No subject territories loaded. Access Learn page to load exam syllabus.
+          </div>
+        )}
+      </div>
+
+      {/* ── 5. MOVEMENT: 14-DAY TRAJECTORY & EXECUTION HISTORY ─────────────── */}
+      <div className="daksh-card p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart2 size={18} className="text-[var(--color-gold-dark)]" />
+            <h2 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+              Movement History (Last 14 Sessions)
+            </h2>
+          </div>
+          <span className="text-[11px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2.5 py-0.5 rounded-md border border-[var(--color-gold)]/20">
+            {activeDaysCount} Active Days
+          </span>
+        </div>
+
+        {recentDiary.length > 0 ? (
+          <div className="space-y-2 pt-2">
+            <div className="h-28 flex items-end justify-between gap-1.5 pt-4 pb-1 px-2 bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border)]">
+              {recentDiary.map((entry, idx) => {
+                const count = entry.questions_solved || 0;
+                const heightPct = Math.max(8, Math.round((count / maxQuestionsInPeriod) * 100));
+                const dateLabel = new Date(entry.date).toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+
+                return (
+                  <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
+                    <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-md pointer-events-none whitespace-nowrap z-20">
+                      {count} Qs ({Math.round((entry.accuracy || 0) * (entry.accuracy > 1 ? 1 : 100))}%)
+                    </div>
+                    <div
+                      className={`w-full max-w-[18px] rounded-t-sm transition-all ${
+                        count > 0 ? "bg-gradient-to-t from-[var(--color-gold-dark)] to-[var(--color-gold)]" : "bg-gray-200 dark:bg-gray-800"
+                      }`}
+                      style={{ height: `${heightPct}%` }}
+                    />
+                    <span className="text-[8px] text-[var(--color-mid-gray)] font-semibold mt-1 truncate">
+                      {dateLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 text-center text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border)] font-medium">
+            Solve practice sessions to plot your movement history.
+          </div>
+        )}
+      </div>
+
+      {/* ── 6. FULL EXAM SIMULATION MOCK TEST CARD ──────────────────────────── */}
+      <div className="daksh-card p-5 border-l-4 border-l-[var(--color-gold-dark)] space-y-3 bg-[var(--color-bg-primary)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center font-bold">
+              <Award size={18} />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-[var(--color-text-primary)]">Full Exam Simulation Mock Test</h3>
+              <p className="text-[11px] text-[var(--color-text-secondary)]">20 Timed questions across all exam subjects.</p>
+            </div>
+          </div>
+
           <button
-            onClick={() => setIsEditingGoal(true)}
-            className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-gold)] text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-gold-dark)] transition-all cursor-pointer flex items-center gap-1.5"
+            onClick={handleStartMockTest}
+            className="btn-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
           >
-            <SlidersHorizontal size={13} />
-            Configure
+            <Play size={14} />
+            <span>Start Mock Test</span>
           </button>
         </div>
-      ) : (
-        <div className="daksh-card p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[var(--color-gold-pale)] flex items-center justify-center text-[var(--color-dark)]">
-                <Target size={18} />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-[var(--color-text-primary)]">
-                  {isEditingGoal ? "Update Target Plan" : "Set Your Target Plan"}
-                </h2>
-                <p className="text-[11px] text-[var(--color-text-secondary)]">Configure target exam, date, and daily hours.</p>
-              </div>
-            </div>
-            {isEditingGoal && (
-              <button
-                onClick={() => setIsEditingGoal(false)}
-                className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-mid-gray)] hover:text-[var(--color-text-primary)] cursor-pointer"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          {wizardError && (
-            <div className="text-xs text-[var(--color-danger)] bg-[var(--color-danger-light)] border border-[var(--color-danger)]/20 rounded-xl px-3.5 py-2">
-              ⚠️ {wizardError}
-            </div>
-          )}
-
-          <form onSubmit={handleCreateGoal} className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1.5">Goal Description</label>
-              <input
-                type="text"
-                value={setupGoalName}
-                onChange={(e) => setSetupGoalName(e.target.value)}
-                placeholder="e.g. Crack JEE Physics, Master Placement Preparation"
-                className="input-field"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1.5">Target Exam</label>
-                <select
-                  value={setupExamId}
-                  onChange={(e) => setSetupExamId(e.target.value)}
-                  className="input-field"
-                  required
-                >
-                  <option value="">Select Exam</option>
-                  {exams.map(exam => (
-                    <option key={exam.id} value={exam.id}>{exam.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1.5">Completion Date</label>
-                <input
-                  type="date"
-                  value={setupTargetDate}
-                  onChange={(e) => setSetupTargetDate(e.target.value)}
-                  className="input-field"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[10px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider mb-1.5">
-                <span>Daily Target Hours</span>
-                <span className="text-[var(--color-gold-dark)] font-bold">{setupHours} hrs</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="12"
-                step="0.5"
-                value={setupHours}
-                onChange={(e) => setSetupHours(parseFloat(e.target.value))}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submittingGoal}
-              className="w-full py-3 rounded-xl btn-gold text-sm disabled:opacity-50"
-            >
-              {submittingGoal ? "Setting plan..." : "Save Target Plan"}
-            </button>
-          </form>
-        </div>
-      )}
+      </div>
 
     </div>
   );

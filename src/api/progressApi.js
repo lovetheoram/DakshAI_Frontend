@@ -16,7 +16,7 @@ const progressApi = {
     return r.data
   },
 
-  // NEW → single call for full dashboard
+  // Full concept progress + history
   getFull: async (conceptId) => {
     const [p, h] = await Promise.all([
       axiosClient.get(`/api/progress/concept/${conceptId}/`),
@@ -48,23 +48,14 @@ const progressApi = {
     return r.data
   },
 
+  // Log revision time (only updates time, no fake readiness growth)
   logRevision: async (minutes) => {
-    const r = await axiosClient.post('/api/progress/daily-target/revision/', { minutes })
-    return r.data
-  },
-
-  shareDailyTarget: async () => {
-    const r = await axiosClient.post('/api/progress/daily-target/share/')
+    const r = await axiosClient.post('/api/progress/revision/', { minutes })
     return r.data
   },
 
   getDiary: async () => {
     const r = await axiosClient.get('/api/progress/diary/')
-    return r.data
-  },
-
-  logEnergy: async (data) => {
-    const r = await axiosClient.post('/api/progress/diary/energy/', data)
     return r.data
   },
 
@@ -78,10 +69,11 @@ const progressApi = {
     return r.data
   },
 
-  checkin: async () => {
-    const r = await axiosClient.post('/api/progress/checkin/')
+  // Automatic app presence (called on mount, no user interaction)
+  recordPresence: async () => {
+    const r = await axiosClient.post('/api/progress/presence/')
     return r.data
-  }
+  },
 }
 
 export default progressApi

@@ -1,8 +1,8 @@
 // src/components/learn/ConceptPracticeSection.jsx
-// Distinct, Un-mixed Practice Modes Aligned with Backend Data & Warm Ivory + Ink + Antique Gold styling.
+// Concept Practice Modes: AI Practice & PYQs (Full Exam Simulation moved to Map Page).
 
 import React from "react";
-import { Brain, Target, Award, ArrowRight } from "lucide-react";
+import { Brain, Award, ArrowRight } from "lucide-react";
 
 export default function ConceptPracticeSection({ onStartQuiz }) {
   const modes = [
@@ -14,26 +14,15 @@ export default function ConceptPracticeSection({ onStartQuiz }) {
       desc: "Adaptive practice questions generated specifically for this concept by AI.",
       questions: "5 Questions",
       time: "4 mins",
-      badge: "Concept AI Generated",
+      badge: "Concept AI Practice",
       icon: Brain,
-    },
-    {
-      id: "exam-sim",
-      numQuestions: 20,
-      type: "FULL_EXAM",
-      title: "2. Full Exam Simulation",
-      desc: "Full-length timed exam simulation covering overall topic endurance.",
-      questions: "20 Questions",
-      time: "15 mins",
-      badge: "Full Exam Test",
-      icon: Target,
     },
     {
       id: "mock-pyqs",
       numQuestions: 10,
       type: "PYQS",
-      title: "3. Authentic PYQ Questions",
-      desc: "Authentic previous year questions with options, correct answer, and detailed backend explanations.",
+      title: "2. Authentic PYQs",
+      desc: "Authentic previous year questions with options, correct answer, and detailed explanations.",
       questions: "10 Questions",
       time: "8 mins",
       badge: "Verified PYQs",
@@ -45,12 +34,14 @@ export default function ConceptPracticeSection({ onStartQuiz }) {
     <div className="space-y-6 select-none text-[var(--color-text-primary)]">
       <div>
         <h3 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
-          Practice & Retrieval Modes
+          Concept Retrieval & Practice
         </h3>
-        <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">Select a dedicated practice mode. Each mode has a separate, distinct purpose.</p>
+        <p className="text-[11px] text-[var(--color-text-secondary)] mt-0.5">
+          Select a concept practice mode to reinforce your recall for this specific concept.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {modes.map((mode) => {
           const Icon = mode.icon;
 
@@ -83,7 +74,7 @@ export default function ConceptPracticeSection({ onStartQuiz }) {
                   onClick={() => onStartQuiz(mode.numQuestions, mode.type)}
                   className="w-full py-2.5 rounded-xl btn-gold text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                 >
-                  <span>Start Mode</span>
+                  <span>Start Practice</span>
                   <ArrowRight size={14} />
                 </button>
               </div>

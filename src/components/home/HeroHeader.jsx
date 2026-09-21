@@ -14,10 +14,10 @@ export default function HeroHeader({ user, streak, dashboard, onRefreshDashboard
     hours < 5
       ? "🌙 Late night"
       : hours < 12
-      ? "🌅 Good morning"
-      : hours < 17
-      ? "☀️ Good afternoon"
-      : "🌆 Good evening";
+        ? "🌅 Good morning"
+        : hours < 17
+          ? "☀️ Good afternoon"
+          : "🌆 Good evening";
 
   const streakDays = streak?.current_streak || 0;
   const targetData = dashboard?.target || {};
@@ -75,15 +75,15 @@ export default function HeroHeader({ user, streak, dashboard, onRefreshDashboard
     ratio >= 0.8
       ? "from-emerald-400 via-teal-400 to-cyan-400"
       : ratio >= 0.3
-      ? "from-amber-400 via-orange-400 to-yellow-400"
-      : "from-rose-500 via-red-500 to-orange-500";
+        ? "from-amber-400 via-orange-400 to-yellow-400"
+        : "from-rose-500 via-red-500 to-orange-500";
 
   const barGlow =
     ratio >= 0.8
       ? "shadow-emerald-500/60"
       : ratio >= 0.3
-      ? "shadow-amber-500/60"
-      : "shadow-rose-500/60";
+        ? "shadow-amber-500/60"
+        : "shadow-rose-500/60";
 
   return (
     <motion.div

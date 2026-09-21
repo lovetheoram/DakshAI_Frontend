@@ -152,14 +152,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/user/:id"
-          element={
-            <ProtectedRoute>
-              <UserProfilePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/user/:id" element={<UserProfilePage />} />
+        <Route path="/profile/:id" element={<UserProfilePage />} />
 
         {/* Admin Dashboard */}
         <Route

@@ -116,13 +116,25 @@ class ObserverEngine {
     // Derive snapshot fields
     this._snapshot = this._buildSnapshot(now, eventType, metadata);
 
-    // Debounce evaluation by 400ms for rapid clicking (<1s apart)
-    // When a user clicks multiple topics/tabs quickly, wait for them to land before evaluating
+    // Filter: Only trigger OIDPI evaluation for genuine evidence events
+    const EVIDENCE_EVENTS = [
+      "CONCEPT_STARTED",
+      "QUIZ_PASSED",
+      "QUIZ_FAILED",
+      "CONCEPT_MASTERED",
+      "STREAK_MILESTONE",
+      "IDENTITY_UNLOCKED"
+    ];
+
+    if (!EVIDENCE_EVENTS.includes(eventType)) {
+      return; // Do not trigger OIDPI for noise events
+    }
+
     if (this._evalDebounceTimer) {
       clearTimeout(this._evalDebounceTimer);
     }
 
-    const debounceDelay = eventType === "PAGE_VIEW" ? 100 : 250;
+    const debounceDelay = 250;
 
     this._evalDebounceTimer = setTimeout(() => {
       if (this._onEvaluate) {

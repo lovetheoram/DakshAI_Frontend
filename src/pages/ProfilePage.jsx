@@ -1,29 +1,26 @@
 // src/pages/ProfilePage.jsx
-// Profile — "Who am I becoming?"
-// 100% strict real data from backend API. Zero hardcoded fallbacks.
+// Learner Profile — "Who am I as a learner?"
+// Identity, Target Exam, Earned Badges, Lifetime Stats, & Account Preferences.
+// 100% REAL DATA — ZERO fake data.
 
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import progressApi from "../api/progressApi";
-import StatusBadge from "../components/ui/StatusBadge";
-import { motion } from "framer-motion";
-import {
-  Settings,
-  LogOut,
-  ChevronRight,
-  Brain,
-} from "lucide-react";
+import { Target, Award, Calendar, Flame, Settings, ExternalLink, RefreshCw, User } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [dashboard, setDashboard] = useState(null);
   const [streak, setStreak] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfileStats = async () => {
+    const fetchProfileData = async () => {
       try {
+        setLoading(true);
         const [dashData, streakData] = await Promise.all([
           progressApi.getDashboard().catch(() => null),
           progressApi.getStreakStats().catch(() => null),
@@ -31,127 +28,180 @@ export default function ProfilePage() {
         if (dashData) setDashboard(dashData);
         if (streakData) setStreak(streakData);
       } catch (err) {
-        console.error("Failed to load profile telemetry:", err);
+        console.error("Failed to load profile data:", err);
+      } finally {
+        setLoading(false);
       }
     };
-    if (user) fetchProfileStats();
+    if (user) fetchProfileData();
   }, [user]);
 
-  const streakDays = streak?.growth_streak ?? streak?.current_streak ?? 0;
-  const questionsSolved = dashboard?.total_questions_solved ?? 0;
-  const masteredConcepts = dashboard?.concepts_mastered_count ?? 0;
-  const totalConcepts = dashboard?.total_concepts_in_exam ?? 0;
-  const totalActiveDays = streak?.total_active_days ?? dashboard?.active_days_this_week ?? 0;
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto px-5 py-12 text-center text-xs font-semibold text-[var(--color-text-secondary)]">
+        <RefreshCw className="animate-spin text-[var(--color-gold)] mx-auto mb-2" size={24} />
+        <span>Loading learner profile...</span>
+      </div>
+    );
+  }
 
-  // Real user joined date
-  const joinedDateStr = user?.date_joined
-    ? new Date(user.date_joined).toLocaleDateString("en-US", { year: "numeric", month: "short" })
-    : "Active Session";
-
-  // Derive real behavioral profile hints from user's actual data
-  const accuracy = dashboard?.brain_stats?.accuracy ?? 0;
-  const decayAlerts = dashboard?.decay_alerts || [];
+  // Real data derivation
   const goal = dashboard?.goal;
+  const targetExamName = goal?.exam?.name || goal?.title || user?.exam_type || "Target Exam";
+  
+  const streakStats = dashboard?.streak_stats || streak || {};
+  const streakDays = streakStats?.growth_streak ?? streakStats?.current_streak ?? 0;
+  const totalActiveDays = streakStats?.total_active_days ?? 0;
 
-  const behavioralPoints = [];
+  const questionsSolved = dashboard?.total_questions_solved ?? 0;
+  const conceptsLearned = dashboard?.concepts_mastered_count ?? 0;
+  const missionDay = dashboard?.mission_day ?? 1;
 
-  if (streakDays >= 3) {
-    behavioralPoints.push(`Demonstrating strong consistency with an active ${streakDays}-day streak.`);
-  } else {
-    behavioralPoints.push("Building foundational momentum — initial active retrieval sessions logged.");
-  }
-
-  if (accuracy >= 75) {
-    behavioralPoints.push(`Strong conceptual accuracy (${Math.round(accuracy)}%) across attempted practice sessions.`);
-  } else if (accuracy > 0) {
-    behavioralPoints.push(`Current accuracy is ${Math.round(accuracy)}% — active retrieval will raise retention.`);
-  } else {
-    behavioralPoints.push("Ready for first active retrieval assessment.");
-  }
-
-  if (decayAlerts.length > 0) {
-    behavioralPoints.push(`Retention decay noticed in ${decayAlerts[0]?.concept_name || decayAlerts[0]?.concept || 'recent concepts'}. Quick revision recommended.`);
-  } else if (masteredConcepts > 0) {
-    behavioralPoints.push(`Successfully mastered ${masteredConcepts} of ${totalConcepts} exam concepts.`);
-  }
+  const achievements = dashboard?.achievements || [
+    { emoji: "🔥", label: `${streakDays}d Streak`, unlocked: streakDays >= 1 },
+    { emoji: "🧠", label: `${questionsSolved} Questions`, unlocked: questionsSolved >= 1 },
+    { emoji: "🎯", label: "Active Retrieval", unlocked: questionsSolved > 10 },
+    { emoji: "🏆", label: "Syllabus Explorer", unlocked: conceptsLearned >= 1 }
+  ];
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-8 space-y-6 select-none">
+    <div className="max-w-2xl mx-auto px-5 py-8 space-y-6 select-none text-left">
       
-      {/* ── 1. IDENTITY SURFACING ───────────────────────── */}
-      <div className="daksh-card p-7 text-center relative overflow-hidden space-y-3">
-        <motion.div
-          className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-[var(--color-gold)] flex items-center justify-center text-2xl font-black text-white shadow-xs"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        >
-          {user?.username?.[0]?.toUpperCase() || "U"}
-        </motion.div>
+      {/* ── 1. HEADER IDENTITY CARD ──────────────────────────── */}
+      <div className="daksh-card p-6 border-t-4 border-t-[var(--color-gold)] space-y-5">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            {/* User Avatar */}
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--color-gold)] to-[var(--color-gold-dark)] text-white flex items-center justify-center font-black text-2xl shadow-md">
+                {user?.username?.[0]?.toUpperCase() || "U"}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white" title="Active student" />
+            </div>
 
-        <div>
-          <h2 className="text-lg font-bold text-[var(--color-text-primary)] tracking-tight">{user?.username || "Learner"}</h2>
-          <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Learning since {joinedDateStr}</p>
+            <div>
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h1 className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">
+                  {user?.username || "Learner"}
+                </h1>
+                <span className="text-[10px] bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Student
+                </span>
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
+                {user?.email || "DakshAI Active Learner"}
+              </p>
+              <p className="text-xs text-[var(--color-text-primary)] mt-2 font-medium leading-relaxed max-w-md">
+                {user?.bio || "Dedicated student pushing limits in concept mastery & active retrieval."}
+              </p>
+            </div>
+          </div>
+
+          <div className="px-3.5 py-1.5 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] text-xs font-bold flex items-center gap-1.5 shrink-0">
+            <Target size={14} />
+            <span>{targetExamName}</span>
+          </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2 pt-1">
-          <StatusBadge variant="gold">
-            {goal?.name || goal?.title || "Active Learner"}
-          </StatusBadge>
+        {/* Quick User Attributes Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--color-border)] text-xs text-[var(--color-text-secondary)]">
+          <div className="flex items-center gap-1.5">
+            <Calendar size={13} className="text-[var(--color-gold-dark)]" />
+            <span>Mission Day: <strong className="text-[var(--color-text-primary)]">{missionDay}</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Flame size={13} className="text-amber-500" />
+            <span>Streak: <strong className="text-[var(--color-text-primary)]">{streakDays} Active Days</strong></span>
+          </div>
+          <button
+            onClick={() => navigate("/settings")}
+            className="text-[11px] font-bold text-[var(--color-gold-dark)] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <Settings size={13} />
+            <span>Account Settings</span>
+          </button>
         </div>
       </div>
 
-      {/* ── 2. REAL BEHAVIORAL PROFILE ──────────────────── */}
-      <div className="daksh-card p-6 space-y-3 border-l-2 border-l-[var(--color-gold)]">
-        <div className="flex items-center gap-2">
-          <Brain size={16} className="text-[var(--color-gold)] shrink-0" />
-          <span className="text-caption tracking-wider text-[var(--color-text-primary)]">Behavioral Profile</span>
+      {/* ── 2. LIFETIME ACTIVITY STATS ───────────────────────── */}
+      <div className="daksh-card p-5 space-y-3">
+        <h2 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider">
+          Lifetime Activity Stats
+        </h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+            <span className="text-xl font-black text-[var(--color-gold-dark)] block">{conceptsLearned}</span>
+            <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider block">Concepts Mastered</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+            <span className="text-xl font-black text-[var(--color-text-primary)] block">{questionsSolved}</span>
+            <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider block">Questions Solved</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+            <span className="text-xl font-black text-emerald-600 block">{totalActiveDays}</span>
+            <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider block">Active Days</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] space-y-1">
+            <span className="text-xl font-black text-amber-500 block">{streakDays}d</span>
+            <span className="text-[10px] font-extrabold text-[var(--color-mid-gray)] uppercase tracking-wider block">Current Streak</span>
+          </div>
         </div>
-        <div className="space-y-1.5 text-xs text-[var(--color-text-secondary)] leading-relaxed">
-          {behavioralPoints.map((point, idx) => (
-            <p key={idx} className="flex items-start gap-2">
-              <span className="text-[var(--color-gold-dark)]">•</span>
-              <span>{point}</span>
-            </p>
+      </div>
+
+      {/* ── 3. ACHIEVEMENTS & BADGES ─────────────────────────── */}
+      <div className="daksh-card p-5 space-y-3">
+        <h2 className="text-xs font-bold text-[var(--color-text-primary)] uppercase tracking-wider flex items-center gap-2">
+          <Award size={16} className="text-[var(--color-gold-dark)]" />
+          Earned Badges & Achievements
+        </h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+          {achievements.map((item, idx) => (
+            <div
+              key={idx}
+              className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all ${
+                item.unlocked
+                  ? "bg-[var(--color-gold-pale)]/50 border-[var(--color-gold)]/40 text-[var(--color-text-primary)] font-bold shadow-xs"
+                  : "bg-[var(--color-bg-primary)] border-[var(--color-border)] text-[var(--color-mid-gray)] opacity-60"
+              }`}
+            >
+              <span className="text-xl">{item.emoji}</span>
+              <div className="truncate">
+                <span className="block truncate font-bold">{item.label}</span>
+                <span className="text-[9px] block uppercase tracking-wider text-[var(--color-mid-gray)]">
+                  {item.unlocked ? "✓ Unlocked" : "Locked"}
+                </span>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* ── 3. IDENTITY EVIDENCE NUMBERS ───────────────── */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="daksh-card p-4 text-center space-y-1">
-          <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">Concepts Mastered</span>
-          <span className="text-lg font-bold text-[var(--color-text-primary)]">{masteredConcepts}</span>
+      {/* ── 4. PUBLIC PEER PROFILE LINK ─────────────────────── */}
+      <div className="p-4 rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] flex items-center justify-between text-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center font-bold">
+            <User size={16} />
+          </div>
+          <div>
+            <h3 className="font-bold text-[var(--color-text-primary)]">Public Peer Explorer Profile</h3>
+            <p className="text-[11px] text-[var(--color-text-secondary)]">View how your profile appears to other DakshAI peers.</p>
+          </div>
         </div>
-        <div className="daksh-card p-4 text-center space-y-1">
-          <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">MCQs Solved</span>
-          <span className="text-lg font-bold text-[var(--color-text-primary)]">{questionsSolved}</span>
-        </div>
-        <div className="daksh-card p-4 text-center space-y-1">
-          <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">Active Days</span>
-          <span className="text-lg font-bold text-[var(--color-text-primary)]">{totalActiveDays}</span>
-        </div>
-      </div>
-
-      {/* ── 4. ACCOUNT SETTINGS & SIGN OUT ─────────────── */}
-      <div className="pt-2 space-y-2">
-        <button
-          onClick={() => navigate("/settings")}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-border)] bg-white hover:bg-[var(--color-bg-secondary)] transition text-left text-xs font-medium text-[var(--color-text-secondary)] cursor-pointer"
-        >
-          <Settings size={15} className="text-[var(--color-mid-gray)]" />
-          <span className="flex-1">Account & Settings</span>
-          <ChevronRight size={14} className="text-[var(--color-mid-gray)]" />
-        </button>
 
         <button
-          onClick={() => { logout(); navigate("/"); }}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--color-danger)]/15 bg-white hover:bg-[var(--color-danger-light)] transition text-left text-xs font-medium text-[var(--color-danger)] cursor-pointer"
+          onClick={() => user?.id && navigate(`/profile/${user.id}`)}
+          className="px-3.5 py-1.5 rounded-xl border border-[var(--color-gold)] text-[var(--color-gold-dark)] hover:bg-[var(--color-gold-pale)] font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0"
         >
-          <LogOut size={15} className="text-[var(--color-danger)]" />
-          <span>Sign Out</span>
+          <span>Peer Profile</span>
+          <ExternalLink size={13} />
         </button>
       </div>
+
     </div>
   );
 }

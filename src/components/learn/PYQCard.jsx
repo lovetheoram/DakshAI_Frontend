@@ -149,37 +149,43 @@ export default function PYQCard({ pyq, index }) {
             {/* Structured Insights Cards (Pattern, Trap, Hook) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               {/* 🔥 Exam Pattern */}
-              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-1">
-                <div className="flex items-center gap-1.5 text-amber-800 text-[11px] font-bold uppercase tracking-wider">
-                  <Flame size={14} className="text-amber-600" />
-                  Exam Pattern
+              {(summary.trend || summary.pattern) && (
+                <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 space-y-1">
+                  <div className="flex items-center gap-1.5 text-amber-800 text-[11px] font-bold uppercase tracking-wider">
+                    <Flame size={14} className="text-amber-600" />
+                    Exam Pattern
+                  </div>
+                  <p className="text-[11px] text-amber-900 leading-snug">
+                    {summary.trend || summary.pattern}
+                  </p>
                 </div>
-                <p className="text-[11px] text-amber-900 leading-snug">
-                  {summary.trend || summary.pattern || "Frequently tested in State PCS examinations."}
-                </p>
-              </div>
+              )}
 
               {/* ⚠️ Common Trap */}
-              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1">
-                <div className="flex items-center gap-1.5 text-rose-800 text-[11px] font-bold uppercase tracking-wider">
-                  <AlertTriangle size={14} className="text-rose-600" />
-                  Common Trap
+              {summary.trap && (
+                <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1">
+                  <div className="flex items-center gap-1.5 text-rose-800 text-[11px] font-bold uppercase tracking-wider">
+                    <AlertTriangle size={14} className="text-rose-600" />
+                    Common Trap
+                  </div>
+                  <p className="text-[11px] text-rose-900 leading-snug">
+                    {summary.trap}
+                  </p>
                 </div>
-                <p className="text-[11px] text-rose-900 leading-snug">
-                  {summary.trap || "Pay close attention to exact site locations and period chronology."}
-                </p>
-              </div>
+              )}
 
               {/* 🧠 Memory Hook */}
-              <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-1">
-                <div className="flex items-center gap-1.5 text-indigo-800 text-[11px] font-bold uppercase tracking-wider">
-                  <Brain size={14} className="text-indigo-600" />
-                  Memory Hook
+              {summary.memory_hook && (
+                <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-1">
+                  <div className="flex items-center gap-1.5 text-indigo-800 text-[11px] font-bold uppercase tracking-wider">
+                    <Brain size={14} className="text-indigo-600" />
+                    Memory Hook
+                  </div>
+                  <p className="text-[11px] text-indigo-900 leading-snug">
+                    {summary.memory_hook}
+                  </p>
                 </div>
-                <p className="text-[11px] text-indigo-900 leading-snug">
-                  {summary.memory_hook || "Connect key findings with primary excavation leads."}
-                </p>
-              </div>
+              )}
             </div>
           </motion.div>
         )}

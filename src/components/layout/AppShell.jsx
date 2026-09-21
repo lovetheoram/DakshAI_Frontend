@@ -21,14 +21,15 @@ import {
   BarChart2,
   Calendar,
   Activity,
+  Target,
 } from "lucide-react";
 
-// Core Navigation Rooms: Home, Learn, World, Map
+// Core 4 Rooms: Home (Where am I?), Practice (Can I do it?), Learn (Do I understand?), World (What else exists?)
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Home" },
+  { to: "/practice", icon: Target, label: "Practice" },
   { to: "/learn", icon: BookOpen, label: "Learn" },
   { to: "/world", icon: Globe, label: "World" },
-  { to: "/map", icon: Map, label: "Map" },
 ];
 
 export default function AppShell({ children }) {
@@ -140,7 +141,7 @@ export default function AppShell({ children }) {
                 to={to}
                 end={to === "/"}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${isActive || (to === "/map" && location.pathname === "/growth")
+                  `flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${isActive
                     ? "bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] border border-[var(--color-gold)]/20"
                     : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
                   }`
@@ -499,7 +500,7 @@ export default function AppShell({ children }) {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[var(--color-border)] pb-safe shadow-md">
           <div className="flex items-center justify-around px-2 py-2">
             {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
-              const isActive = location.pathname === to || (to === "/map" && location.pathname === "/growth");
+              const isActive = location.pathname === to;
               return (
                 <NavLink
                   key={to}

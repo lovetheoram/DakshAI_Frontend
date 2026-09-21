@@ -1,6 +1,8 @@
 // src/pages/Home.jsx
-// Home = The Studio — "I know what to do."
-// 100% strict real data from backend API with info tooltips & multiple continuous concepts support.
+// HOME — "The Reassurance Contract"
+// Ultra-clean, iconic, zero description paragraphs.
+// Big typography, visual cards, and authoritative evidence.
+// Always displays the calculated required pace from Day 1 based on exam target date.
 
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,48 +10,51 @@ import { AuthContext } from "../context/AuthContext";
 import progressApi from "../api/progressApi";
 import syllabusApi from "../api/syllabusApi";
 import SkeletonLoader from "../components/ui/SkeletonLoader";
-import InfoTooltip from "../components/ui/InfoTooltip";
 import LandingPage from "../components/home/LandingPage";
 import ServerStatusChecker from "../components/home/ServerStatusChecker";
 import OnboardingGate from "../components/onboarding/OnboardingGate";
-import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Globe, MapPin, Layers, Target } from "lucide-react";
-
-import { useSessionEngine } from "../hooks/useSessionEngine";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowRight,
+  BookOpen,
+  Target,
+  Globe,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 export default function Home() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { activeSession } = useSessionEngine();
+
   const [dashboard, setDashboard] = useState(null);
   const [exams, setExams] = useState([]);
-  const [syllabusTree, setSyllabusTree] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isServerReady, setIsServerReady] = useState(false);
-  const [selectedConceptIdx, setSelectedConceptIdx] = useState(0);
+
+  // Progressive Disclosure for Diagnostic
+  const [showWhy, setShowWhy] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [dashData, treeData] = await Promise.all([
+        progressApi.getDashboard(),
+        syllabusApi.getTree().catch(() => null),
+      ]);
+      setDashboard(dashData);
+      setExams(treeData?.exams || []);
+    } catch (err) {
+      console.error("Home data fetch failed:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user || !isServerReady) return;
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [dashData, treeData] = await Promise.all([
-          progressApi.getDashboard(),
-          syllabusApi.getTree().catch(() => null),
-        ]);
-        setDashboard(dashData);
-        setSyllabusTree(treeData);
-        setExams(treeData?.exams || []);
-      } catch (err) {
-        console.error("Home data fetch failed:", err);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, [user, isServerReady]);
 
@@ -58,20 +63,25 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-16 space-y-6 text-center">
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 py-20 space-y-8 text-left">
         <SkeletonLoader lines={2} />
-        <SkeletonLoader lines={4} />
+        <SkeletonLoader lines={3} />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-20 text-center">
-        <p className="text-[var(--color-text-secondary)] mb-4">Something went wrong connecting to your study room.</p>
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 py-24 text-left space-y-4">
+        <h2 className="text-xl font-black text-[var(--color-text-primary)]">
+          Could not connect to your study room.
+        </h2>
+        <p className="text-xs text-[var(--color-text-secondary)]">
+          Let's reconnect your study session.
+        </p>
         <button
           onClick={() => window.location.reload()}
-          className="btn-gold px-6 py-2.5 rounded-xl text-sm"
+          className="btn-gold px-6 py-2.5 rounded-xl text-xs font-bold cursor-pointer shadow-xs"
         >
           Try Again
         </button>
@@ -79,282 +89,234 @@ export default function Home() {
     );
   }
 
-  const activeGoal = dashboard?.goal;
-  const recentActivity = dashboard?.recent_activity;
-  const lastActive = dashboard?.last_active_concept;
-  const recentConcepts = dashboard?.recent_concepts || [];
-  const decayAlerts = dashboard?.decay_alerts || [];
+  // ── Authoritative Data From Backend ──
+  const goal = dashboard?.goal;
+  const prediction = dashboard?.prediction || dashboard?.trajectory || {};
+  const bottleneck = dashboard?.bottleneck;
+  const subjectBreakdown = dashboard?.subject_breakdown || [];
 
-  // Daily target telemetry
-  const todayGrowth = dashboard?.today_growth ?? dashboard?.target?.completed_growth ?? 0;
-  const targetGrowth = dashboard?.target_growth ?? dashboard?.target?.target_growth ?? 1.0;
+  // Target & Days
+  const targetExamName = goal?.exam_name || goal?.exam?.name || goal?.title || "Target Exam";
+  const daysRemaining = prediction?.days_remaining ?? (
+    goal?.target_date
+      ? Math.max(0, Math.ceil((new Date(goal.target_date).getTime() - Date.now()) / 86400000))
+      : null
+  );
 
-  // Assemble ALL active continuous concepts
-  const continuousConceptsMap = new Map();
+  // Authoritative Velocity & Status
+  const statusType = prediction?.status || "UNAVAILABLE";
+  const hasHistory = Boolean(prediction?.has_sufficient_history);
 
-  if (activeSession) {
-    continuousConceptsMap.set(activeSession.conceptId, {
-      id: activeSession.conceptId,
-      name: activeSession.conceptTitle,
-      status: "ACTIVE SESSION",
-      prev_concept: recentActivity?.prev_concept || "Prerequisite Review",
-      next_concept: recentActivity?.next_concept || "Advanced Application",
-    });
-  }
+  // Calculate Required Daily Pace from target date
+  const requiredDaily = prediction?.required_daily !== null && prediction?.required_daily !== undefined
+    ? Number(prediction.required_daily).toFixed(1)
+    : (daysRemaining && daysRemaining > 0 ? (100 / daysRemaining).toFixed(1) : "1.5");
 
-  if (lastActive) {
-    continuousConceptsMap.set(lastActive.id, {
-      id: lastActive.id,
-      name: lastActive.name,
-      status: "IN PROGRESS",
-      subtopic_name: lastActive.subtopic_name,
-      mastery: lastActive.mastery,
-    });
-  }
-
-  recentConcepts.forEach((c) => {
-    if (c && c.id && !continuousConceptsMap.has(c.id)) {
-      continuousConceptsMap.set(c.id, {
-        id: c.id,
-        name: c.name,
-        status: "RECENT",
-        subtopic_name: c.subtopic_name,
-        mastery: c.mastery,
-      });
-    }
-  });
-
-  decayAlerts.forEach((da) => {
-    if (da && da.concept_id && !continuousConceptsMap.has(da.concept_id)) {
-      continuousConceptsMap.set(da.concept_id, {
-        id: da.concept_id,
-        name: da.concept_name || da.concept,
-        status: "NEEDS REVISION",
-        subtopic_name: da.subtopic_name,
-      });
-    }
-  });
-
-  if (continuousConceptsMap.size === 0) {
-    let fallback = null;
-    if (syllabusTree?.exams?.[0]?.subjects?.[0]?.topics?.[0]?.subtopics?.[0]?.concepts?.[0]) {
-      fallback = syllabusTree.exams[0].subjects[0].topics[0].subtopics[0].concepts[0];
-    } else if (syllabusTree?.subjects?.[0]?.topics?.[0]?.subtopics?.[0]) {
-      fallback = { id: syllabusTree.subjects[0].topics[0].subtopics[0].id, name: syllabusTree.subjects[0].topics[0].subtopics[0].name };
-    }
-    if (fallback) {
-      continuousConceptsMap.set(fallback.id, {
-        id: fallback.id,
-        name: fallback.name,
-        status: "START PATHWAY",
-      });
-    }
-  }
-
-  const continuousConceptsList = Array.from(continuousConceptsMap.values());
-  const activeConceptItem = continuousConceptsList[selectedConceptIdx] || continuousConceptsList[0];
-
-  let ctaLabel = "Continue Journey";
-  let ctaAction = () => navigate(activeConceptItem?.id ? `/learn/${activeConceptItem.id}` : "/learn");
-
-  if (!activeGoal) {
-    ctaLabel = "Set Target Goal";
-    ctaAction = () => navigate("/map");
-  } else if (!activeConceptItem) {
-    ctaLabel = "Explore Learning Space";
-    ctaAction = () => navigate("/learn");
-  }
-
-  // Greeting
-  const hour = new Date().getHours();
-  const timeGreeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const userName = user?.first_name || user?.username || "Learner";
+  const actualDaily = prediction?.actual_daily !== null && prediction?.actual_daily !== undefined
+    ? Number(prediction.actual_daily).toFixed(1)
+    : "0.0";
 
   return (
     <OnboardingGate
       dashboard={dashboard}
       exams={exams}
-      onComplete={() => {
-        setLoading(true);
-        progressApi.getDashboard().then(setDashboard).finally(() => setLoading(false));
-      }}
+      onComplete={fetchData}
     >
-      <div className="max-w-xl mx-auto px-5 py-10 space-y-8 select-none">
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-10 py-12 sm:py-16 space-y-12 sm:space-y-14 select-none text-left font-sans">
 
-        {/* ── 1. GREETING & CALM STATEMENT ─────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-3"
-        >
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
-              {timeGreeting}, {userName}.
-            </h1>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate("/map")}
-                className="px-3 py-1.5 rounded-xl bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-[var(--color-gold-dark)] text-xs font-bold flex items-center gap-1.5 hover:bg-[var(--color-gold)] hover:text-white transition-all cursor-pointer shadow-xs"
-              >
-                <MapPin size={13} />
-                <span>Map POC</span>
-              </button>
-              {activeGoal && (
-                <span className="text-[10px] font-bold text-[var(--color-gold-dark)] bg-[var(--color-gold-pale)] px-2.5 py-1 rounded-full border border-[var(--color-gold)]/20 flex items-center gap-1">
-                  <Target size={11} />
-                  +{todayGrowth.toFixed(2)}% / +{targetGrowth.toFixed(2)}% Target
-                </span>
+        {/* ── 1. THE CONTRACT (HERO) ─────────────────────────── */}
+        <section className="space-y-3">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[var(--color-gold-pale)] border border-[var(--color-gold)]/30 text-xs font-bold text-[var(--color-gold-dark)] shadow-2xs">
+              <span>{targetExamName}</span>
+              {daysRemaining !== null && (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span>{daysRemaining} days left</span>
+                </>
               )}
             </div>
           </div>
-          <p className="text-xs sm:text-sm text-[var(--color-text-secondary)] leading-relaxed font-semibold">
-            Don't find out on exam day. Gathering evidence today to close the gap between assumption and reality.
-          </p>
-        </motion.div>
 
-        {/* ── 2. MULTIPLE CONTINUOUS CONCEPTS SELECTOR ────────── */}
-        {continuousConceptsList.length > 1 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-caption tracking-widest text-[var(--color-text-primary)] font-bold flex items-center gap-1.5">
-                <Layers size={13} className="text-[var(--color-gold)]" />
-                Active Continuous Pathways ({continuousConceptsList.length})
-              </span>
-              <InfoTooltip
-                title="Multiple Continuous Concepts"
-                meaning="DakshAI allows you to study multiple concepts concurrently across different subjects without forcing a rigid linear sequence."
-                formula="Active Pathways = Ongoing Sessions + Recent In-Progress Topics + Decay Alerts"
-                howToIncrease="Switch between pathways freely. Your memory engine tracks retention independently for each concept."
-              />
-            </div>
+          <h1 className="text-3xl sm:text-5xl font-black text-[var(--color-text-primary)] tracking-tight leading-[1.12]">
+            You do the studying.{" "}
+            <span className="text-[var(--color-gold)]">We'll help you know if it's enough.</span>
+          </h1>
+        </section>
 
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-              {continuousConceptsList.map((cItem, i) => (
-                <button
-                  key={cItem.id}
-                  onClick={() => setSelectedConceptIdx(i)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                    selectedConceptIdx === i
-                      ? "bg-[var(--color-gold-pale)] border-[var(--color-gold)] text-[var(--color-gold-dark)] shadow-xs font-bold"
-                      : "bg-white border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                  }`}
-                >
-                  {cItem.name}
-                  {cItem.status === "ACTIVE SESSION" && " ⚡"}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── 3. TODAY CARD (Selected Continuous Concept) ─────────── */}
-        <motion.div
-          key={activeConceptItem?.id || selectedConceptIdx}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="daksh-card p-6 sm:p-7 space-y-6 relative border-t-2 border-t-[var(--color-gold)]"
-        >
-          {/* Section label */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-caption tracking-widest text-[var(--color-gold)] font-bold">
-                Today
-              </span>
-              <InfoTooltip
-                title="Daily Pathway Logic"
-                meaning="Presents your current active concept or highest-priority retrieval step for today."
-                formula="Priority = Active Session > Decay Slippage > Recent Unfinished Topic"
-                howToIncrease="Complete your active retrieval session to advance mastery from Understanding to Applying."
-              />
-            </div>
-            <h2 className="text-lg font-bold text-[var(--color-text-primary)] tracking-tight">
-              {activeConceptItem?.name || "Your Learning Pathway"}
-            </h2>
-            <p className="text-xs text-[var(--color-text-secondary)] font-normal">
-              {activeConceptItem?.status === "ACTIVE SESSION"
-                ? "You have an active session in progress. Pick up right where you paused."
-                : activeConceptItem?.status === "NEEDS REVISION"
-                ? "Memory recall stability slipping. A short 5-minute retrieval check is recommended today."
-                : activeGoal
-                ? `Target exam: ${activeGoal.name || activeGoal.title || 'Selected Syllabus'}`
-                : "Configure your target exam to initialize your exact daily trajectory."}
-            </p>
+        {/* ── 2. THE THREE PLACES ─────────────────────────────── */}
+        <section className="space-y-3">
+          <div>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--color-mid-gray)]">
+              When you need us
+            </span>
           </div>
 
-          {/* Primary CTA Button */}
-          <button
-            onClick={ctaAction}
-            className="w-full py-3.5 rounded-xl btn-gold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-          >
-            <span>{ctaLabel}</span>
-            <ArrowRight size={16} />
-          </button>
-
-          {/* Continuity Pathway: Yesterday → Today → Tomorrow */}
-          {activeConceptItem && (
-            <div className="grid grid-cols-3 gap-3 pt-5 border-t border-[var(--color-border)] text-left">
-              <div className="space-y-1">
-                <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">Yesterday</span>
-                <p className="text-xs font-medium text-[var(--color-text-secondary)] truncate flex items-center gap-1">
-                  <CheckCircle2 size={11} className="text-[var(--color-success)] shrink-0" />
-                  {activeConceptItem.prev_concept || "Prerequisites"}
-                </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            {/* PLACE 1: LEARN */}
+            <div
+              onClick={() => navigate("/learn")}
+              className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-gold)] hover:shadow-sm transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                  <BookOpen size={20} />
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                  Understand something.
+                </h3>
               </div>
-              <div className="space-y-1 border-x border-[var(--color-border)] px-3">
-                <span className="text-[10px] text-[var(--color-gold-dark)] font-bold uppercase block">Today</span>
-                <p className="text-xs font-bold text-[var(--color-text-primary)] truncate">{activeConceptItem.name}</p>
-              </div>
-              <div className="space-y-1 pl-1">
-                <span className="text-[10px] text-[var(--color-mid-gray)] font-semibold uppercase block">Tomorrow</span>
-                <p className="text-xs font-medium text-[var(--color-text-secondary)] truncate">{activeConceptItem.next_concept || "Next Chapter"}</p>
+              <div className="text-xs font-bold text-[var(--color-gold)] flex items-center gap-1.5 pt-1">
+                <span>Enter Learn</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
-          )}
-        </motion.div>
 
-        {/* ── 4. WHY THIS MATTERS ────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="daksh-card p-5 space-y-2 border-l-2 border-l-[var(--color-gold)]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Globe size={14} className="text-[var(--color-gold)] shrink-0" />
-              <span className="text-caption tracking-wider text-[var(--color-text-primary)]">Why This Matters</span>
+            {/* PLACE 2: PRACTICE */}
+            <div
+              onClick={() => navigate("/practice")}
+              className="p-5 rounded-2xl bg-[var(--color-bg-card)] border-2 border-[var(--color-gold)]/40 hover:border-[var(--color-gold)] hover:shadow-gold/10 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between space-y-4 relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--color-gold-pale)] text-[var(--color-gold-dark)] flex items-center justify-center font-bold">
+                  <Target size={20} />
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-[var(--color-gold-dark)]">
+                  Test what you know.
+                </h3>
+              </div>
+              <div className="text-xs font-black text-[var(--color-gold-dark)] flex items-center gap-1.5 pt-1">
+                <span>Enter Practice</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </div>
             </div>
-            <InfoTooltip
-              title="Real-World Relevance"
-              meaning="Connects textbook formulas directly to real engineering, physics, and computational systems."
-              formula="Relevance = Concept Domain -> Industry Applications (EV Powertrains, Robotics, Algorithms)"
-              howToIncrease="Understanding real-world applications enhances long-term memory retrieval."
-            />
+
+            {/* PLACE 3: WORLD */}
+            <div
+              onClick={() => navigate("/world")}
+              className="p-5 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] hover:border-[var(--color-gold)] hover:shadow-sm transition-all cursor-pointer group flex flex-col justify-between space-y-4"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                  <Globe size={20} />
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-[var(--color-text-primary)] group-hover:text-[var(--color-gold)] transition-colors">
+                  See what's happening.
+                </h3>
+              </div>
+              <div className="text-xs font-bold text-[var(--color-gold)] flex items-center gap-1.5 pt-1">
+                <span>Enter World</span>
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
           </div>
-          <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-            {activeGoal
-              ? `Mastering ${activeConceptItem?.name || 'this concept'} builds real problem-solving competence for ${activeGoal.name || activeGoal.title}.`
-              : "Connecting textbook principles to real engineering, physics, and computational systems."}
-          </p>
-        </motion.div>
+        </section>
 
-        {/* ── 5. MAP ANCHOR ─────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="text-center pt-2"
-        >
-          <button
-            onClick={() => navigate("/map")}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-gold-dark)] transition-colors cursor-pointer"
-          >
-            <MapPin size={13} className="text-[var(--color-gold)]" />
-            See where I stand on my map →
-          </button>
-        </motion.div>
+        {/* ── 3. YOUR WORK SHOWS US (EVIDENCE HUD) ─────────────── */}
+        <section className="space-y-3 pt-2 border-t border-[var(--color-border)]">
+          <div>
+            <span className="text-[11px] font-black uppercase tracking-widest text-[var(--color-gold-dark)] block">
+              Your work shows us
+            </span>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-4 shadow-2xs">
+            <div className="flex items-baseline justify-between flex-wrap gap-4">
+              <h3 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">
+                {statusType === "BEHIND" && (
+                  <span className="text-rose-600 dark:text-rose-400">You're behind pace.</span>
+                )}
+                {statusType === "AHEAD" && (
+                  <span className="text-emerald-600 dark:text-emerald-400">You're ahead of pace.</span>
+                )}
+                {statusType === "ON_TRACK" && (
+                  <span className="text-[var(--color-gold)]">You're on pace.</span>
+                )}
+                {(statusType === "UNAVAILABLE" || !hasHistory) && (
+                  <span className="text-[var(--color-gold)]">Calibrating your pace.</span>
+                )}
+              </h3>
+
+              <div className="flex items-center gap-6 text-xs font-bold">
+                <div>
+                  <span className="text-[10px] text-[var(--color-mid-gray)] uppercase block">Recent</span>
+                  <span className="text-base font-black text-[var(--color-text-primary)]">
+                    {hasHistory && actualDaily !== "0.0" ? `${actualDaily}%` : "0.0%"}
+                  </span>
+                  <span className="text-[10px] font-normal text-[var(--color-mid-gray)]">/day</span>
+                </div>
+                <div className="h-6 w-px bg-[var(--color-border)]" />
+                <div>
+                  <span className="text-[10px] text-[var(--color-gold-dark)] uppercase block">Required</span>
+                  <span className="text-base font-black text-[var(--color-gold)]">{requiredDaily}%</span>
+                  <span className="text-[10px] font-normal text-[var(--color-mid-gray)]">/day</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Diagnostic Button */}
+            <div className="pt-1">
+              <button
+                onClick={() => setShowWhy((prev) => !prev)}
+                className="text-xs font-bold text-[var(--color-gold-dark)] hover:text-[var(--color-gold)] transition-colors cursor-pointer flex items-center gap-1.5 py-1"
+              >
+                <span>{showWhy ? "Hide Breakdown" : "How do we know?"}</span>
+                {showWhy ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+
+              <AnimatePresence>
+                {showWhy && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4 pt-4 border-t border-[var(--color-border)] overflow-hidden mt-2"
+                  >
+                    <span className="text-[11px] font-bold text-[var(--color-mid-gray)] uppercase tracking-wider block">
+                      Your Verified Evidence
+                    </span>
+
+                    {/* Subject Bars */}
+                    {subjectBreakdown.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {subjectBreakdown.map((subj) => (
+                          <div key={subj.id} className="space-y-1 text-xs">
+                            <div className="flex justify-between font-bold">
+                              <span className="text-[var(--color-text-primary)]">{subj.name}</span>
+                              <span className="text-[var(--color-gold-dark)]">{subj.readiness_pct}%</span>
+                            </div>
+                            <div className="w-full bg-[var(--color-bg-secondary)] rounded-full h-2 overflow-hidden">
+                              <div
+                                className="bg-[var(--color-gold)] h-full rounded-full transition-all duration-500"
+                                style={{ width: `${subj.readiness_pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--color-text-secondary)]">
+                        Solve questions in Practice to establish your subject readiness baseline.
+                      </p>
+                    )}
+
+                    {/* Bottleneck Observation */}
+                    {bottleneck && (
+                      <div className="p-4 rounded-xl bg-[var(--color-bg-secondary)] text-xs">
+                        <p className="font-bold text-[var(--color-text-primary)]">
+                          Largest gap: <span className="text-[var(--color-gold)]">{bottleneck.subject_name}</span> ({bottleneck.subtopic_name})
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+          </div>
+        </section>
 
       </div>
     </OnboardingGate>

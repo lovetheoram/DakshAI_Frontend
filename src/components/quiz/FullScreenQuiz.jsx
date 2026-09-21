@@ -2,7 +2,7 @@
 // Strict real-data focus mode quiz experience
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import quizApi from "../../api/quizApi";
 import socialApi from "../../api/socialApi";
 import syllabusApi from "../../api/syllabusApi";
@@ -14,10 +14,24 @@ const MAIN = "__main__";
 
 export default function FullScreenQuiz({ conceptId: propConceptId, concept: propConcept, onClose: propOnClose }) {
   const { conceptId: routeConceptId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  const subtopicId = searchParams.get("subtopic_id") || searchParams.get("subtopicId");
+  const quizType = (searchParams.get("type") || "PYQS").toUpperCase();
+  const numQuestions = parseInt(searchParams.get("q") || (quizType === "FULL_EXAM" ? "20" : "5"), 10);
+  const customTitle = searchParams.get("title");
+
   const conceptId = propConceptId || routeConceptId;
-  const onClose = propOnClose || (() => navigate(`/learn/${conceptId}`));
+  const onClose = propOnClose || (() => {
+    if (subtopicId || quizType === "FULL_EXAM") {
+      navigate("/practice");
+    } else if (conceptId) {
+      navigate(`/learn/${conceptId}`);
+    } else {
+      navigate("/practice");
+    }
+  });
   const { refreshCatalyst } = useMindModel();
 
   const [conceptDetail, setConceptDetail] = useState(propConcept || null);
@@ -31,7 +45,9 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    socialApi.pingSession("quiz", conceptId).catch(() => {});
+    if (conceptId) {
+      socialApi.pingSession("quiz", conceptId).catch(() => {});
+    }
     return () => { socialApi.pingSession(null).catch(() => {}); };
   }, [conceptId]);
 
@@ -52,9 +68,10 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
         let res = null;
         try {
           res = await quizApi.start({
-            concept_id: conceptId,
-            num_questions: 5,
-            quiz_type: "PYQS",
+            concept_id: conceptId || undefined,
+            subtopic_id: subtopicId || undefined,
+            num_questions: numQuestions,
+            quiz_type: quizType,
           });
         } catch (apiErr) {
           console.warn("Backend quiz start endpoint error:", apiErr);
@@ -64,20 +81,18 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
           setSession(res);
           setStartTime(Date.now());
         } else {
-          setError("No practice questions found for this concept yet.");
+          setError("No practice questions found for this session yet.");
         }
       } catch (err) {
         console.error("Quiz init failed:", err);
-        setError("Failed to load questions for this concept.");
+        setError("Failed to load questions for this test.");
       } finally {
         setLoading(false);
       }
     };
 
-    if (conceptId) {
-      initializeQuiz();
-    }
-  }, [conceptId, conceptDetail]);
+    initializeQuiz();
+  }, [conceptId, subtopicId, quizType, numQuestions]);
 
   const getSelected = (qid, type = MAIN) =>
     answers.find((a) => a.question_id === qid && a.sub_question_type === type)?.marked_option;
@@ -151,7 +166,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
             <div>
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">Quiz Review & Results</h2>
               <p className="text-xs text-[var(--color-text-secondary)] mt-1 font-medium">
-                {conceptDetail?.name || result.concept_name || "Concept Mastery Practice"}
+                {customTitle || conceptDetail?.name || result.subtopic_name || result.concept_name || (quizType === "FULL_EXAM" ? "Full Exam Simulation" : "Practice Quiz")}
               </p>
             </div>
 
@@ -205,7 +220,7 @@ export default function FullScreenQuiz({ conceptId: propConceptId, concept: prop
                 onClick={onClose}
                 className="btn-gold px-6 py-2.5 rounded-xl text-xs font-bold shadow-xs cursor-pointer"
               >
-                Return to Learning Space
+                {subtopicId || quizType === "FULL_EXAM" ? "Return to Practice" : "Return to Learning Space"}
               </button>
             </div>
           </div>

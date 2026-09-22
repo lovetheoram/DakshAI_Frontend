@@ -1,49 +1,40 @@
 // src/components/onboarding/OnboardingGate.jsx
-// Decides whether to show DakshOnboarding or the normal dashboard.
-// Condition: user is logged in, has no goal, and hasn't completed onboarding yet.
+// Controls the Welcomer flow for new users.
+// Ensures every newly signed up or logged in user who has not been welcomed
+// or has no goal set is greeted by the Welcomer to set their Target Date & Promise.
 
 import { useContext, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import DakshOnboarding from "./DakshOnboarding";
 
-const STORAGE_KEY = "daksh_onboarding_done";
-
-export function hasCompletedOnboarding() {
-  return localStorage.getItem(STORAGE_KEY) === "true";
-}
-
-export function markOnboardingDone() {
-  localStorage.setItem(STORAGE_KEY, "true");
-}
-
-/**
- * Wraps any page. If the user needs onboarding, renders DakshOnboarding
- * fullscreen and calls onComplete when done. Otherwise renders children normally.
- *
- * Props:
- *   dashboard  — from progressApi.getDashboard()
- *   exams      — from syllabusApi.getTree().exams
- *   onComplete — called after onboarding finishes (to reload dashboard data)
- *   children   — the normal page content
- */
 export default function OnboardingGate({ dashboard, exams, onComplete, children }) {
   const { user } = useContext(AuthContext);
   const [forceDone, setForceDone] = useState(false);
 
-  // User needs onboarding if logged in, dashboard has loaded, user has no goal set, hasn't completed onboarding, and hasn't skipped in this session
+  // User-scoped key ensures each user account is treated individually
+  const userKey = user ? (user.id || user.username) : null;
+  const hasBeenWelcomed = userKey ? localStorage.getItem(`daksh_welcomed_${userKey}`) === "true" : false;
+
+  // A user needs the Welcomer if:
+  // 1. User is authenticated
+  // 2. Has not completed their welcoming session (!hasBeenWelcomed) OR has no active goal (!dashboard?.goal)
+  // 3. Has not skipped in current memory session (!forceDone)
   const needsOnboarding =
-    user &&
+    Boolean(user) &&
     dashboard !== null &&
-    !dashboard?.goal &&
-    !hasCompletedOnboarding() &&
+    (!hasBeenWelcomed || !dashboard?.goal) &&
     !forceDone;
 
   if (needsOnboarding) {
     return (
       <DakshOnboarding
         exams={exams || []}
+        existingGoal={dashboard?.goal}
         onComplete={() => {
-          markOnboardingDone();
+          if (userKey) {
+            localStorage.setItem(`daksh_welcomed_${userKey}`, "true");
+          }
+          localStorage.setItem("daksh_onboarding_done", "true");
           setForceDone(true);
           if (onComplete) onComplete();
         }}

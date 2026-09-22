@@ -75,8 +75,20 @@ export default function App() {
           }
         />
         <Route
+          path="/quiz"
+          element={
+            <ProtectedRoute>
+              <FullScreenQuiz />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/practice"
-          element={<Navigate to="/learn" replace />}
+          element={
+            <ProtectedRoute>
+              <PracticePage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/community"
@@ -96,19 +108,11 @@ export default function App() {
         />
         <Route
           path="/growth"
-          element={
-            <ProtectedRoute>
-              <GrowthPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/" replace />}
         />
         <Route
           path="/map"
-          element={
-            <ProtectedRoute>
-              <GrowthPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/" replace />}
         />
         <Route
           path="/profile"

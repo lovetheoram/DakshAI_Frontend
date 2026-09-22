@@ -1,445 +1,215 @@
 // src/components/onboarding/DakshOnboarding.jsx
-// The first-time onboarding experience — Daksh the alien companion introduces itself,
-// collects exam + daily hours, then launches the user into the app.
-//
-// State machine: transmission → introduction → exam_select → time_select → launch
-// No LLM. No backend calls during animation. Pure frontend state + copy.
+// THE WELCOMER — Takes Target Date & Personal Promise from the learner on first onboarding.
+// Exam type was already selected during signup.
 
-import { useEffect, useRef, useState, useContext } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useState, useContext } from "react";
+import { motion } from "framer-motion";
 import { AuthContext } from "../../context/AuthContext";
 import progressApi from "../../api/progressApi";
-import EventTracker from "../../intelligence/events/EventTracker";
+import {
+  Calendar,
+  Sparkles,
+  ArrowRight,
+  HeartHandshake,
+} from "lucide-react";
 
-// ── Script ───────────────────────────────────────────────────────────────────
-const SCRIPT = {
-  transmission: [
-    { text: "Transmission received...", delay: 0 },
-    { text: "Hello, explorer 👽", delay: 1800 },
-  ],
-  introduction: "I am Daksh.\n\nI have been waiting for someone who wants to upgrade their mind.\n\nBefore we begin — I need to understand your mission.",
-  examQuestion: "What universe are you preparing for?",
-  timeQuestion: "How much time does your daily mission have?",
-  launch: ["Interesting...", "Your journey begins."],
-};
-
-const EXAM_OPTIONS = [
-  { icon: "🚀", label: "JEE", sublabel: "Joint Entrance Exam", value: "jee" },
-  { icon: "🧬", label: "NEET", sublabel: "National Eligibility", value: "neet" },
-  { icon: "💻", label: "Placement", sublabel: "Coding Interviews", value: "placement" },
-  { icon: "🏛️", label: "State PCS", sublabel: "BPSC, UPPCS, etc.", value: "pcs" },
+const PROMISE_SUGGESTIONS = [
+  "I will show up honestly and face the questions I get wrong.",
+  "Consistency over comfort. 2 hours of real retrieval every day.",
+  "I will test before assuming mastery.",
 ];
 
-const TIME_OPTIONS = [
-  { label: "30 min", value: 0.5 },
-  { label: "1 hour", value: 1 },
-  { label: "2 hours", value: 2 },
-  { label: "4+ hours", value: 4 },
-];
-
-// ── Typing line component ─────────────────────────────────────────────────────
-function TypedLine({ text, speed = 30, onDone }) {
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
-  useEffect(() => {
-    setDisplayed("");
-    setDone(false);
-    let i = 0;
-    const interval = setInterval(() => {
-      i++;
-      setDisplayed(text.slice(0, i));
-      if (i >= text.length) {
-        clearInterval(interval);
-        setDone(true);
-        if (onDone) onDone();
-      }
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text]);
-
-  return (
-    <span>
-      {displayed}
-      {!done && <span className="inline-block w-0.5 h-4 bg-purple-400 ml-0.5 animate-pulse align-middle" />}
-    </span>
-  );
-}
-
-// ── Main Onboarding component ─────────────────────────────────────────────────
-export default function DakshOnboarding({ exams = [], onComplete }) {
-  const navigate = useNavigate();
+export default function DakshOnboarding({ exams = [], existingGoal = null, onComplete }) {
   const { user } = useContext(AuthContext);
-  const [step, setStep] = useState("transmission");
-  const [transmissionLine, setTransmissionLine] = useState(0);
-  const [showOrb, setShowOrb] = useState(false);
-  const [introDone, setIntroDone] = useState(false);
-  const [selectedExam, setSelectedExam] = useState(() => {
-    if (user?.selected_exam?.exam_type) {
-      const match = EXAM_OPTIONS.find((o) => o.value === user.selected_exam.exam_type);
-      if (match) return match;
-    }
-    return null;
-  });
-  const [selectedHours, setSelectedHours] = useState(null);
-  const [pcsSection, setPcsSection] = useState("BPSC");
-  const [launching, setLaunching] = useState(false);
-  const [launchLine, setLaunchLine] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
 
-  // Orb appears first
-  useEffect(() => {
-    const t = setTimeout(() => setShowOrb(true), 400);
-    return () => clearTimeout(t);
-  }, []);
+  const rawName = user?.first_name || user?.username || "Learner";
+  const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
-  // Advance transmission lines
-  useEffect(() => {
-    if (step !== "transmission") return;
-    const delays = [0, 1800];
-    delays.forEach((d, i) => {
-      setTimeout(() => setTransmissionLine(i), d);
-    });
-    // Move to introduction after last line finishes typing
-    setTimeout(() => setStep("introduction"), 4200);
-  }, [step]);
+  // Exam name from user profile (selected at signup) or existing goal or fallback
+  const targetExamName =
+    user?.selected_exam?.name ||
+    existingGoal?.exam_name ||
+    (exams[0]?.name ?? "Your Target Exam");
 
-  // Match exam from API list to selected value
+  // Date setup: minimum tomorrow, default 6 months
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDateStr = tomorrow.toISOString().split("T")[0];
+
+  const defaultDate = new Date();
+  defaultDate.setDate(defaultDate.getDate() + 180);
+  const defaultDateStr = existingGoal?.target_date || defaultDate.toISOString().split("T")[0];
+
+  const [targetDate, setTargetDate] = useState(defaultDateStr);
+  const [promiseText, setPromiseText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Live days left calculation
+  const daysLeft = targetDate
+    ? Math.max(1, Math.ceil((new Date(targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  // Match exam ID
   function getExamId() {
-    if (!selectedExam) return null;
-    const found = exams.find((e) =>
-      e.name.toLowerCase().includes(selectedExam.value) ||
-      e.exam_type === selectedExam.value
-    );
-    return found?.id || (exams[0]?.id ?? null);
+    if (user?.selected_exam?.id) return user.selected_exam.id;
+    if (existingGoal?.exam) return existingGoal.exam;
+    if (user?.selected_exam?.exam_type) {
+      const match = exams.find((e) => e.exam_type === user.selected_exam.exam_type);
+      if (match) return match.id;
+    }
+    return exams[0]?.id ?? 1;
   }
 
-  const handleLaunch = async () => {
-    if (submitted) return;
-    setLaunching(true);
-    setStep("launch");
-    setLaunchLine(0);
-    setTimeout(() => setLaunchLine(1), 2000);
+  const handleFinish = async (e) => {
+    if (e) e.preventDefault();
+    if (submitting || !targetDate) return;
+    setSubmitting(true);
 
     try {
       const examId = getExamId();
-      const targetDate = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
-
       await progressApi.setGoal({
-        goal_name: `Crack ${selectedExam?.label || "Exam"}`,
+        goal_name: `Crack ${targetExamName}`,
         exam: examId,
         target_date: targetDate,
-        available_hours_per_day: selectedHours?.value || 2,
+        available_hours_per_day: 2.0,
       });
 
-      EventTracker.onboardingCompleted(selectedExam?.label || "");
-      setSubmitted(true);
+      // Save user promise & onboarding status
+      const userKey = user?.id || user?.username || "default";
+      if (promiseText.trim()) {
+        localStorage.setItem(`daksh_promise_${userKey}`, promiseText.trim());
+      }
+      localStorage.setItem(`daksh_welcomed_${userKey}`, "true");
+      localStorage.setItem("daksh_onboarding_done", "true");
 
-      // Full-screen flash then complete
-      setTimeout(() => {
-        localStorage.setItem("daksh_onboarding_done", "true");
-        if (onComplete) onComplete();
-      }, 3200);
+      if (onComplete) onComplete();
     } catch (err) {
-      console.error("Onboarding goal set failed:", err);
-      // Still proceed — don't block the user
-      setTimeout(() => {
-        localStorage.setItem("daksh_onboarding_done", "true");
-        if (onComplete) onComplete();
-      }, 3200);
+      console.error("Welcomer save failed:", err);
+      // Ensure user is not blocked
+      const userKey = user?.id || user?.username || "default";
+      localStorage.setItem(`daksh_welcomed_${userKey}`, "true");
+      localStorage.setItem("daksh_onboarding_done", "true");
+      if (onComplete) onComplete();
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050810] overflow-hidden">
-      {/* Skip button */}
-      <button
-        type="button"
-        onClick={() => {
-          localStorage.setItem("daksh_onboarding_done", "true");
-          if (onComplete) onComplete();
-        }}
-        className="absolute top-5 right-5 text-xs font-semibold text-gray-400 hover:text-white px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all z-50 cursor-pointer"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md select-none font-sans overflow-y-auto">
+      {/* Ambient background glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl text-left text-slate-100 space-y-6"
       >
-        Skip ✕
-      </button>
+        {/* Header with Exam from Signup */}
+        <div className="space-y-2 border-b border-slate-800 pb-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
+              <Sparkles size={12} />
+              <span>Welcome to DakshAI</span>
+            </span>
 
-      {/* Galaxy background particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(40)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              width: Math.random() * 2 + 1 + "px",
-              height: Math.random() * 2 + 1 + "px",
-              top: Math.random() * 100 + "%",
-              left: Math.random() * 100 + "%",
-              opacity: Math.random() * 0.4 + 0.1,
-              animation: `pulse ${2 + Math.random() * 3}s ease-in-out infinite`,
-              animationDelay: Math.random() * 3 + "s",
-            }}
-          />
-        ))}
-        <div className="absolute inset-0 bg-gradient-radial from-purple-950/20 via-transparent to-transparent" />
-      </div>
+            {/* Target Exam selected during signup */}
+            <span className="px-3 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-bold text-amber-400">
+              {targetExamName}
+            </span>
+          </div>
 
-      {/* Main content */}
-      <div className="relative w-full max-w-sm px-6 flex flex-col items-center">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Welcome, <span className="text-amber-400">{displayName}</span>.
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Let's anchor your preparation with two important commitments:
+          </p>
+        </div>
 
-        {/* ── Orb ── */}
-        <AnimatePresence>
-          {showOrb && (
-            <motion.div
-              className="mb-8"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.7, ease: "backOut" }}
-            >
-              <div
-                className="w-16 h-16 rounded-full"
-                style={{
-                  background: "radial-gradient(circle at 35% 35%, #e9d5ff, #7c3aed 50%, #0891b2 100%)",
-                  boxShadow: "0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 0 12px rgba(8,145,178,0.4)",
-                  animation: "pulse 2.5s ease-in-out infinite",
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <form onSubmit={handleFinish} className="space-y-6">
 
-        {/* ── STEP: Transmission ── */}
-        <AnimatePresence mode="wait">
-          {step === "transmission" && (
-            <motion.div
-              key="transmission"
-              className="text-center space-y-3 min-h-[80px]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {SCRIPT.transmission.map((line, i) => (
-                <AnimatePresence key={i}>
-                  {transmissionLine >= i && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={i === 0 ? "text-xs text-gray-500 font-mono tracking-widest uppercase" : "text-2xl font-black text-white"}
-                    >
-                      {i === transmissionLine ? (
-                        <TypedLine text={line.text} speed={i === 0 ? 50 : 35} />
-                      ) : (
-                        line.text
-                      )}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              ))}
-            </motion.div>
-          )}
+          {/* ═══ 1. EXAM TARGET DATE ═══ */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <Calendar size={14} className="text-amber-400" />
+                <span>When is your exam target date?</span>
+              </label>
 
-          {/* ── STEP: Introduction ── */}
-          {step === "introduction" && (
-            <motion.div
-              key="introduction"
-              className="text-center"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <p className="text-sm text-gray-300 leading-loose whitespace-pre-line mb-8">
-                {!introDone ? (
-                  <TypedLine text={SCRIPT.introduction} speed={18} onDone={() => setIntroDone(true)} />
-                ) : (
-                  SCRIPT.introduction
-                )}
-              </p>
-              <AnimatePresence>
-                {introDone && (
-                  <motion.button
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setStep(selectedExam ? "time_select" : "exam_select")}
-                    className="px-8 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold transition-all shadow-xl shadow-purple-500/25 active:scale-[0.97]"
+              {daysLeft > 0 && (
+                <span className="text-xs font-black text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                  {daysLeft} days to go
+                </span>
+              )}
+            </div>
+
+            <input
+              type="date"
+              min={minDateStr}
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-2xl bg-slate-800/70 border border-slate-700 text-slate-100 text-sm font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all cursor-pointer"
+            />
+            <p className="text-[11px] text-slate-400">
+              DakshAI uses this date to determine the exact daily pace your goal requires.
+            </p>
+          </div>
+
+          {/* ═══ 2. PERSONAL PROMISE MESSAGE ═══ */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+              <HeartHandshake size={14} className="text-amber-400" />
+              <span>A promise from yourself</span>
+            </label>
+
+            <textarea
+              rows={3}
+              value={promiseText}
+              onChange={(e) => setPromiseText(e.target.value)}
+              placeholder="e.g. I promise to show up honestly, face the questions I find hard, and never pretend I know what I haven't tested."
+              className="w-full p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700 text-slate-100 text-xs sm:text-sm leading-relaxed placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all resize-none"
+            />
+
+            {/* Quick Inspiration Chips */}
+            <div className="space-y-1 pt-0.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Tap for inspiration:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {PROMISE_SUGGESTIONS.map((sug, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPromiseText(sug)}
+                    className="text-[11px] text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700/80 px-2.5 py-1 rounded-xl transition cursor-pointer text-left"
                   >
-                    Tell me your mission
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-
-          {/* ── STEP: Exam Select ── */}
-          {step === "exam_select" && (
-            <motion.div
-              key="exam_select"
-              className="w-full"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <p className="text-center text-base font-bold text-white mb-6">
-                {SCRIPT.examQuestion}
-              </p>
-              <div className="space-y-3">
-                {EXAM_OPTIONS.map((option) => (
-                  <div key={option.value} className="space-y-2">
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        setSelectedExam(option);
-                        if (option.value !== "pcs") {
-                          setTimeout(() => setStep("time_select"), 350);
-                        }
-                      }}
-                      className={`w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition-all ${
-                        selectedExam?.value === option.value
-                          ? "border-purple-500/60 bg-purple-950/40"
-                          : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.12]"
-                      }`}
-                    >
-                      <span className="text-2xl">{option.icon}</span>
-                      <div>
-                        <p className="text-sm font-bold text-white">{option.label}</p>
-                        <p className="text-[10px] text-gray-500">{option.sublabel}</p>
-                      </div>
-                      {selectedExam?.value === option.value && (
-                        <div className="ml-auto w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </motion.button>
-
-                    {/* PCS Sub-Section Options */}
-                    {option.value === "pcs" && selectedExam?.value === "pcs" && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-2.5 ml-2"
-                      >
-                        <p className="text-[11px] font-bold text-amber-300">Select State Commission (Default: BPSC):</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { code: "BPSC", label: "BPSC (Bihar)" },
-                            { code: "UPPSC", label: "UPPSC (UP)" },
-                            { code: "MPPSC", label: "MPPSC (MP)" },
-                            { code: "RAS", label: "RAS (Rajasthan)" },
-                            { code: "WBPSC", label: "WBPSC (WB)" }
-                          ].map((pcs) => (
-                            <button
-                              key={pcs.code}
-                              type="button"
-                              onClick={() => {
-                                setPcsSection(pcs.code);
-                                setTimeout(() => setStep("time_select"), 300);
-                              }}
-                              className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
-                                pcsSection === pcs.code
-                                  ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-sm"
-                                  : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
-                              }`}
-                            >
-                              {pcs.label}
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
+                    "{sug}"
+                  </button>
                 ))}
               </div>
-            </motion.div>
-          )}
+            </div>
+          </div>
 
-          {/* ── STEP: Time Select ── */}
-          {step === "time_select" && (
-            <motion.div
-              key="time_select"
-              className="w-full"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
+          {/* ═══ 3. SUBMIT / LAUNCH ═══ */}
+          <div className="space-y-2 pt-2 border-t border-slate-800">
+            <button
+              type="submit"
+              disabled={submitting || !targetDate || daysLeft <= 0}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50"
             >
-              <p className="text-center text-base font-bold text-white mb-6">
-                {SCRIPT.timeQuestion}
-              </p>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {TIME_OPTIONS.map((opt) => (
-                  <motion.button
-                    key={opt.value}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedHours(opt)}
-                    className={`p-4 rounded-2xl border text-center transition-all ${
-                      selectedHours?.value === opt.value
-                        ? "border-purple-500/60 bg-purple-950/40 text-purple-300"
-                        : "border-white/[0.07] bg-white/[0.03] hover:bg-white/[0.06] text-gray-400"
-                    }`}
-                  >
-                    <p className="text-base font-black text-white">{opt.label}</p>
-                    <p className="text-[9px] text-gray-500 mt-0.5">daily</p>
-                  </motion.button>
-                ))}
-              </div>
-              {selectedHours && (
-                <motion.button
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={handleLaunch}
-                  disabled={launching}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-bold transition-all shadow-xl shadow-purple-500/25 disabled:opacity-70 active:scale-[0.97]"
-                >
-                  {launching ? "Initializing..." : "Begin My Journey ⚡"}
-                </motion.button>
-              )}
-            </motion.div>
-          )}
+              <span>{submitting ? "Anchoring Your Room..." : "Seal Commitment & Enter Home"}</span>
+              <ArrowRight size={15} />
+            </button>
 
-          {/* ── STEP: Launch ── */}
-          {step === "launch" && (
-            <motion.div
-              key="launch"
-              className="text-center space-y-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <motion.p
-                className="text-sm text-gray-400 font-mono tracking-widest"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {SCRIPT.launch[0]}
-              </motion.p>
-              <AnimatePresence>
-                {launchLine >= 1 && (
-                  <motion.p
-                    className="text-3xl font-black text-white"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6, ease: "backOut" }}
-                  >
-                    {SCRIPT.launch[1]}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-              {/* Expanding orb flash */}
-              {launchLine >= 1 && (
-                <motion.div
-                  className="fixed inset-0 bg-purple-600/20 pointer-events-none"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0, 0.4, 0] }}
-                  transition={{ duration: 1.5, delay: 1.2 }}
-                />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            <p className="text-center text-[11px] text-slate-400">
+              You do the studying. We'll help you know if it's enough.
+            </p>
+          </div>
+
+        </form>
+      </motion.div>
     </div>
   );
 }

@@ -11,11 +11,13 @@ const quizApi = {
   // ===================================
   start: async ({
     concept_id,
-    num_questions = 2,
+    subtopic_id,
+    num_questions = 5,
     quiz_type = "PYQS",
   }) => {
     const res = await axiosClient.post("/api/quiz/start/", {
       concept_id,
+      subtopic_id,
       num_questions,
       quiz_type,
     });

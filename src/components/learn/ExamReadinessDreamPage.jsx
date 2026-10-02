@@ -2,7 +2,7 @@
 // DakshAI Student Vocal Learning Content Engine
 // Voice-first presentation with text reveal, live equalizer, interactive timebar, and mobile-optimized controls.
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -20,21 +20,61 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-export const DEFAULT_VOCAL_LEARNING_SERIES = [
-  {
-    id: "l-1",
-    module: "LLM Architecture",
-    title: "Why Transformers Replaced RNNs",
-    narration: [
-      "Why did Transformer architectures replace Recurrent Neural Networks for processing long context sequences in deep learning?",
-      "In traditional RNNs, hidden state updates occurred sequentially token-by-token, causing vanishing gradients over long sequences.",
-      "Transformers introduced Scaled Dot-Product Self-Attention, allowing every token to compute attention weights with all other tokens simultaneously."
-    ],
-    key_takeaway: "Transformers replaced RNNs by using self-attention to compute long-range token relationships in parallel on GPUs."
-  }
-];
+import hindiInterviewData from "../../data/AI_Engineering_Interview_Bank_2026_Hindi_Interview.json";
+
+export const DEFAULT_VOCAL_LEARNING_SERIES = (hindiInterviewData && Array.isArray(hindiInterviewData.scenes) && hindiInterviewData.scenes.length > 0)
+  ? hindiInterviewData.scenes
+  : [];
 
 export const DEFAULT_AI_ENGINEERING_SERIES = DEFAULT_VOCAL_LEARNING_SERIES;
+
+// Dedicated Hindi speaker selector with Android & WebSpeech engine support
+export function getHindiSpeakerVoice(availableVoices) {
+  if (!availableVoices || availableVoices.length === 0) return null;
+
+  // 1. Strictly prioritize authentic Hindi voices (hi-IN / hi / Google हिन्दी / Swara / Kalpana / Hemant / Madhur)
+  const hiVoices = availableVoices.filter((v) => {
+    const l = (v.lang || "").toLowerCase().replace("_", "-");
+    const n = (v.name || "").toLowerCase();
+    return (
+      l === "hi-in" ||
+      l.startsWith("hi") ||
+      n.includes("hindi") ||
+      n.includes("हिन्दी") ||
+      n.includes("swara") ||
+      n.includes("kalpana") ||
+      n.includes("hemant") ||
+      n.includes("madhur")
+    );
+  });
+  if (hiVoices.length > 0) return hiVoices[0];
+
+  // 2. Fallback: Indian English (en-IN / India / Neerja / Prabhat / Heera / Ravi)
+  // Strictly filter OUT American/British voices (Zira, David, Mark, Hazel, Samantha)
+  const indianVoices = availableVoices.filter((v) => {
+    const l = (v.lang || "").toLowerCase().replace("_", "-");
+    const n = (v.name || "").toLowerCase();
+    if ((n.includes("zira") || n.includes("david") || n.includes("mark") || n.includes("hazel")) && !n.includes("india")) {
+      return false;
+    }
+    return (
+      l === "en-in" ||
+      n.includes("india") ||
+      n.includes("neerja") ||
+      n.includes("prabhat") ||
+      n.includes("heera") ||
+      n.includes("ravi")
+    );
+  });
+  if (indianVoices.length > 0) return indianVoices[0];
+
+  // 3. Fallback: Any voice that is NOT an English US/UK robot
+  const nonEnglish = availableVoices.filter((v) => {
+    const n = (v.name || "").toLowerCase();
+    return !n.includes("zira") && !n.includes("david") && !n.includes("mark");
+  });
+  return nonEnglish.length > 0 ? nonEnglish[0] : (availableVoices[0] || null);
+}
 
 // // Varied Intermediate Transition sentence pools to prevent repetitive phrasing across 78+ scenes
 const SCENE_ONE_HOOKS = [
@@ -170,7 +210,7 @@ export function prepareCompanionStory(rawLessons, subjectName = "AI Engineering"
     const rawNarration = Array.isArray(item.narration)
       ? item.narration
       : typeof item.narration === "string"
-        ? [item.narration]
+        ? item.narration.split("\n").map((s) => s.trim()).filter(Boolean)
         : Array.isArray(item.persona_female)
           ? item.persona_female
           : Array.isArray(item.persona_male)
@@ -290,6 +330,7 @@ export default function ExamReadinessDreamPage({
   const [showIntro, setShowIntro] = useState(true);
 
   const activeUtteranceRef = useRef(null);
+  const androidKeepAliveRef = useRef(null);
 
   const activeScene = story[sceneIdx] || story[0];
   const activeNarration = activeScene.narration || [];
@@ -351,9 +392,10 @@ export default function ExamReadinessDreamPage({
     };
   }, [isSpeaking, isPaused, totalSeconds]);
 
+  // Robust voice loading with polling to handle asynchronous Chromium/Android initialization
   useEffect(() => {
     const updateVoices = () => {
-      if ("speechSynthesis" in window) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
         const available = window.speechSynthesis.getVoices();
         if (available && available.length > 0) {
           setVoices(available);
@@ -361,8 +403,14 @@ export default function ExamReadinessDreamPage({
       }
     };
     updateVoices();
-    if ("speechSynthesis" in window) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.onvoiceschanged = updateVoices;
+      const t1 = setTimeout(updateVoices, 250);
+      const t2 = setTimeout(updateVoices, 1000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, []);
 
@@ -372,11 +420,12 @@ export default function ExamReadinessDreamPage({
 
   useEffect(() => {
     return () => {
-      if ("speechSynthesis" in window) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
         try {
           window.speechSynthesis.cancel();
         } catch (e) { }
       }
+      if (androidKeepAliveRef.current) clearInterval(androidKeepAliveRef.current);
     };
   }, []);
 
@@ -408,6 +457,7 @@ export default function ExamReadinessDreamPage({
     setRevealedChars(0);
 
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
     // Detect if text contains Hindi Devanagari script
     const hasHindiChars = /[\u0900-\u097F]/.test(text);
@@ -415,44 +465,38 @@ export default function ExamReadinessDreamPage({
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
 
-    // Pitch & rate tuned for female voice warmth and clear human articulation
-    utterance.pitch = 1.15;
-    const effectiveRate = Math.max(0.65, Math.min(1.3, rateOverride * (hasHindiChars ? 0.95 : 0.92)));
+    // Pitch & rate tuned for Indian vocal clarity and natural human articulation
+    utterance.pitch = 1.0;
+    const effectiveRate = Math.max(0.65, Math.min(1.3, rateOverride * 0.95));
     utterance.rate = effectiveRate;
-    utterance.lang = hasHindiChars ? "hi-IN" : "en-IN";
 
-    // Select distinct native female voice from available WebSpeech engine pool
+    // ALWAYS enforce Hindi language tag for the speech synthesizer (works natively on Android and Chromium)
+    utterance.lang = "hi-IN";
+
+    // Select dedicated Hindi speaker voice
     const availableVoices = voices.length > 0 ? voices : (("speechSynthesis" in window) ? window.speechSynthesis.getVoices() : []);
-    if (availableVoices.length > 0) {
-      const eligibleVoices = availableVoices.filter((v) => {
-        const vLang = v.lang.toLowerCase();
-        return hasHindiChars
-          ? vLang.includes("hi") || vLang.includes("in")
-          : vLang.includes("en") || vLang.includes("in");
-      });
-      const pool = eligibleVoices.length > 0 ? eligibleVoices : availableVoices;
+    const targetVoice = getHindiSpeakerVoice(availableVoices);
 
-      const targetVoice = pool.find((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes("female") ||
-          name.includes("woman") ||
-          name.includes("swara") ||
-          name.includes("kalpana") ||
-          name.includes("zira") ||
-          name.includes("aria") ||
-          name.includes("sangeeta") ||
-          name.includes("samantha") ||
-          name.includes("lekha")
-        );
-      }) || pool[pool.length - 1];
+    if (targetVoice && targetVoice.name) {
+      try {
+        utterance.voice = targetVoice;
+        utterance.lang = targetVoice.lang || "hi-IN";
+      } catch (e) { }
+    }
 
-      if (targetVoice && targetVoice.name) {
-        try {
-          utterance.voice = targetVoice;
-          if (targetVoice.lang) utterance.lang = targetVoice.lang;
-        } catch (e) { }
-      }
+    // Android keep-alive pulse: keeps Android Chrome speech engine active during long sentences
+    if (isAndroid) {
+      if (androidKeepAliveRef.current) clearInterval(androidKeepAliveRef.current);
+      androidKeepAliveRef.current = setInterval(() => {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          if (!window.speechSynthesis.speaking) {
+            clearInterval(androidKeepAliveRef.current);
+          } else {
+            window.speechSynthesis.pause();
+            window.speechSynthesis.resume();
+          }
+        }
+      }, 10000);
     }
 
     // 1. Synchronize word-by-word reveal EXACTLY when audio starts playing
@@ -513,6 +557,7 @@ export default function ExamReadinessDreamPage({
     };
 
     utterance.onend = () => {
+      if (androidKeepAliveRef.current) clearInterval(androidKeepAliveRef.current);
       if (activeUtteranceRef.current !== utterance) return;
       if (syncTimerRef.current) clearInterval(syncTimerRef.current);
       setRevealedChars(text.length);
@@ -526,6 +571,7 @@ export default function ExamReadinessDreamPage({
 
     utterance.onerror = (err) => {
       console.warn("SpeechSynthesis utterance error:", err);
+      if (androidKeepAliveRef.current) clearInterval(androidKeepAliveRef.current);
       if (activeUtteranceRef.current !== utterance) return;
       if (syncTimerRef.current) clearInterval(syncTimerRef.current);
       setRevealedChars(text.length);
@@ -541,7 +587,7 @@ export default function ExamReadinessDreamPage({
         console.error("Speech speak error, trying native fallback:", err);
         try {
           const fallbackUtterance = new SpeechSynthesisUtterance(text);
-          fallbackUtterance.lang = hasHindiChars ? "hi-IN" : "en-IN";
+          fallbackUtterance.lang = "hi-IN";
           fallbackUtterance.onend = () => {
             if (syncTimerRef.current) clearInterval(syncTimerRef.current);
             setRevealedChars(text.length);

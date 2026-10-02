@@ -10,7 +10,7 @@ import ProgressBar from "../components/ui/ProgressBar";
 import SkeletonLoader from "../components/ui/SkeletonLoader";
 import ConceptSession from "../components/learn/ConceptSession";
 import ExamReadinessDreamPage, { DEFAULT_AI_ENGINEERING_SERIES } from "../components/learn/ExamReadinessDreamPage";
-import aiEngineeringScenes from "../data/ai_engineering_vocal_scenes.json";
+import hindiInterviewData from "../data/AI_Engineering_Interview_Bank_2026_Hindi_Interview.json";
 import SubjectPassModal from "../components/learn/SubjectPassModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, ChevronRight, ArrowLeft, Network, List, RefreshCw, Sparkles, Layers, Zap, Headphones, Play, Lock } from "lucide-react";
@@ -28,8 +28,8 @@ export const getMasteryPercent = (mastery) => {
 };
 
 const getLessonsForSubject = (subject) => {
-  const fullPdfScenes = (aiEngineeringScenes && Array.isArray(aiEngineeringScenes.scenes) && aiEngineeringScenes.scenes.length > 0)
-    ? aiEngineeringScenes.scenes
+  const fullPdfScenes = (hindiInterviewData && Array.isArray(hindiInterviewData.scenes) && hindiInterviewData.scenes.length > 0)
+    ? hindiInterviewData.scenes
     : DEFAULT_AI_ENGINEERING_SERIES;
 
   if (!subject) return fullPdfScenes;

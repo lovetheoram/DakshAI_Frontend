@@ -1,11 +1,11 @@
 // src/components/learn/AIEngineeringDreamPage.jsx
 import React from "react";
 import ExamReadinessDreamPage, { DEFAULT_AI_ENGINEERING_SERIES } from "./ExamReadinessDreamPage";
-import aiEngineeringScenes from "../../data/ai_engineering_vocal_scenes.json";
+import hindiInterviewData from "../../data/AI_Engineering_Interview_Bank_2026_Hindi_Interview.json";
 
 export default function AIEngineeringDreamPage({ onBack }) {
-  const scenesList = (aiEngineeringScenes && aiEngineeringScenes.scenes && aiEngineeringScenes.scenes.length > 0)
-    ? aiEngineeringScenes.scenes
+  const scenesList = (hindiInterviewData && hindiInterviewData.scenes && hindiInterviewData.scenes.length > 0)
+    ? hindiInterviewData.scenes
     : DEFAULT_AI_ENGINEERING_SERIES;
 
   return (

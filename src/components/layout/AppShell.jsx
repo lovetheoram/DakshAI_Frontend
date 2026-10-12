@@ -22,14 +22,19 @@ import {
   Calendar,
   Activity,
   Target,
+  Compass,
+  Users,
+  PlusCircle,
 } from "lucide-react";
+import CreatePostModal from "../social/CreatePostModal";
 
-// Core 4 Rooms: Home (Where am I?), Practice (Can I do it?), Learn (Do I understand?), World (What else exists?)
+// Primary Navigation: Home (People & Feed), Discover (Projects & People), Circles (Communities), Learn (Concepts), Practice (Active Retrieval)
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Home" },
-  { to: "/practice", icon: Target, label: "Practice" },
+  { to: "/discover", icon: Compass, label: "Discover" },
+  { to: "/communities", icon: Users, label: "Circles" },
   { to: "/learn", icon: BookOpen, label: "Learn" },
-  { to: "/world", icon: Globe, label: "World" },
+  { to: "/practice", icon: Target, label: "Practice" },
 ];
 
 export default function AppShell({ children }) {
@@ -38,6 +43,7 @@ export default function AppShell({ children }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   // Multi-Streak Modal & Telemetry State
   const [streakModalOpen, setStreakModalOpen] = useState(false);
@@ -155,6 +161,16 @@ export default function AppShell({ children }) {
 
           {/* Right section */}
           <div className="flex items-center gap-2">
+            {/* Create Post CTA */}
+            <button
+              onClick={() => setCreatePostOpen(true)}
+              className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs hover:scale-105 transition-all"
+              title="Share a reflection, project, question or milestone"
+            >
+              <PlusCircle size={15} />
+              <span>Create</span>
+            </button>
+
             {/* Streak Header Button */}
             <button
               onClick={() => setStreakModalOpen(true)}
@@ -244,6 +260,15 @@ export default function AppShell({ children }) {
           </NavLink>
 
           <div className="flex items-center gap-1.5">
+            {/* Create Mobile Button */}
+            <button
+              onClick={() => setCreatePostOpen(true)}
+              className="w-8 h-8 rounded-xl bg-[var(--color-gold)] text-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer active:scale-95"
+              title="Create Post"
+            >
+              <PlusCircle size={15} />
+            </button>
+
             {/* Streak Mobile Button */}
             <button
               onClick={() => setStreakModalOpen(true)}
@@ -529,6 +554,19 @@ export default function AppShell({ children }) {
           </div>
         </nav>
       )}
+
+      {/* Global Create Post Modal */}
+      <CreatePostModal
+        isOpen={createPostOpen}
+        onClose={() => setCreatePostOpen(false)}
+        onPostCreated={() => {
+          setCreatePostOpen(false);
+          // If on home or communities page, reload to show new post
+          if (["/", "/communities"].includes(location.pathname)) {
+            window.location.reload();
+          }
+        }}
+      />
     </div>
   );
 }

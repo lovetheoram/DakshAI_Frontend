@@ -51,8 +51,17 @@ useEffect(() => {
     localStorage.removeItem("daksh_onboarding_done");
   };
 
+  const updateUserData = (updatedUser) => {
+    setUser(updatedUser);
+    try {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (e) {
+      console.warn("Could not save user to localStorage", e);
+    }
+  };
+
   return (
-<AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUserData }}>
       {children}
     </AuthContext.Provider>
   );

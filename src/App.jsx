@@ -14,6 +14,8 @@ import CommunityPage from "./pages/CommunityPage";
 import GrowthPage from "./pages/GrowthPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import DiscoverPage from "./pages/DiscoverPage";
+import CommunitiesPage from "./pages/CommunitiesPage";
 
 // Auth & Social
 import Login from "./components/auth/Login";
@@ -91,10 +93,34 @@ export default function App() {
           }
         />
         <Route
+          path="/discover"
+          element={
+            <ProtectedRoute>
+              <DiscoverPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/communities"
+          element={
+            <ProtectedRoute>
+              <CommunitiesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/communities/:slugOrId"
+          element={
+            <ProtectedRoute>
+              <CommunitiesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/community"
           element={
             <ProtectedRoute>
-              <CommunityPage />
+              <CommunitiesPage />
             </ProtectedRoute>
           }
         />
@@ -102,7 +128,7 @@ export default function App() {
           path="/world"
           element={
             <ProtectedRoute>
-              <CommunityPage />
+              <DiscoverPage />
             </ProtectedRoute>
           }
         />
